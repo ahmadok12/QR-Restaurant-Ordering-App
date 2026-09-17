@@ -119,13 +119,6 @@
             <span class="font-headline font-bold text-[17px] text-on-surface leading-tight tracking-tight">Dera Gourmet</span>
             <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">Desi Dine-In</span>
           </div>
-          <!-- Clickable Table Binding Switcher -->
-          <button onclick="openTableModal()" type="button" class="flex items-center gap-1 text-left text-[12px] text-secondary hover:text-primary transition-colors group">
-            <span class="material-symbols-outlined text-[14px] text-primary">table_restaurant</span>
-            <span class="font-semibold text-on-surface" id="header-table-label">Table 04</span>
-            <span class="text-secondary/70 truncate">• Main Hall</span>
-            <span class="material-symbols-outlined text-[14px] opacity-60 group-hover:opacity-100">expand_more</span>
-          </button>
         </div>
       </div>
 
@@ -183,133 +176,130 @@
         </button>
       </div>
 
-      <!-- Live Search & Quick Spicy Toggle -->
-      <div class="px-margin py-1.5">
+      <!-- Live Search & Instant Search Mode -->
+      <div class="px-margin py-1.5" id="search-container">
         <div class="flex items-center gap-2">
-          <div class="relative flex-1 flex items-center bg-surface-container-lowest rounded-full shadow-[0_3px_14px_rgba(15,23,42,0.05)] border border-surface-container px-4 py-2.5">
+          <div class="relative flex-1 flex items-center bg-surface-container-lowest rounded-full shadow-[0_2px_12px_rgba(15,23,42,0.06)] border border-surface-container px-4 py-2.5 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
             <span class="material-symbols-outlined text-secondary text-[20px] mr-2">search</span>
-            <input id="search-input" oninput="handleSearch()" class="w-full bg-transparent text-[14px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search Karahi, Biryani, BBQ, Naan..." type="text"/>
-            <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-secondary hover:text-on-surface" type="button">
+            <input id="search-input" onfocus="enterSearchMode()" oninput="handleSearch()" class="w-full bg-transparent text-[14px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search Karahi, Biryani, BBQ, Naan..." type="text" autocomplete="off"/>
+            <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-secondary hover:text-on-surface p-1" type="button">
               <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
           </div>
-          <button onclick="toggleFilterDietary('spicy')" id="filter-spicy-btn" type="button" class="h-11 px-3 rounded-full bg-surface-container-lowest border border-surface-container text-secondary text-[12px] font-semibold flex items-center gap-1 shadow-sm transition-all hover:text-primary active:scale-95" title="Filter Chatpata / Spicy Dishes">
-            <span class="material-symbols-outlined text-[18px] text-primary">local_fire_department</span>
-            <span class="hidden sm:inline">Spicy</span>
-          </button>
+          <button id="search-cancel-btn" onclick="exitSearchMode()" type="button" class="hidden px-3.5 py-2 text-[13px] font-bold text-primary hover:text-primary-container bg-primary/10 rounded-full transition-all active:scale-95">Cancel</button>
         </div>
       </div>
 
       <!-- TOP FEATURED DISHES & DEALS LARGE THUMBNAIL SLIDER -->
-      <div class="px-margin py-2">
+      <div id="deals-slider-section" class="px-margin py-2 transition-all duration-300">
         <div class="relative w-full">
           <!-- Horizontal Swipeable Track -->
           <div id="featured-deals-slider" class="w-full flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth pb-1">
             
             <!-- Slide 1: Dera Karahi Feast Deal -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80" alt="Dera Karahi Feast" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
-              <div class="relative z-10 flex items-center justify-between mb-1">
-                <span class="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <span class="material-symbols-outlined text-[13px]">local_fire_department</span>
+              <div class="relative z-10 flex items-center justify-between mb-0.5">
+                <span class="px-2 py-0.5 rounded-full bg-primary text-white text-[9.5px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[12px]">local_fire_department</span>
                   <span>15% OFF DEAL</span>
                 </span>
-                <span class="text-[11px] font-bold text-amber-300">Family Feast (3-4p)</span>
+                <span class="text-[10.5px] font-bold text-amber-300">Family Feast (3-4p)</span>
               </div>
-              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">Dera Karahi Feast</h3>
-              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">1kg Chicken Karahi + 4 Roghni Naan + 3 Kulhad Sweet Lassi</p>
+              <h3 class="relative z-10 font-headline font-black text-[16px] sm:text-[17px] leading-tight text-white">Dera Karahi Feast</h3>
+              <p class="relative z-10 text-[10.5px] text-white/80 line-clamp-1 mt-0.5">1kg Chicken Karahi + 4 Roghni Naan + 3 Kulhad Sweet Lassi</p>
               
-              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+              <div class="relative z-10 flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/20">
                 <div class="flex items-center gap-2">
-                  <span class="font-headline font-black text-[18px] text-amber-400">Rs. 3,450</span>
-                  <span class="text-[12px] text-white/60 line-through">Rs. 3,900</span>
+                  <span class="font-headline font-black text-[16px] text-amber-400">Rs. 3,450</span>
+                  <span class="text-[11px] text-white/60 line-through">Rs. 3,900</span>
                 </div>
-                <button onclick="addComboFeast('karahi_feast')" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
-                  <span class="material-symbols-outlined text-[15px]">add</span>
+                <button onclick="addComboFeast('karahi_feast')" class="px-3 py-1 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[11.5px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[14px]">add</span>
                   <span>Add Deal</span>
                 </button>
               </div>
             </div>
 
             <!-- Slide 2: BBQ & Biryani Platter Deal -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80" alt="BBQ & Biryani Platter" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
-              <div class="relative z-10 flex items-center justify-between mb-1">
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <span class="material-symbols-outlined text-[13px]">outdoor_grill</span>
+              <div class="relative z-10 flex items-center justify-between mb-0.5">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9.5px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[12px]">outdoor_grill</span>
                   <span>BBQ PLATTER DEAL</span>
                 </span>
-                <span class="text-[11px] font-bold text-emerald-300">Serves 2</span>
+                <span class="text-[10.5px] font-bold text-emerald-300">Serves 2</span>
               </div>
-              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">BBQ &amp; Biryani Combo</h3>
-              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">Malai Boti + Chapli Kabab + Dum Biryani + 2 Mint Coolers</p>
+              <h3 class="relative z-10 font-headline font-black text-[16px] sm:text-[17px] leading-tight text-white">BBQ &amp; Biryani Combo</h3>
+              <p class="relative z-10 text-[10.5px] text-white/80 line-clamp-1 mt-0.5">Malai Boti + Chapli Kabab + Dum Biryani + 2 Mint Coolers</p>
               
-              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+              <div class="relative z-10 flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/20">
                 <div class="flex items-center gap-2">
-                  <span class="font-headline font-black text-[18px] text-emerald-300">Rs. 2,150</span>
-                  <span class="text-[12px] text-white/60 line-through">Rs. 2,380</span>
+                  <span class="font-headline font-black text-[16px] text-emerald-300">Rs. 2,150</span>
+                  <span class="text-[11px] text-white/60 line-through">Rs. 2,380</span>
                 </div>
-                <button onclick="addComboFeast('bbq_platter')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
-                  <span class="material-symbols-outlined text-[15px]">add</span>
+                <button onclick="addComboFeast('bbq_platter')" class="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11.5px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[14px]">add</span>
                   <span>Add Deal</span>
                 </button>
               </div>
             </div>
 
             <!-- Slide 3: Chef's Chicken Makhni Karahi -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80" alt="Chicken Makhni Karahi" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
-              <div class="relative z-10 flex items-center justify-between mb-1">
-                <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <span class="material-symbols-outlined text-[13px]">star</span>
+              <div class="relative z-10 flex items-center justify-between mb-0.5">
+                <span class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[9.5px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[12px]">star</span>
                   <span>CHEF'S SPECIAL</span>
                 </span>
-                <span class="text-[11px] font-bold text-amber-200">Clay Handi</span>
+                <span class="text-[10.5px] font-bold text-amber-200">Clay Handi</span>
               </div>
-              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">Chicken Makhni Karahi</h3>
-              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">Desi butter, ripe Sindh tomatoes, ginger juliennes &amp; green chilies</p>
+              <h3 class="relative z-10 font-headline font-black text-[16px] sm:text-[17px] leading-tight text-white">Chicken Makhni Karahi</h3>
+              <p class="relative z-10 text-[10.5px] text-white/80 line-clamp-1 mt-0.5">Desi butter, ripe Sindh tomatoes, ginger juliennes &amp; green chilies</p>
               
-              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+              <div class="relative z-10 flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/20">
                 <div class="flex items-center gap-2">
-                  <span class="font-headline font-black text-[18px] text-amber-400">Rs. 1,250</span>
+                  <span class="font-headline font-black text-[16px] text-amber-400">Rs. 1,250</span>
                   <span class="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-full">Half (0.5 kg)</span>
                 </div>
-                <button onclick="handleDishAddClick('dish-1')" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
-                  <span class="material-symbols-outlined text-[15px]">add</span>
-                  <span>Add Dish</span>
+                <button onclick="handleDishAddClick('dish-1')" class="px-3 py-1 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[11.5px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[14px]">tune</span>
+                  <span>Customize</span>
                 </button>
               </div>
             </div>
 
             <!-- Slide 4: Dum Biryani Special -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80" alt="Special Dum Biryani" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
-              <div class="relative z-10 flex items-center justify-between mb-1">
-                <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <span class="material-symbols-outlined text-[13px]">military_tech</span>
+              <div class="relative z-10 flex items-center justify-between mb-0.5">
+                <span class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9.5px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[12px]">military_tech</span>
                   <span>ROYAL BIRYANI</span>
                 </span>
-                <span class="text-[11px] font-bold text-amber-200">Karachi Dum</span>
+                <span class="text-[10.5px] font-bold text-amber-200">Karachi Dum</span>
               </div>
-              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">Special Chicken Dum Biryani</h3>
-              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">Aged basmati rice, marinated spiced chicken, saffron milk &amp; brown onions</p>
+              <h3 class="relative z-10 font-headline font-black text-[16px] sm:text-[17px] leading-tight text-white">Special Chicken Dum Biryani</h3>
+              <p class="relative z-10 text-[10.5px] text-white/80 line-clamp-1 mt-0.5">Aged basmati rice, marinated spiced chicken, saffron milk &amp; brown onions</p>
               
-              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+              <div class="relative z-10 flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/20">
                 <div class="flex items-center gap-2">
-                  <span class="font-headline font-black text-[18px] text-amber-400">Rs. 690</span>
+                  <span class="font-headline font-black text-[16px] text-amber-400">Rs. 690</span>
                   <span class="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-full">Single Plate</span>
                 </div>
-                <button onclick="handleDishAddClick('dish-3')" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
-                  <span class="material-symbols-outlined text-[15px]">add</span>
-                  <span>Add Dish</span>
+                <button onclick="handleDishAddClick('dish-3')" class="px-3 py-1 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[11.5px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[14px]">tune</span>
+                  <span>Customize</span>
                 </button>
               </div>
             </div>
@@ -391,7 +381,7 @@
             <span class="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>
           <div>
-            <h1 class="font-headline font-bold text-[20px] text-on-surface leading-tight">Table Basket</h1>
+            <h1 class="font-headline font-bold text-[20px] text-on-surface leading-tight">Your Order</h1>
             <span class="text-[12px] text-secondary" id="cart-table-subtitle">Ordering for Table 04</span>
           </div>
         </div>
@@ -399,19 +389,6 @@
           <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
           <span>Clear</span>
         </button>
-      </div>
-
-      <!-- Offline Service Info Banner -->
-      <div class="px-margin mt-3">
-        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined text-[20px]">payments</span>
-          </div>
-          <div class="text-[12px]">
-            <p class="font-semibold text-on-surface">Zero Digital Payment Required</p>
-            <p class="text-secondary">Pay cash to server or settle at the counter when finished.</p>
-          </div>
-        </div>
       </div>
 
       <!-- Cart Items List Container -->
@@ -424,35 +401,15 @@
         <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
           <span class="material-symbols-outlined text-[32px]">dinner_dining</span>
         </div>
-        <h3 class="font-headline font-bold text-[18px] text-on-surface">Your table basket is empty</h3>
-        <p class="text-[13px] text-secondary max-w-xs mt-1">Explore our chef-curated dishes and add items for your table.</p>
+        <h3 class="font-headline font-bold text-[18px] text-on-surface">Your order is currently empty</h3>
+        <p class="text-[13px] text-secondary max-w-xs mt-1">Explore our chef-curated dishes and add items to your table order.</p>
         <button onclick="switchView('menu')" class="mt-4 px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
           Browse Menu
         </button>
       </div>
 
-      <!-- Bill & Split Calculator Module -->
+      <!-- Bill Module -->
       <div id="cart-pricing-section" class="px-margin mt-5 flex flex-col gap-3">
-        
-        <!-- Interactive Bill Split Calculator -->
-        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3.5 shadow-sm">
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-headline font-bold text-[14px] text-on-surface flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[17px] text-primary">group</span>
-              <span>Split Cash Bill Calculator</span>
-            </span>
-            <div class="flex items-center gap-1">
-              <button onclick="adjustSplitDiners(-1)" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-on-surface active:scale-90">-</button>
-              <span class="font-bold text-[13px] w-6 text-center" id="split-diners-count">2</span>
-              <button onclick="adjustSplitDiners(1)" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-on-surface active:scale-90">+</button>
-              <span class="text-[11px] text-secondary ml-1">guests</span>
-            </div>
-          </div>
-          <div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between">
-            <span class="text-[12px] text-secondary">Estimated per guest (Cash):</span>
-            <span class="font-headline font-bold text-primary text-[15px]" id="split-amount-display">$0.00</span>
-          </div>
-        </div>
 
         <!-- Price Breakdown Card -->
         <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-4 shadow-sm space-y-2">
@@ -470,16 +427,10 @@
           </div>
         </div>
 
-        <!-- Diner Name & Table Note Inputs -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 shadow-sm">
-            <label class="block text-[12px] font-semibold text-secondary mb-1">Diner / Guest Name (Optional)</label>
-            <input id="guest-name-input" type="text" placeholder="e.g. Sarah / Table Guest" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
-          </div>
-          <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 shadow-sm">
-            <label class="block text-[12px] font-semibold text-secondary mb-1">Kitchen Note for Chef</label>
-            <input id="general-order-notes" type="text" placeholder="e.g. Serve drinks first, less salt" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
-          </div>
+        <!-- Kitchen Note Input -->
+        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 shadow-sm">
+          <label class="block text-[12px] font-semibold text-secondary mb-1">Kitchen Note for Chef (Optional)</label>
+          <input id="general-order-notes" type="text" placeholder="e.g. Serve drinks first, less spice/salt" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
         </div>
 
         <!-- Submit Order Directly to Kitchen Button -->
@@ -813,7 +764,7 @@
           </div>
         </div>
         <div class="flex items-center gap-1.5 font-bold text-[13px] bg-white/20 px-3.5 py-1.5 rounded-xl shadow-xs">
-          <span id="float-cart-cta-text">View Basket</span>
+          <span id="float-cart-cta-text">View Order</span>
           <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
         </div>
       </button>
@@ -1776,11 +1727,16 @@
 
     function applyTableLabels() {
       const lbl = `Table ${appState.tableNumber}`;
-      document.getElementById('header-table-label').textContent = lbl;
-      document.getElementById('banner-table-title').textContent = `Dine-In • Table #${appState.tableNumber}`;
-      document.getElementById('cart-table-subtitle').textContent = `Ordering for Table #${appState.tableNumber}`;
-      document.getElementById('conf-table-badge').textContent = appState.tableNumber;
-      document.getElementById('waiter-modal-table').textContent = `Table #${appState.tableNumber}`;
+      const hTable = document.getElementById('header-table-label');
+      if (hTable) hTable.textContent = lbl;
+      const bTitle = document.getElementById('banner-table-title');
+      if (bTitle) bTitle.textContent = `Dine-In • Table #${appState.tableNumber}`;
+      const cSub = document.getElementById('cart-table-subtitle');
+      if (cSub) cSub.textContent = `Ordering for Table #${appState.tableNumber}`;
+      const confBadge = document.getElementById('conf-table-badge');
+      if (confBadge) confBadge.textContent = appState.tableNumber;
+      const wTable = document.getElementById('waiter-modal-table');
+      if (wTable) wTable.textContent = `Table #${appState.tableNumber}`;
       const floatTable = document.getElementById('float-cart-table');
       if (floatTable) floatTable.textContent = appState.tableNumber;
     }
@@ -1963,27 +1919,49 @@
       renderDishGrid();
     }
 
-    function toggleFilterDietary(type) {
-      if (type === 'spicy') {
-        appState.filterSpicyOnly = !appState.filterSpicyOnly;
-        const btn = document.getElementById('filter-spicy-btn');
-        if (appState.filterSpicyOnly) {
-          btn.classList.add('bg-primary/10', 'border-primary', 'text-primary');
-        } else {
-          btn.classList.remove('bg-primary/10', 'border-primary', 'text-primary');
-        }
-        renderDishGrid();
+    function enterSearchMode() {
+      const dealsSlider = document.getElementById('deals-slider-section');
+      const cancelBtn = document.getElementById('search-cancel-btn');
+      if (dealsSlider) dealsSlider.classList.add('hidden');
+      if (cancelBtn) cancelBtn.classList.remove('hidden');
+      
+      const searchContainer = document.getElementById('search-container');
+      if (searchContainer) {
+        searchContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+    }
+
+    function exitSearchMode() {
+      const dealsSlider = document.getElementById('deals-slider-section');
+      const cancelBtn = document.getElementById('search-cancel-btn');
+      const searchInput = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear-btn');
+      
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+      }
+      appState.searchQuery = '';
+      if (clearBtn) clearBtn.classList.add('hidden');
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+      if (dealsSlider) dealsSlider.classList.remove('hidden');
+      
+      renderDishGrid();
     }
 
     function handleSearch() {
       const input = document.getElementById('search-input');
       appState.searchQuery = input.value.trim().toLowerCase();
       const clearBtn = document.getElementById('search-clear-btn');
+      const dealsSlider = document.getElementById('deals-slider-section');
+      const cancelBtn = document.getElementById('search-cancel-btn');
+
       if (appState.searchQuery) {
-        clearBtn.classList.remove('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+        if (dealsSlider) dealsSlider.classList.add('hidden');
+        if (cancelBtn) cancelBtn.classList.remove('hidden');
       } else {
-        clearBtn.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.add('hidden');
       }
       renderDishGrid();
     }
@@ -1991,14 +1969,24 @@
     function clearSearch() {
       document.getElementById('search-input').value = '';
       appState.searchQuery = '';
-      document.getElementById('search-clear-btn').classList.add('hidden');
+      const clearBtn = document.getElementById('search-clear-btn');
+      if (clearBtn) clearBtn.classList.add('hidden');
       renderDishGrid();
+    }
+
+    function dishHasCustomization(dish) {
+      if (!dish) return false;
+      const hasMultipleSizes = Array.isArray(dish.sizeOptions) && dish.sizeOptions.length > 1;
+      const hasAddons = Array.isArray(dish.addons) && dish.addons.length > 0;
+      return Boolean(hasMultipleSizes || hasAddons);
     }
 
     function renderDishGrid() {
       const grid = document.getElementById('dish-grid-container');
+      if (!grid) return;
+
       const filtered = DISH_CATALOG.filter(dish => {
-        const matchesCategory = (appState.activeCategory === 'all') || 
+        const matchesCategory = Boolean(appState.searchQuery) || (appState.activeCategory === 'all') || 
           (dish.category === appState.activeCategory) || 
           ((appState.activeCategory === 'meetha' || appState.activeCategory === 'desserts') && (dish.category === 'meetha' || dish.category === 'desserts'));
         const matchesSpicy = !appState.filterSpicyOnly || dish.isSpicy;
@@ -2014,11 +2002,29 @@
         countInd.textContent = `${filtered.length} dishes`;
       }
 
+      const heading = document.getElementById('menu-section-heading');
+      if (heading) {
+        if (appState.searchQuery) {
+          heading.textContent = `Search results for "${appState.searchQuery}"`;
+        } else {
+          const catLabels = {
+            all: 'All Menu',
+            karahi: 'Karahi & Handi',
+            bbq: 'Charcoal BBQ',
+            rice: 'Royal Biryani & Rice',
+            naan: 'Tandoori Naan & Roti',
+            drinks: 'Drinks & Beverages',
+            meetha: 'Desserts & Meetha'
+          };
+          heading.textContent = catLabels[appState.activeCategory] || (appState.activeCategory.charAt(0).toUpperCase() + appState.activeCategory.slice(1));
+        }
+      }
+
       if (filtered.length === 0) {
         grid.innerHTML = `
           <div class="py-10 text-center text-secondary">
             <span class="material-symbols-outlined text-[32px] text-secondary/60">search_off</span>
-            <p class="mt-1 font-semibold text-[14px]">No dishes match your filter</p>
+            <p class="mt-1 font-semibold text-[14px]">No dishes match your search</p>
             <button onclick="clearSearch(); selectCategory('all', document.querySelector('.cat-rail-btn'))" class="mt-2 text-[12px] text-primary underline">Reset filters</button>
           </div>
         `;
@@ -2029,52 +2035,65 @@
         const isSoldOut = soldOutSet.has(dish.id);
         const cartQty = getDishCartQty(dish.id);
         const escapedId = String(dish.id).replace(/'/g, "\\'");
+        const hasCustom = dishHasCustomization(dish);
         return `
-        <div class="bg-surface-container-lowest rounded-2xl p-2.5 sm:p-3 border border-surface-container shadow-xs flex items-center justify-between gap-2.5 group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}">
+        <div class="bg-surface-container-lowest rounded-2xl p-2.5 sm:p-3 border border-surface-container shadow-xs flex items-center justify-between gap-2.5 sm:gap-3 group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}">
           <!-- Left info: title, desc/dietary, price, star rating -->
-          <div class="flex-1 min-w-0 pr-1 cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : `openDishDetail('${escapedId}')`}">
+          <div class="flex-1 min-w-0 pr-1 cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : (hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`)}">
             <div class="flex items-center gap-1.5 mb-1">
               ${dish.isSpicy ? `<span class="material-symbols-outlined text-[13px] text-red-500 shrink-0" title="Spicy">local_fire_department</span>` : ''}
-              <h3 class="font-headline font-bold text-[13px] sm:text-[14px] text-on-surface leading-snug truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${dish.title}</h3>
+              <h3 class="font-headline font-bold text-[13.5px] sm:text-[14.5px] text-on-surface leading-snug truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${dish.title}</h3>
             </div>
             <p class="text-[11px] text-secondary line-clamp-1 mb-2 leading-snug">${dish.desc || dish.dietary}</p>
             <div class="flex items-center gap-2">
-              <span class="font-headline font-black text-[13px] sm:text-[14px] text-primary">${formatPrice(dish.price)}</span>
-              <div class="flex items-center gap-0.5 text-secondary text-[10px]">
+              <span class="font-headline font-black text-[13.5px] sm:text-[14.5px] text-primary">${formatPrice(dish.price)}</span>
+              <div class="flex items-center gap-0.5 text-secondary text-[10.5px]">
                 <span class="material-symbols-outlined text-tertiary text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
                 <span class="font-bold text-on-surface">${dish.rating || '4.8'}</span>
               </div>
             </div>
           </div>
 
-          <!-- Right: Image thumbnail & Add button / stepper -->
-          <div class="relative w-20 h-20 sm:w-22 sm:h-22 shrink-0 rounded-xl overflow-hidden bg-surface-container">
-            <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${dish.image}" alt="${dish.title}" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : `openDishDetail('${escapedId}')`}" />
-            ${isSoldOut ? `
-              <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <span class="text-[9px] font-black uppercase text-white tracking-wider">Sold Out</span>
-              </div>
-            ` : `
-              <div class="absolute bottom-1 right-1" onclick="event.stopPropagation()">
-                ${cartQty > 0 ? `
-                  <div class="inline-flex items-center bg-white/95 backdrop-blur-sm border border-primary/40 rounded-full p-0.5 shadow-md">
-                    <button onclick="decrementDish('${escapedId}')" class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-90 transition-all">
-                      <span class="material-symbols-outlined text-[12px] font-bold">remove</span>
-                    </button>
-                    <span class="font-headline font-bold text-primary text-[11px] px-1 min-w-[14px] text-center">${cartQty}</span>
-                    <button onclick="incrementDish('${escapedId}')" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center active:scale-90 transition-all">
-                      <span class="material-symbols-outlined text-[12px] font-bold">add</span>
-                    </button>
-                  </div>
-                ` : `
-                  <button onclick="handleDishAddClick('${escapedId}')" class="px-2.5 py-1 rounded-lg bg-primary/95 backdrop-blur-sm hover:bg-primary text-white font-headline font-bold text-[11px] flex items-center gap-0.5 shadow-md active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-[13px]">add</span>
-                    <span>ADD</span>
+          <!-- Right: Image thumbnail + Action button placed NEXT TO / UNDER the picture, NOT covering the image! -->
+          <div class="flex flex-col items-center justify-center shrink-0 w-20 sm:w-22 gap-1.5">
+            <div class="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-surface-container shadow-2xs cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : (hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`)}">
+              <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${dish.image}" alt="${dish.title}" />
+              ${isSoldOut ? `
+                <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <span class="text-[9px] font-black uppercase text-white tracking-wider">Sold Out</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Action button located in the column next to the info text, NOT overlaying the photo -->
+            <div class="w-full flex flex-col items-center" onclick="event.stopPropagation()">
+              ${isSoldOut ? `
+                <span class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">86'd</span>
+              ` : cartQty > 0 ? `
+                <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-full p-0.5 shadow-xs w-full justify-between">
+                  <button onclick="decrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 hover:bg-primary/20 transition-all" title="Remove one">
+                    <span class="material-symbols-outlined text-[13px] font-bold">remove</span>
                   </button>
-                `}
-              </div>
-            `}
+                  <span class="font-headline font-bold text-primary text-[11px] px-1 text-center leading-none">${cartQty}</span>
+                  <button onclick="incrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center active:scale-90 hover:brightness-110 transition-all" title="Add another">
+                    <span class="material-symbols-outlined text-[13px] font-bold">add</span>
+                  </button>
+                </div>
+                ${hasCustom ? `<button onclick="openDishDetail('${escapedId}')" class="text-[9px] text-primary/80 hover:text-primary font-semibold underline mt-0.5">Customize</button>` : ''}
+              ` : hasCustom ? `
+                <button onclick="openDishDetail('${escapedId}')" class="w-full py-1 px-1 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary font-headline font-bold text-[11px] flex items-center justify-center gap-0.5 shadow-2xs active:scale-95 transition-all" title="Customize portion & spice">
+                  <span class="material-symbols-outlined text-[12px]">tune</span>
+                  <span>Customize</span>
+                </button>
+              ` : `
+                <button onclick="quickAddToCart('${escapedId}')" class="w-full py-1 px-1 rounded-lg bg-primary hover:bg-primary/90 text-white font-headline font-bold text-[11px] flex items-center justify-center gap-0.5 shadow-2xs active:scale-95 transition-all" title="Add to table order">
+                  <span class="material-symbols-outlined text-[13px]">add</span>
+                  <span>ADD</span>
+                </button>
+              `}
+            </div>
           </div>
+
         </div>
         `;
       }).join('');
@@ -2268,7 +2287,7 @@
       addItemToCart(cartItem);
       closeDishDetail();
       renderDishGrid();
-      showToast(`Added ${appState.modalQty}x ${appState.activeModalDish.title} to Table Basket!`);
+      showToast(`Added ${appState.modalQty}x ${appState.activeModalDish.title} to Your Order!`);
     }
 
     function getDishCartQty(dishId) {
@@ -2289,7 +2308,7 @@
     function handleDishAddClick(dishId) {
       const dish = findDishById(dishId);
       if (!dish) return;
-      if (dish.sizeOptions && dish.sizeOptions.length > 1) {
+      if (dishHasCustomization(dish)) {
         openDishDetail(dish.id);
       } else {
         quickAddToCart(dish.id);
@@ -2343,7 +2362,7 @@
         station: station || (dish ? dish.station : "rice_naan")
       });
       renderDishGrid();
-      showToast(`Added +1 ${title} to Table Basket!`);
+      showToast(`Added +1 ${title} to Your Order!`);
     }
 
     function addComboFeast(comboType) {
@@ -2359,7 +2378,7 @@
           note: "1kg Karahi + 4 Roghni Naan + 3 Sweet Lassi",
           station: "karahi"
         });
-        showToast("Added 'Dera Karahi Feast' (Serves 3-4) to Table Basket!");
+        showToast("Added 'Dera Karahi Feast' (Serves 3-4) to Your Order!");
       } else if (comboType === 'bbq_platter') {
         addItemToCart({
           dishId: 102,
@@ -2372,7 +2391,7 @@
           note: "Malai Boti + Chapli Kabab + Dum Biryani + 2 Margarita",
           station: "bbq"
         });
-        showToast("Added 'BBQ & Biryani Platter' (Serves 2) to Table Basket!");
+        showToast("Added 'BBQ & Biryani Platter' (Serves 2) to Your Order!");
       }
       renderDishGrid();
     }
@@ -2395,7 +2414,7 @@
       });
 
       renderDishGrid();
-      showToast(`Added ${dish.title} to Table Basket!`);
+      showToast(`Added ${dish.title} to Your Order!`);
     }
 
     // --- 6. CART MANAGEMENT ---
@@ -2433,18 +2452,18 @@
       updateCartUI();
       renderCartItems();
       renderDishGrid();
-      showToast("Item removed from basket");
+      showToast("Item removed from order");
     }
 
     function clearEntireCart() {
       if (appState.cart.length === 0) return;
-      if (confirm("Clear all dishes from table basket?")) {
+      if (confirm("Clear all dishes from your order?")) {
         appState.cart = [];
         saveCartToStorage();
         updateCartUI();
         renderCartItems();
         renderDishGrid();
-        showToast("Basket cleared");
+        showToast("Order cleared");
       }
     }
 
@@ -2489,11 +2508,6 @@
       const btnTotalEl = document.getElementById('btn-checkout-total');
       if (btnTotalEl) btnTotalEl.textContent = formatPrice(grandTotal);
       
-      // Split Calculator
-      const perGuest = grandTotal > 0 ? grandTotal / appState.splitGuests : 0;
-      const splitAmountEl = document.getElementById('split-amount-display');
-      if (splitAmountEl) splitAmountEl.textContent = formatPrice(perGuest);
-
       // Floating Action Cart Bar update
       const floatBar = document.getElementById('floating-cart-bar');
       const floatQty = document.getElementById('float-cart-qty');
@@ -2505,7 +2519,7 @@
       if (floatQty) floatQty.textContent = totalQty;
       if (floatTotal) floatTotal.textContent = formatPrice(grandTotal);
       if (floatCta) {
-        floatCta.textContent = appState.currentTicket ? "Add to Kitchen Order" : "View Basket";
+        floatCta.textContent = appState.currentTicket ? "Add to Kitchen Order" : "View Order";
       }
 
       if (floatBar) {
@@ -2609,7 +2623,7 @@
 
     function submitOrderToKitchen() {
       if (appState.cart.length === 0) {
-        showToast("Basket is empty!");
+        showToast("Your order is empty!");
         switchView('menu');
         return;
       }
