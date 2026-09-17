@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-100 text-slate-900" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+  <title>Dera Gourmet - Admin Console &amp; QR Generator</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <!-- Pure QR Code Generator library via CDN for authentic scannable SVG QR codes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#ac2d00",
+            "primary-light": "#d53e0b"
+          },
+          fontFamily: {
+            "sans": ["DM Sans", "sans-serif"],
+            "headline": ["Outfit", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #qr-print-section, #qr-print-section * { visibility: visible; }
+      #qr-print-section { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans select-none bg-slate-100">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-sm flex-shrink-0 no-print">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-md">
+        <span class="material-symbols-outlined text-[22px]">admin_panel_settings</span>
+      </div>
+      <div>
+        <h1 class="font-headline font-bold text-[17px] text-slate-900 tracking-tight flex items-center gap-2">
+          <span>RESTAURANT MANAGER &amp; CASHIER HUB</span>
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800">Admin Live</span>
+        </h1>
+        <p class="text-[11px] text-slate-500">QR Generator &bull; Menu Pricing &bull; Cash Ledger</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs & Role Switcher -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 text-[12px] font-semibold">
+        <button onclick="switchAdminTab('qr', this)" class="admin-nav-btn active px-3 py-1.5 rounded-md bg-white text-slate-900 shadow-xs">Table QR Generator</button>
+        <button onclick="switchAdminTab('menu', this)" class="admin-nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900">Menu &amp; Pricing</button>
+        <button onclick="switchAdminTab('sales', this)" class="admin-nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900">Cash Reconciliation</button>
+      </div>
+
+      <!-- Role Switcher -->
+      <div class="h-6 w-px bg-slate-200 mx-1"></div>
+      <div class="flex items-center gap-1">
+        <a href="index.html" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">smartphone</span>
+          <span>Customer Menu</span>
+        </a>
+        <a href="kds.html" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">soup_kitchen</span>
+          <span>Kitchen KDS</span>
+        </a>
+        <a href="waiter.html" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">table_restaurant</span>
+          <span>Waiter Floor</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= TAB 1: BATCH QR CODE GENERATOR ================= -->
+  <main id="tab-qr" class="flex-1 p-6 overflow-y-auto max-w-6xl mx-auto w-full">
+    <div class="flex items-center justify-between mb-4 no-print">
+      <div>
+        <h2 class="font-headline font-bold text-[20px] text-slate-900">Table QR Tent Card Generator</h2>
+        <p class="text-[13px] text-slate-500">Generate print-ready QR code standees and stickers for every table. Scanning automatically binds customers to their table.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-[13px] flex items-center gap-1.5 hover:bg-slate-800 shadow-sm active:scale-98 transition-all">
+          <span class="material-symbols-outlined text-[18px]">print</span>
+          <span>Print All Tent Cards</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Printable Grid of QR Standee Cards -->
+    <div id="qr-print-section" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <!-- Generated via JS for Tables 1 to 12 -->
+    </div>
+  </main>
+
+  <!-- ================= TAB 2: MENU & PRICING MANAGER ================= -->
+  <main id="tab-menu" class="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full hidden">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="font-headline font-bold text-[20px] text-slate-900">Menu &amp; Dish Catalog Editor</h2>
+        <p class="text-[13px] text-slate-500">Update pricing and prep times. Changes sync instantly with all customer menus.</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50 text-[12px] font-bold text-slate-600 uppercase tracking-wider">
+            <th class="py-3 px-4">Dish</th>
+            <th class="py-3 px-4">Category</th>
+            <th class="py-3 px-4">Price (Rs.)</th>
+            <th class="py-3 px-4">Est. Prep</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="menu-editor-tbody" class="divide-y divide-slate-100 text-[13px]">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- ================= TAB 3: DAILY CASH RECONCILIATION ================= -->
+  <main id="tab-sales" class="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full hidden">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="font-headline font-bold text-[20px] text-slate-900">Daily Cash Reconciliation Ledger</h2>
+        <p class="text-[13px] text-slate-500">Real-time breakdown of cash settlements collected at tables and the front counter.</p>
+      </div>
+      <button onclick="clearSalesLedger()" class="text-slate-500 hover:text-red-600 text-[12px] font-semibold">
+        Reset Ledger (Demo)
+      </button>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <span class="text-[12px] text-slate-500 font-semibold block">Total Cash Collected Today</span>
+        <span class="font-headline font-bold text-[26px] text-emerald-600" id="stat-total-cash">Rs. 0</span>
+        <span class="text-[11px] text-slate-400 mt-1 block">From settled dine-in tabs</span>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <span class="text-[12px] text-slate-500 font-semibold block">Total Parties Served</span>
+        <span class="font-headline font-bold text-[26px] text-slate-900" id="stat-total-parties">0</span>
+        <span class="text-[11px] text-slate-400 mt-1 block">Completed table sessions</span>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <span class="text-[12px] text-slate-500 font-semibold block">Average Ticket Value</span>
+        <span class="font-headline font-bold text-[26px] text-primary" id="stat-avg-ticket">Rs. 0</span>
+        <span class="text-[11px] text-slate-400 mt-1 block">Per closed dining party</span>
+      </div>
+    </div>
+
+    <!-- Detailed Ledger Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-3.5 bg-slate-50 border-b border-slate-200 font-bold text-[14px] text-slate-800">
+        Recent Closed Transactions
+      </div>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200 text-[12px] font-bold text-slate-500 uppercase tracking-wider">
+            <th class="py-2.5 px-4">Ticket</th>
+            <th class="py-2.5 px-4">Table</th>
+            <th class="py-2.5 px-4">Time</th>
+            <th class="py-2.5 px-4">Settlement Method</th>
+            <th class="py-2.5 px-4 text-right">Cash Amount</th>
+          </tr>
+        </thead>
+        <tbody id="sales-ledger-tbody" class="divide-y divide-slate-100 text-[13px]">
+          <!-- Populated via JS -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // --- 1. MULTI-CHANNEL SYNC ENGINE (SSE + HTTP Broadcast + BroadcastChannel + localStorage Event Bus + Storage Event + Polling) ---
+    const PosSync = {
+      channel: (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('gourmet_pos_sync') : null,
+      listeners: [],
+      lastEventId: null,
+      eventSource: null,
+
+      init(handler) {
+        if (handler) this.listeners.push(handler);
+
+        // 1. If running over HTTP, connect to Server-Sent Events (SSE)
+        if (window.location.protocol.startsWith('http')) {
+          try {
+            this.eventSource = new EventSource('/api/events');
+            this.eventSource.onmessage = (e) => {
+              try {
+                const data = JSON.parse(e.data);
+                if (data && data.eventId !== this.lastEventId) {
+                  this.lastEventId = data.eventId;
+                  this.dispatch(data);
+                }
+              } catch (err) {}
+            };
+          } catch (e) {
+            console.warn('SSE connection skipped:', e);
+          }
+        }
+
+        // 2. BroadcastChannel
+        if (this.channel) {
+          this.channel.onmessage = (e) => {
+            if (e.data && e.data.eventId !== this.lastEventId) {
+              this.lastEventId = e.data.eventId;
+              this.dispatch(e.data);
+            }
+          };
+        }
+
+        // 3. Storage event
+        window.addEventListener('storage', (e) => {
+          if (e.key === 'gourmet_sync_event' && e.newValue) {
+            try {
+              const data = JSON.parse(e.newValue);
+              if (data && data.eventId !== this.lastEventId) {
+                this.lastEventId = data.eventId;
+                this.dispatch(data);
+              }
+            } catch (err) {}
+          }
+        });
+
+        // 4. Polling interval fallback for isolated file:/// origins
+        setInterval(() => {
+          try {
+            const raw = localStorage.getItem('gourmet_sync_event');
+            if (raw) {
+              const data = JSON.parse(raw);
+              if (data && data.eventId !== this.lastEventId) {
+                this.lastEventId = data.eventId;
+                this.dispatch(data);
+              }
+            }
+          } catch (err) {}
+        }, 800);
+      },
+
+      emit(data) {
+        const eventId = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        const payload = { ...data, eventId, _sentAt: Date.now() };
+        this.lastEventId = eventId;
+
+        // Post to Server if running via HTTP
+        if (window.location.protocol.startsWith('http')) {
+          try {
+            fetch('/api/broadcast', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(() => {});
+          } catch (err) {}
+        }
+
+        // Post to BroadcastChannel
+        try {
+          if (this.channel) this.channel.postMessage(payload);
+        } catch (err) {}
+
+        // Write to localStorage event bus
+        try {
+          localStorage.setItem('gourmet_sync_event', JSON.stringify(payload));
+        } catch (err) {}
+      },
+
+      dispatch(data) {
+        this.listeners.forEach(fn => {
+          try { fn(data); } catch (err) { console.error('Sync listener error:', err); }
+        });
+      }
+    };
+
+    const syncChannel = PosSync.channel;
+
+    function formatPrice(amt) {
+      return 'Rs. ' + Math.round(amt).toLocaleString();
+    }
+
+    // 12 Tables for QR generation
+    const TABLE_LIST = [
+      { id: "01", name: "Table 01", zone: "Patio Corner" },
+      { id: "02", name: "Table 02", zone: "Window Booth" },
+      { id: "03", name: "Table 03", zone: "Main Hall" },
+      { id: "04", name: "Table 04", zone: "Main Hall" },
+      { id: "05", name: "Table 05", zone: "Center Floor" },
+      { id: "06", name: "Table 06", zone: "Mezzanine" },
+      { id: "07", name: "Table 07", zone: "Bar High-top" },
+      { id: "08", name: "Table 08", zone: "VIP Lounge" },
+      { id: "09", name: "Table 09", zone: "Patio Garden" },
+      { id: "10", name: "Table 10", zone: "Patio Garden" },
+      { id: "11", name: "Table 11", zone: "Window Booth" },
+      { id: "12", name: "Table 12", zone: "VIP Lounge" }
+    ];
+
+    let dishes = [
+      { id: 1, title: "Chicken Makhni Karahi", category: "Karahi & Handi", price: 1250, prepTime: "20-25 min" },
+      { id: 2, title: "Mutton Shinwari Karahi", category: "Karahi & Handi", price: 1850, prepTime: "30-35 min" },
+      { id: 3, title: "Special Chicken Dum Biryani", category: "Dum Biryani", price: 690, prepTime: "10-15 min" },
+      { id: 4, title: "Reshmi Chicken Malai Boti", category: "Tandoor & BBQ", price: 780, prepTime: "18-20 min" },
+      { id: 5, title: "Peshawari Beef Chapli Kabab", category: "Tandoor & BBQ", price: 650, prepTime: "15-20 min" },
+      { id: 6, title: "Mutton Seekh Kabab", category: "Tandoor & BBQ", price: 980, prepTime: "15-18 min" },
+      { id: 7, title: "Sesame Roghni Naan", category: "Tandoori Naan", price: 140, prepTime: "5-7 min" },
+      { id: 8, title: "Garlic Butter Naan", category: "Tandoori Naan", price: 160, prepTime: "5-7 min" },
+      { id: 9, title: "Kulhad Makhni Sweet Lassi", category: "Lassi & Chai", price: 290, prepTime: "5 min" },
+      { id: 10, title: "Peshawari Mint Margarita", category: "Lassi & Chai", price: 260, prepTime: "4 min" },
+      { id: 11, title: "Hot Gulab Jamun With Shahi Rabri", category: "Shahi Meetha", price: 340, prepTime: "5 min" },
+      { id: 12, title: "Doodh Patti Karak Matka Chai", category: "Lassi & Chai", price: 180, prepTime: "8 min" }
+    ];
+
+    let soldOutSet = new Set(JSON.parse(localStorage.getItem('gourmet_86_items') || '[]'));
+
+    // --- TAB SWITCHING ---
+    function switchAdminTab(tabName, btn) {
+      document.querySelectorAll('.admin-nav-btn').forEach(b => {
+        b.classList.remove('active', 'bg-white', 'text-slate-900', 'shadow-xs');
+        b.classList.add('text-slate-600');
+      });
+      btn.classList.add('active', 'bg-white', 'text-slate-900', 'shadow-xs');
+      btn.classList.remove('text-slate-600');
+
+      ['qr', 'menu', 'sales'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const activeEl = document.getElementById(`tab-${tabName}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+
+      if (tabName === 'menu') renderMenuEditor();
+      if (tabName === 'sales') renderSalesLedger();
+    }
+
+    // --- BATCH QR CODE GENERATION ---
+    function generateAllTableQRs() {
+      const container = document.getElementById('qr-print-section');
+      container.innerHTML = '';
+
+      // Determine base URL of customer menu
+      const currentUrl = window.location.href;
+      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/')) + '/index.html';
+
+      TABLE_LIST.forEach(tbl => {
+        const targetUrl = `${baseUrl}?table=${tbl.id}`;
+        
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border-2 border-slate-200 p-4 flex flex-col items-center text-center shadow-sm relative overflow-hidden break-inside-avoid";
+        
+        card.innerHTML = `
+          <!-- Standee Header -->
+          <div class="w-full flex items-center justify-between pb-2 border-b border-slate-100">
+            <span class="font-headline font-bold text-[13px] text-primary tracking-tight">DERA GOURMET</span>
+            <span class="text-[10px] font-bold uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">${tbl.zone}</span>
+          </div>
+
+          <div class="my-2">
+            <h3 class="font-headline font-extrabold text-[22px] text-slate-900 leading-tight">${tbl.name}</h3>
+            <p class="text-[11px] text-slate-500">Scan for Pakistani Desi Menu &amp; Order</p>
+          </div>
+
+          <!-- QR Code Container -->
+          <div id="qrcode-${tbl.id}" class="p-2 bg-white border border-slate-100 rounded-xl shadow-xs my-1 flex items-center justify-center"></div>
+
+          <!-- Footer Instructions -->
+          <p class="text-[10px] text-slate-400 mt-2">Dine-In Self-Ordering &bull; Pay Cash to Server</p>
+          
+          <div class="mt-3 pt-2 w-full border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-primary no-print">
+            <a href="${targetUrl}" target="_blank" class="hover:underline flex items-center gap-0.5">
+              <span>Test URL</span>
+              <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+            </a>
+            <span class="text-[10px] text-slate-400">#${tbl.id}</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+
+        // Generate actual QR code using qrcodejs
+        new QRCode(document.getElementById(`qrcode-${tbl.id}`), {
+          text: targetUrl,
+          width: 120,
+          height: 120,
+          colorDark: "#0b1c30",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      });
+    }
+
+    // --- MENU & PRICING EDITOR ---
+    function renderMenuEditor() {
+      const tbody = document.getElementById('menu-editor-tbody');
+      tbody.innerHTML = dishes.map((dish, idx) => {
+        const is86 = soldOutSet.has(dish.id);
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="py-3 px-4 font-bold text-slate-900">${dish.title}</td>
+            <td class="py-3 px-4 text-slate-600">${dish.category}</td>
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1 font-bold text-slate-900">
+                <span class="text-[12px] font-semibold text-slate-500">Rs.</span>
+                <input type="number" step="10" value="${dish.price}" onchange="updatePrice(${idx}, this.value)" class="w-24 bg-slate-100 border border-slate-300 rounded px-2 py-1 text-[13px] font-bold focus:outline-none focus:bg-white"/>
+              </div>
+            </td>
+            <td class="py-3 px-4 text-slate-600">${dish.prepTime}</td>
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${is86 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
+                ${is86 ? '86\'d (Sold Out)' : 'In Stock'}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <button onclick="toggleDishStock(${dish.id})" class="px-3 py-1 rounded-lg text-[12px] font-bold border transition-all ${is86 ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}">
+                ${is86 ? 'Restock Item' : '86 Item'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updatePrice(idx, newPrice) {
+      const p = parseFloat(newPrice);
+      if (!isNaN(p) && p > 0) {
+        dishes[idx].price = p;
+        localStorage.setItem('gourmet_menu_dishes', JSON.stringify(dishes));
+        PosSync.emit({ type: 'MENU_UPDATE', dishes: dishes });
+      }
+    }
+
+    function toggleDishStock(dishId) {
+      if (soldOutSet.has(dishId)) soldOutSet.delete(dishId);
+      else soldOutSet.add(dishId);
+      const arr = Array.from(soldOutSet);
+      localStorage.setItem('gourmet_86_items', JSON.stringify(arr));
+      PosSync.emit({ type: 'ITEM_86_UPDATE', soldOutList: arr });
+      renderMenuEditor();
+    }
+
+    // --- SALES RECONCILIATION ---
+    function renderSalesLedger() {
+      const sales = JSON.parse(localStorage.getItem('gourmet_sales_ledger') || '[]');
+      const tbody = document.getElementById('sales-ledger-tbody');
+
+      let totalCash = 0;
+      sales.forEach(s => totalCash += (s.total || 0));
+
+      document.getElementById('stat-total-cash').textContent = formatPrice(totalCash);
+      document.getElementById('stat-total-parties').textContent = sales.length;
+      document.getElementById('stat-avg-ticket').textContent = sales.length > 0 ? formatPrice(totalCash / sales.length) : 'Rs. 0';
+
+      if (sales.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 italic">No settled transactions yet today.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = sales.map(s => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="py-2.5 px-4 font-mono font-bold text-slate-700">${s.ticketId || '#TKT-PAID'}</td>
+          <td class="py-2.5 px-4 font-bold text-slate-900">${s.table}</td>
+          <td class="py-2.5 px-4 text-slate-500">${s.time}</td>
+          <td class="py-2.5 px-4 text-slate-700">${s.method || 'Cash at Table'}</td>
+          <td class="py-2.5 px-4 text-right font-headline font-bold text-emerald-600 text-[14px]">+${formatPrice(s.total)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function clearSalesLedger() {
+      if (confirm("Reset today's demo sales ledger?")) {
+        localStorage.removeItem('gourmet_sales_ledger');
+        renderSalesLedger();
+      }
+    }
+
+    // Multi-channel listener
+    PosSync.init((data) => {
+      if (!data) return;
+      if (data.type === 'BILL_SETTLED') {
+        const salesTab = document.getElementById('tab-sales');
+        if (salesTab && !salesTab.classList.contains('hidden')) {
+          renderSalesLedger();
+        }
+      }
+    });
+
+    // 1500ms auto sync loop for sales ledger
+    setInterval(() => {
+      try {
+        const salesTab = document.getElementById('tab-sales');
+        if (salesTab && !salesTab.classList.contains('hidden')) {
+          renderSalesLedger();
+        }
+      } catch (e) {}
+    }, 1500);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      generateAllTableQRs();
+    });
+  </script>
+</body>
+</html>

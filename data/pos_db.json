@@ -1,0 +1,2246 @@
+{
+  "tickets": [
+    {
+      "ticketId": "#TKT-VOID-9604",
+      "table": "Table 05",
+      "restaurantId": "rest-dera-01",
+      "guest": "Walkout Customer",
+      "time": "01:00 PM",
+      "items": [
+        {
+          "dishId": "dish-02",
+          "title": "Mutton Seekh Kabab",
+          "price": 950,
+          "qty": 1,
+          "size": "Standard Portion",
+          "spice": "Normal 🍃",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 950,
+      "total": 998,
+      "tax": 48,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Voided",
+      "voidReason": "Customer cancelled before food entered tandoor",
+      "voidedBy": "Manager (PIN Verified)",
+      "voidedAt": "2026-09-17T10:46:59.613Z"
+    },
+    {
+      "ticketId": "#TKT-TAMPER-9585",
+      "table": "Table 08",
+      "restaurantId": "rest-dera-01",
+      "guest": "Price Tampering Attacker",
+      "time": "12:30 PM",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Settled",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01005",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T10:46:59.598Z"
+    },
+    {
+      "ticketId": "#TKT-VOID-8414",
+      "table": "Table 05",
+      "restaurantId": "rest-dera-01",
+      "guest": "Walkout Customer",
+      "time": "01:00 PM",
+      "items": [
+        {
+          "dishId": "dish-02",
+          "title": "Mutton Seekh Kabab",
+          "price": 950,
+          "qty": 1,
+          "size": "Standard Portion",
+          "spice": "Normal 🍃",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 950,
+      "total": 998,
+      "tax": 48,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Voided",
+      "voidReason": "Customer cancelled before food entered tandoor",
+      "voidedBy": "Manager (PIN Verified)",
+      "voidedAt": "2026-09-17T10:43:18.424Z"
+    },
+    {
+      "ticketId": "#TKT-TAMPER-8365",
+      "table": "Table 08",
+      "restaurantId": "rest-dera-01",
+      "guest": "Price Tampering Attacker",
+      "time": "12:30 PM",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Settled",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01004",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T10:43:18.380Z"
+    },
+    {
+      "ticketId": "#TKT-VOID-4593",
+      "table": "Table 05",
+      "restaurantId": "rest-dera-01",
+      "guest": "Walkout Customer",
+      "time": "01:00 PM",
+      "items": [
+        {
+          "dishId": "dish-02",
+          "title": "Mutton Seekh Kabab",
+          "price": 950,
+          "qty": 1,
+          "size": "Standard Portion",
+          "spice": "Normal 🍃",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 950,
+      "total": 998,
+      "tax": 48,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Voided",
+      "voidReason": "Customer cancelled before food entered tandoor",
+      "voidedBy": "Manager (PIN Verified)",
+      "voidedAt": "2026-09-17T10:24:14.608Z"
+    },
+    {
+      "ticketId": "#TKT-TAMPER-4570",
+      "table": "Table 08",
+      "restaurantId": "rest-dera-01",
+      "guest": "Price Tampering Attacker",
+      "time": "12:30 PM",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Settled",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01003",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T10:24:14.585Z"
+    },
+    {
+      "ticketId": "#TKT-VOID-0982",
+      "table": "Table 05",
+      "restaurantId": "rest-dera-01",
+      "guest": "Walkout Customer",
+      "time": "01:00 PM",
+      "items": [
+        {
+          "dishId": "dish-02",
+          "title": "Mutton Seekh Kabab",
+          "price": 950,
+          "qty": 1,
+          "size": "Standard Portion",
+          "spice": "Normal 🍃",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 950,
+      "total": 998,
+      "tax": 48,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Voided",
+      "voidReason": "Customer cancelled before food entered tandoor",
+      "voidedBy": "Manager (PIN Verified)",
+      "voidedAt": "2026-09-17T10:22:20.993Z"
+    },
+    {
+      "ticketId": "#TKT-TAMPER-0958",
+      "table": "Table 08",
+      "restaurantId": "rest-dera-01",
+      "guest": "Price Tampering Attacker",
+      "time": "12:30 PM",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Settled",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01002",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T10:22:20.972Z"
+    },
+    {
+      "ticketId": "#TKT-TEST-999",
+      "restaurantId": "REST-001",
+      "table": "Table 07",
+      "guest": "Test Diner",
+      "time": "12:30 PM",
+      "timestamp": 1789639460770,
+      "notes": "Extra spicy",
+      "payment": "Pay Cash to Server at Table",
+      "items": [
+        {
+          "title": "Chicken Makhni Karahi",
+          "qty": 1,
+          "price": 1250,
+          "station": "karahi",
+          "size": "Full",
+          "spice": "Medium"
+        }
+      ],
+      "subtotal": 1250,
+      "total": 1313,
+      "status": "Settled",
+      "assignedWaiterId": "waiter-01",
+      "assignedWaiterName": "Hamza Abbasi (Rank 1)",
+      "paymentStatus": "paid"
+    },
+    {
+      "ticketId": "#TKT-7290",
+      "restaurantId": "REST-001",
+      "table": "Table 08",
+      "guest": "Table #08 Guest",
+      "time": "02:48 PM",
+      "timestamp": 1789638513176,
+      "notes": "",
+      "payment": "Pay Cash to Server at Table",
+      "items": [
+        {
+          "dishId": "dish-4",
+          "title": "Reshmi Chicken Malai Boti",
+          "price": 780,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=800&q=80",
+          "size": "Single Plate (8 pcs)",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "bbq"
+        },
+        {
+          "dishId": "dish-6",
+          "title": "Sesame Roghni Naan",
+          "price": 140,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=800&q=80",
+          "size": "Single Naan",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "rice_naan"
+        },
+        {
+          "dishId": "dish-8",
+          "title": "Shahi Gulab Jamun",
+          "price": 320,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80",
+          "size": "2 Pieces",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "drinks_meetha"
+        }
+      ],
+      "subtotal": 1240,
+      "total": 1302,
+      "status": "Served",
+      "assignedWaiterId": "waiter-01",
+      "assignedWaiterName": "Hamza Abbasi (Rank 1)"
+    },
+    {
+      "ticketId": "#TKT-5673",
+      "restaurantId": "REST-001",
+      "table": "Table 01",
+      "guest": "Table #01 Guest",
+      "time": "02:43 PM",
+      "timestamp": 1789638188196,
+      "notes": "",
+      "payment": "Pay Cash to Server at Table",
+      "items": [
+        {
+          "dishId": "dish-5",
+          "title": "Peshawari Beef Chapli Kabab",
+          "price": 650,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+          "size": "Standard (2 Kababs)",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "bbq"
+        }
+      ],
+      "subtotal": 650,
+      "total": 683,
+      "status": "In Kitchen",
+      "assignedWaiterId": "waiter-01",
+      "assignedWaiterName": "Hamza Abbasi (Rank 1)"
+    },
+    {
+      "ticketId": "#TKT-9907",
+      "restaurantId": "REST-001",
+      "table": "Table 07",
+      "guest": "Table #07 Guest",
+      "time": "01:25 PM",
+      "timestamp": 1789633469994,
+      "notes": "Extra crispy naan",
+      "payment": "Pay Cash to Server at Table",
+      "status": "In Kitchen",
+      "items": [
+        {
+          "title": "Chicken Makhni Karahi",
+          "qty": 1,
+          "price": 1250,
+          "size": "Half",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi"
+        }
+      ],
+      "subtotal": 1250,
+      "total": 1312,
+      "assignedWaiterId": "waiter-01",
+      "assignedWaiterName": "Hamza Abbasi (Rank 1)"
+    },
+    {
+      "ticketId": "#TKT-TEST-3337",
+      "restaurantId": "REST-001",
+      "table": "Table 03",
+      "guest": "Ali Hassan",
+      "time": "01:05 PM",
+      "notes": "Less oil",
+      "payment": "Pay Cash at Table",
+      "items": [
+        {
+          "title": "Chicken Makhni Karahi",
+          "qty": 1,
+          "price": 1250,
+          "size": "Half",
+          "spice": "Chatpata 🌶️"
+        }
+      ],
+      "subtotal": 1250,
+      "total": 1312,
+      "assignedWaiterId": "waiter-01",
+      "assignedWaiterName": "Hamza Abbasi (Rank 1)",
+      "status": "Settled",
+      "paymentStatus": "paid"
+    },
+    {
+      "ticketId": "#TKT-3424",
+      "table": "Table 04",
+      "guest": "Table #04 Guest",
+      "time": "07:04 PM",
+      "timestamp": 1789639485103,
+      "payment": "Pay Cash to Server at Table",
+      "items": [
+        {
+          "dishId": 3,
+          "title": "Special Chicken Dum Biryani",
+          "price": 690,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80",
+          "size": "Single Plate",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "rice_naan"
+        },
+        {
+          "dishId": 5,
+          "title": "Peshawari Beef Chapli Kabab",
+          "price": 650,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+          "size": "Standard (2 Kababs)",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "bbq"
+        },
+        {
+          "dishId": "dish-7",
+          "title": "Kulhad Makhni Sweet Lassi",
+          "price": 290,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1571006687694-7a557729a788?auto=format&fit=crop&w=800&q=80",
+          "size": "Standard Kulhad",
+          "spice": "Chatpata 🌶️",
+          "addons": [],
+          "note": "",
+          "station": "drinks_meetha"
+        }
+      ],
+      "subtotal": 1630,
+      "total": 1712,
+      "status": "Settled",
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01001",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T10:18:36.671Z",
+      "tax": 82
+    },
+    {
+      "ticketId": "#TKT-9627",
+      "table": "Table 04",
+      "guest": "Table Guest",
+      "time": "06:56 PM",
+      "timestamp": 1789567011825,
+      "notes": "",
+      "payment": "Open Table Tab (Settle Later)",
+      "items": [
+        {
+          "dishId": 2,
+          "title": "Mutton Shinwari Karahi",
+          "price": 1850,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1545247181-516773cae754?auto=format&fit=crop&w=800&q=80",
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "karahi"
+        }
+      ],
+      "subtotal": 1850,
+      "total": 1943,
+      "status": "New"
+    },
+    {
+      "ticketId": "#TKT-7763",
+      "table": "Table 06",
+      "guest": "Table Guest",
+      "time": "06:45 PM",
+      "timestamp": 1789566332525,
+      "notes": "",
+      "payment": "Pay Cash to Server at Table",
+      "items": [
+        {
+          "dishId": 5,
+          "title": "Peshawari Beef Chapli Kabab",
+          "price": 650,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+          "size": "Standard (2 Kababs)",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "bbq"
+        },
+        {
+          "dishId": 10,
+          "title": "Peshawari Mint Margarita",
+          "price": 260,
+          "qty": 1,
+          "image": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
+          "size": "Chilled Glass",
+          "spice": "Chatpata 🌶️",
+          "note": "",
+          "station": "drinks_meetha"
+        }
+      ],
+      "subtotal": 910,
+      "total": 956,
+      "status": "New"
+    },
+    {
+      "ticketId": "#TKT-4666",
+      "table": "Table 04",
+      "guest": "Table Guest",
+      "time": "06:34 PM",
+      "timestamp": 1789566194365,
+      "notes": "",
+      "payment": "Pay Cash to Server at Table",
+      "status": "In Kitchen",
+      "items": [
+        {
+          "title": "Peshawari Beef Chapli Kabab",
+          "qty": 1,
+          "size": "Standard (2 Kababs)",
+          "spice": "Chatpata 🌶️",
+          "station": "bbq"
+        },
+        {
+          "title": "Peshawari Mint Margarita",
+          "qty": 1,
+          "size": "Chilled Glass",
+          "spice": "Chatpata 🌶️",
+          "station": "drinks_meetha"
+        }
+      ],
+      "subtotal": 910,
+      "total": 956
+    },
+    {
+      "ticketId": "#TKT-1042",
+      "table": "Table 04",
+      "guest": "Tariq M.",
+      "time": "12:14 PM",
+      "timestamp": 1789565268043,
+      "notes": "Serve with hot green chilies & ginger",
+      "payment": "Pay Cash at Table",
+      "status": "In Kitchen",
+      "items": [
+        {
+          "title": "Chicken Makhni Karahi",
+          "qty": 1,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi"
+        },
+        {
+          "title": "Sesame Roghni Naan",
+          "qty": 3,
+          "size": "Single Naan",
+          "spice": "Normal 🍃",
+          "station": "rice_naan"
+        }
+      ]
+    },
+    {
+      "ticketId": "#TKT-1043",
+      "table": "Table 02",
+      "guest": "Zainab B.",
+      "time": "12:22 PM",
+      "timestamp": 1789565748043,
+      "notes": "Extra mint raita",
+      "payment": "Pay at Front Cashier",
+      "status": "Settled",
+      "items": [
+        {
+          "title": "Reshmi Chicken Malai Boti",
+          "qty": 1,
+          "size": "Single Plate (8 pcs)",
+          "spice": "Normal 🍃",
+          "station": "bbq"
+        },
+        {
+          "title": "Special Chicken Dum Biryani",
+          "qty": 1,
+          "size": "Single Plate",
+          "spice": "Chatpata 🌶️",
+          "station": "rice_naan"
+        },
+        {
+          "title": "Kulhad Makhni Sweet Lassi",
+          "qty": 2,
+          "size": "Standard Kulhad",
+          "spice": "Sweet",
+          "station": "drinks_meetha"
+        }
+      ],
+      "paymentStatus": "paid"
+    }
+  ],
+  "sections": [
+    "Patio Corner",
+    "Window Booth",
+    "Main Hall",
+    "Center Floor",
+    "Mezzanine",
+    "Bar High-top",
+    "VIP Lounge",
+    "Patio Garden",
+    "Rooftop Skylight"
+  ],
+  "tables": [
+    {
+      "id": "01",
+      "name": "Table 01",
+      "zone": "Patio Corner",
+      "capacity": 4,
+      "shape": "round",
+      "x": 12,
+      "y": 15,
+      "status": "dining",
+      "order": {
+        "ticketId": "#TKT-5673",
+        "guest": "Table #01 Guest",
+        "time": "02:43 PM",
+        "total": 683,
+        "subtotal": 650,
+        "payment": "Pay Cash to Server at Table",
+        "assignedWaiter": "Hamza Abbasi (Rank 1)",
+        "items": [
+          {
+            "dishId": "dish-5",
+            "title": "Peshawari Beef Chapli Kabab",
+            "price": 650,
+            "qty": 1,
+            "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+            "size": "Standard (2 Kababs)",
+            "spice": "Chatpata 🌶️",
+            "note": "",
+            "station": "bbq"
+          }
+        ]
+      }
+    },
+    {
+      "id": "02",
+      "name": "Table 02",
+      "zone": "Window Booth",
+      "capacity": 4,
+      "shape": "booth",
+      "x": 38,
+      "y": 15,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "03",
+      "name": "Table 03",
+      "zone": "Main Hall",
+      "capacity": 4,
+      "shape": "square",
+      "x": 64,
+      "y": 15,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "04",
+      "name": "Table 04",
+      "zone": "Main Hall",
+      "capacity": 6,
+      "shape": "rect",
+      "x": 88,
+      "y": 15,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "05",
+      "name": "Table 05",
+      "zone": "Center Floor",
+      "capacity": 4,
+      "shape": "round",
+      "x": 12,
+      "y": 48,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "06",
+      "name": "Table 06",
+      "zone": "Mezzanine",
+      "capacity": 2,
+      "shape": "square",
+      "x": 38,
+      "y": 48,
+      "status": "dining",
+      "order": {
+        "ticketId": "#TKT-7763",
+        "guest": "Table Guest",
+        "time": "06:45 PM",
+        "total": 956,
+        "subtotal": 910,
+        "payment": "Pay Cash to Server at Table",
+        "items": [
+          {
+            "dishId": 5,
+            "title": "Peshawari Beef Chapli Kabab",
+            "price": 650,
+            "qty": 1,
+            "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+            "size": "Standard (2 Kababs)",
+            "spice": "Chatpata 🌶️",
+            "note": "",
+            "station": "bbq"
+          },
+          {
+            "dishId": 10,
+            "title": "Peshawari Mint Margarita",
+            "price": 260,
+            "qty": 1,
+            "image": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
+            "size": "Chilled Glass",
+            "spice": "Chatpata 🌶️",
+            "note": "",
+            "station": "drinks_meetha"
+          }
+        ]
+      }
+    },
+    {
+      "id": "07",
+      "name": "Table 07",
+      "zone": "Bar High-top",
+      "capacity": 2,
+      "shape": "round",
+      "x": 64,
+      "y": 48,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "08",
+      "name": "Table 08",
+      "zone": "VIP Lounge",
+      "capacity": 8,
+      "shape": "rect",
+      "x": 88,
+      "y": 48,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "09",
+      "name": "Table 09",
+      "zone": "Patio Garden",
+      "capacity": 4,
+      "shape": "round",
+      "x": 12,
+      "y": 80,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "10",
+      "name": "Table 10",
+      "zone": "Patio Garden",
+      "capacity": 4,
+      "shape": "round",
+      "x": 38,
+      "y": 80,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "11",
+      "name": "Table 11",
+      "zone": "Window Booth",
+      "capacity": 4,
+      "shape": "booth",
+      "x": 64,
+      "y": 80,
+      "status": "vacant",
+      "order": null
+    },
+    {
+      "id": "12",
+      "name": "Table 12",
+      "zone": "VIP Lounge",
+      "capacity": 6,
+      "shape": "booth",
+      "x": 88,
+      "y": 80,
+      "status": "vacant",
+      "order": null
+    }
+  ],
+  "serviceBells": [],
+  "sales": [
+    {
+      "id": "SALE-19598",
+      "invoiceNumber": "INV-2026-01005",
+      "ticketId": "#TKT-TAMPER-9585",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 08",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "paymentMethod": "Cash",
+      "cashReceived": 3125,
+      "changeGiven": 500,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": "SHIFT-1789642019593",
+      "time": "03:46 PM",
+      "timestamp": 1789642019598
+    },
+    {
+      "id": "SALE-98380",
+      "invoiceNumber": "INV-2026-01004",
+      "ticketId": "#TKT-TAMPER-8365",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 08",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "paymentMethod": "Cash",
+      "cashReceived": 3125,
+      "changeGiven": 500,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": "SHIFT-1789641798375",
+      "time": "03:43 PM",
+      "timestamp": 1789641798407
+    },
+    {
+      "id": "SALE-54585",
+      "invoiceNumber": "INV-2026-01003",
+      "ticketId": "#TKT-TAMPER-4570",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 08",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "paymentMethod": "Cash",
+      "cashReceived": 3125,
+      "changeGiven": 500,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": "SHIFT-1789640654579",
+      "time": "03:24 PM",
+      "timestamp": 1789640654586
+    },
+    {
+      "id": "SALE-40972",
+      "invoiceNumber": "INV-2026-01002",
+      "ticketId": "#TKT-TAMPER-0958",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 08",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "paymentMethod": "Cash",
+      "cashReceived": 3125,
+      "changeGiven": 500,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": "SHIFT-1789640540968",
+      "time": "03:22 PM",
+      "timestamp": 1789640540973
+    },
+    {
+      "id": "SALE-16671",
+      "invoiceNumber": "INV-2026-01001",
+      "ticketId": "#TKT-3424",
+      "restaurantId": "REST-001",
+      "table": "Table 04",
+      "items": [
+        {
+          "dishId": "dish-3",
+          "title": "Special Chicken Dum Biryani",
+          "price": 690,
+          "qty": 1,
+          "size": "Single Plate",
+          "spice": "Chatpata 🌶️",
+          "station": "rice_naan",
+          "notes": ""
+        },
+        {
+          "dishId": "dish-5",
+          "title": "Peshawari Beef Chapli Kabab",
+          "price": 650,
+          "qty": 1,
+          "size": "Standard (2 Kababs)",
+          "spice": "Chatpata 🌶️",
+          "station": "bbq",
+          "notes": ""
+        },
+        {
+          "dishId": "dish-7",
+          "title": "Kulhad Makhni Sweet Lassi",
+          "price": 290,
+          "qty": 1,
+          "size": "Standard Kulhad",
+          "spice": "Chatpata 🌶️",
+          "station": "drinks_meetha",
+          "notes": ""
+        }
+      ],
+      "subtotal": 1630,
+      "tax": 82,
+      "total": 1712,
+      "paymentMethod": "Cash",
+      "cashReceived": 1712,
+      "changeGiven": 0,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": null,
+      "time": "03:18 PM",
+      "timestamp": 1789640316698
+    },
+    {
+      "id": "SALE-61003",
+      "ticketId": "#TKT-TEST-999",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 07",
+      "subtotal": 1250,
+      "tax": 63,
+      "total": 1313,
+      "paymentMethod": "Cash",
+      "cashReceived": 1500,
+      "changeGiven": 187,
+      "cashierName": "Front Cashier",
+      "time": "03:04 PM",
+      "timestamp": 1789639461004
+    },
+    {
+      "id": "SALE-43256",
+      "ticketId": "#TKT-1043",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 02",
+      "subtotal": 1680,
+      "total": 1760,
+      "paymentMethod": "Cash",
+      "cashReceived": 1797,
+      "changeGiven": 37,
+      "cashierName": "Rashid Minhas",
+      "time": "01:15 PM",
+      "timestamp": 1789632943284
+    },
+    {
+      "id": "SALE-83345",
+      "ticketId": "#TKT-TEST-3337",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 03",
+      "subtotal": 1250,
+      "tax": 62,
+      "total": 1312,
+      "paymentMethod": "Cash",
+      "cashReceived": 1500,
+      "changeGiven": 188,
+      "cashierName": "Rashid Minhas",
+      "time": "12:51 PM",
+      "timestamp": 1789631483378
+    }
+  ],
+  "soldOut": [],
+  "restaurants": [
+    {
+      "id": "REST-005",
+      "name": "Pak Rohani",
+      "address": "Benazir Road Okara",
+      "ownerName": "Arslan",
+      "ownerPhone": "030056569898",
+      "ownerManagesApp": true,
+      "managerName": "",
+      "managerPhone": "",
+      "plan": "trial",
+      "planLabel": "Free Trial (15 Days)",
+      "trialDays": 15,
+      "status": "active",
+      "subscriptionCancelled": false,
+      "startDate": "2026-09-17T08:12:17.594Z",
+      "endDate": "2026-10-02T08:12:17.594Z",
+      "credentials": {
+        "email": "arslan123@gmail.com",
+        "password": "TandoorPass#605"
+      },
+      "currency": "Rs.",
+      "taxRate": 0.05,
+      "createdAt": "2026-09-17T08:12:17.594Z",
+      "managerPin": "7788",
+      "nextInvoiceNumber": 1001
+    },
+    {
+      "id": "REST-004",
+      "name": "Cafe Bistro 7",
+      "address": "F-7 Markaz, Islamabad",
+      "ownerName": "Khurram Shah",
+      "ownerPhone": "+92 312 9988771",
+      "ownerManagesApp": true,
+      "managerName": "",
+      "managerPhone": "",
+      "plan": "3m",
+      "planLabel": "3 Months Plan",
+      "trialDays": 0,
+      "status": "active",
+      "subscriptionCancelled": false,
+      "startDate": "2026-09-17T08:07:02.986Z",
+      "endDate": "2026-12-16T08:07:02.986Z",
+      "credentials": {
+        "email": "khurram@cafebistro.com",
+        "password": "BistroPass#771"
+      },
+      "currency": "Rs.",
+      "taxRate": 0.05,
+      "createdAt": "2026-09-17T08:07:02.986Z",
+      "managerPin": "7788",
+      "nextInvoiceNumber": 1001
+    },
+    {
+      "id": "REST-003",
+      "name": "Royal Tandoor",
+      "address": "Mall Road, Lahore",
+      "ownerName": "Asad Ali",
+      "ownerPhone": "+92 300 1122334",
+      "ownerManagesApp": true,
+      "managerName": "",
+      "managerPhone": "",
+      "plan": "trial",
+      "planLabel": "Free Trial (15 Days)",
+      "trialDays": 15,
+      "status": "active",
+      "subscriptionCancelled": false,
+      "startDate": "2026-09-17T08:06:58.332Z",
+      "endDate": "2026-10-02T08:06:58.332Z",
+      "credentials": {
+        "email": "asad@royaltandoor.com",
+        "password": "RoyalPass#103"
+      },
+      "currency": "Rs.",
+      "taxRate": 0.05,
+      "createdAt": "2026-09-17T08:06:58.332Z",
+      "managerPin": "7788",
+      "nextInvoiceNumber": 1001
+    },
+    {
+      "id": "REST-002",
+      "name": "Spice Lounge Test",
+      "address": "Phase 5 DHA, Lahore",
+      "ownerName": "Zahid Khan",
+      "ownerPhone": "+92 321 5551234",
+      "ownerManagesApp": true,
+      "managerName": "",
+      "managerPhone": "",
+      "plan": "trial",
+      "planLabel": "Free Trial (Extended +15d)",
+      "trialDays": 15,
+      "status": "active",
+      "subscriptionCancelled": false,
+      "startDate": "2026-09-17T07:51:23.325Z",
+      "endDate": "2026-10-17T07:51:23.325Z",
+      "credentials": {
+        "email": "zahid@spicelounge.com",
+        "password": "LoungePass#821"
+      },
+      "currency": "Rs.",
+      "taxRate": 0.05,
+      "createdAt": "2026-09-17T07:51:23.325Z",
+      "managerPin": "7788",
+      "nextInvoiceNumber": 1001
+    },
+    {
+      "id": "REST-001",
+      "name": "Dera Gourmet",
+      "address": "74-B Gulberg III, Main Boulevard, Lahore",
+      "ownerName": "Malik Tariq",
+      "ownerPhone": "+92 300 8472910",
+      "ownerManagesApp": true,
+      "managerName": "",
+      "managerPhone": "",
+      "plan": "trial",
+      "planLabel": "Free Trial (15 Days)",
+      "trialDays": 15,
+      "status": "active",
+      "subscriptionCancelled": false,
+      "startDate": "2026-09-17T07:46:30.768Z",
+      "endDate": "2026-10-02T07:46:30.769Z",
+      "credentials": {
+        "email": "owner@deragourmet.com",
+        "password": "DeraAdmin#2026"
+      },
+      "currency": "Rs.",
+      "taxRate": 0.05,
+      "managerPin": "7788",
+      "nextInvoiceNumber": 1001
+    }
+  ],
+  "staff": [
+    {
+      "id": "waiter-01",
+      "restaurantId": "REST-001",
+      "name": "Hamza Abbasi",
+      "phone": "+92 321 4455667",
+      "email": "hamza@deragourmet.com",
+      "password": "Waiter#101",
+      "role": "waiter",
+      "hierarchyLevel": 1,
+      "maxConcurrentOrders": 4,
+      "status": "active"
+    },
+    {
+      "id": "waiter-02",
+      "restaurantId": "REST-001",
+      "name": "Bilal Farooq",
+      "phone": "+92 333 7788990",
+      "email": "bilal@deragourmet.com",
+      "password": "Waiter#102",
+      "role": "waiter",
+      "hierarchyLevel": 2,
+      "maxConcurrentOrders": 4,
+      "status": "active"
+    },
+    {
+      "id": "cashier-01",
+      "restaurantId": "REST-001",
+      "name": "Rashid Minhas",
+      "phone": "+92 301 9988776",
+      "email": "cashier@deragourmet.com",
+      "password": "Cashier#2026",
+      "role": "cashier",
+      "status": "active"
+    },
+    {
+      "id": "staff-1789632906822",
+      "restaurantId": "REST-005",
+      "name": "daniyal",
+      "phone": "03000000",
+      "email": "daniyal123@gmail.com",
+      "password": "Waiter#630",
+      "role": "waiter",
+      "hierarchyLevel": 1,
+      "maxConcurrentOrders": 5,
+      "status": "active"
+    },
+    {
+      "id": "cashier-1789633938661",
+      "restaurantId": "REST-001",
+      "name": "Bilal Tariq",
+      "phone": "+92 300 7766554",
+      "email": "bilal.cashier@deragourmet.com",
+      "password": "Cashier#482",
+      "role": "cashier",
+      "counter": "Counter 1 (Main Cash)",
+      "hierarchyLevel": 1,
+      "maxConcurrentOrders": 4,
+      "status": "active",
+      "createdAt": "2026-09-17T08:32:18.661Z"
+    }
+  ],
+  "menu": [
+    {
+      "id": "dish-1789639353837",
+      "restaurantId": "REST-005",
+      "title": "Shinwari Karahi",
+      "category": "karahi",
+      "station": "karahi",
+      "price": 1850,
+      "rating": 5,
+      "prepTime": "15-20 min",
+      "calories": "680 kcal",
+      "dietary": "KPK Tribal Special",
+      "isSpicy": false,
+      "isChef": false,
+      "isBestSeller": false,
+      "isVeg": false,
+      "enableSpice": true,
+      "allowNotes": true,
+      "desc": "",
+      "image": "https://images.unsplash.com/photo-1545247181-516773cae754?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "isAvailable": true,
+      "sizeOptions": [
+        {
+          "name": "Half (0.5 kg)",
+          "extra": 0,
+          "desc": "Serves 1-2 persons"
+        },
+        {
+          "name": "Full (1.0 kg)",
+          "extra": 1100,
+          "desc": "Serves 3-4 persons"
+        }
+      ],
+      "addons": [
+        {
+          "name": "Extra Desi Makhan Dollop",
+          "price": 90
+        },
+        {
+          "name": "Fresh Zeera Raita",
+          "price": 80
+        }
+      ],
+      "createdAt": "2026-09-17T10:02:33.837Z"
+    },
+    {
+      "id": "dish-1",
+      "restaurantId": "REST-001",
+      "title": "Chicken Makhni Karahi",
+      "category": "karahi",
+      "station": "karahi",
+      "price": 1250,
+      "rating": 4.9,
+      "prepTime": "20-25 min",
+      "calories": "680 kcal",
+      "dietary": "Desi Makhan & Tomatoes",
+      "isSpicy": true,
+      "isChef": true,
+      "desc": "Fresh tender chicken simmered in a traditional clay handi with ripe Sindh tomatoes, freshly pounded ginger juliennes, green chilies, and authentic Desi Makhan.",
+      "image": "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Half (0.5 kg)",
+          "extra": 0,
+          "desc": "Serves 1-2 persons"
+        },
+        {
+          "name": "Full (1.0 kg)",
+          "extra": 1100,
+          "desc": "Serves 3-4 persons"
+        }
+      ]
+    },
+    {
+      "id": "dish-2",
+      "restaurantId": "REST-001",
+      "title": "Mutton Shinwari Karahi",
+      "category": "karahi",
+      "station": "karahi",
+      "price": 1850,
+      "rating": 5,
+      "prepTime": "30-35 min",
+      "calories": "790 kcal",
+      "dietary": "KPK Tribal Special",
+      "isSpicy": false,
+      "isChef": true,
+      "desc": "Pure Peshawari Shinwari style fresh young mutton cooked in its own natural fat, coarse sea salt, black pepper, and whole tomatoes. No onions.",
+      "image": "https://images.unsplash.com/photo-1545247181-516773cae754?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Half (0.5 kg)",
+          "extra": 0,
+          "desc": "Serves 1-2 persons"
+        },
+        {
+          "name": "Full (1.0 kg)",
+          "extra": 1650,
+          "desc": "Serves 3-4 persons"
+        }
+      ]
+    },
+    {
+      "id": "dish-3",
+      "restaurantId": "REST-001",
+      "title": "Special Chicken Dum Biryani",
+      "category": "rice",
+      "station": "rice_naan",
+      "price": 690,
+      "rating": 4.9,
+      "prepTime": "10-15 min",
+      "calories": "720 kcal",
+      "dietary": "Karachi Dum Special",
+      "isSpicy": true,
+      "isChef": true,
+      "desc": "Long-grain aged Basmati rice layered with succulent marinated chicken, saffron milk, caramelized brown onions, golden potato, and aromatic kewra.",
+      "image": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Single Plate",
+          "extra": 0,
+          "desc": "1 Chicken piece & Aloo"
+        },
+        {
+          "name": "Double Special",
+          "extra": 560,
+          "desc": "2 Chicken pieces & Double Rice"
+        }
+      ]
+    },
+    {
+      "id": "dish-4",
+      "restaurantId": "REST-001",
+      "title": "Reshmi Chicken Malai Boti",
+      "category": "bbq",
+      "station": "bbq",
+      "price": 780,
+      "rating": 4.8,
+      "prepTime": "18-20 min",
+      "calories": "520 kcal",
+      "dietary": "Melt-in-mouth Creamy Skewers",
+      "isSpicy": false,
+      "isChef": true,
+      "desc": "Boneless chicken cubes steeped in velvety cream, strained yogurt, cardamom, white pepper, and roasted coriander, char-grilled over fragrant coals.",
+      "image": "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Single Plate (8 pcs)",
+          "extra": 0,
+          "desc": "Serves 1 person"
+        },
+        {
+          "name": "Family Platter (16 pcs)",
+          "extra": 720,
+          "desc": "Serves 2-3 persons"
+        }
+      ]
+    },
+    {
+      "id": "dish-5",
+      "restaurantId": "REST-001",
+      "title": "Peshawari Beef Chapli Kabab",
+      "category": "bbq",
+      "station": "bbq",
+      "price": 650,
+      "rating": 4.9,
+      "prepTime": "15-18 min",
+      "calories": "610 kcal",
+      "dietary": "Crispy Crust with Pomegranate",
+      "isSpicy": true,
+      "isChef": false,
+      "desc": "Traditional flat minced beef patties kneaded with crushed anardana, coriander seeds, fresh mint, scrambled egg, and tomato slice, shallow fried in bone marrow ghee.",
+      "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Standard (2 Kababs)",
+          "extra": 0,
+          "desc": "Served with mint chutney"
+        },
+        {
+          "name": "Large (4 Kababs)",
+          "extra": 600,
+          "desc": "Served with 2 Naan"
+        }
+      ]
+    },
+    {
+      "id": "dish-6",
+      "restaurantId": "REST-001",
+      "title": "Sesame Roghni Naan",
+      "category": "naan",
+      "station": "rice_naan",
+      "price": 140,
+      "rating": 4.7,
+      "prepTime": "5-8 min",
+      "calories": "280 kcal",
+      "dietary": "Fresh Tandoor Baked",
+      "isSpicy": false,
+      "isChef": false,
+      "desc": "Pillowy tandoor-baked leavened flatbread brushed with golden desi butter and sprinkled with toasted white sesame seeds.",
+      "image": "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Single Naan",
+          "extra": 0,
+          "desc": "1 piece"
+        },
+        {
+          "name": "Basket of 3",
+          "extra": 260,
+          "desc": "3 pieces hot & fresh"
+        }
+      ]
+    },
+    {
+      "id": "dish-7",
+      "restaurantId": "REST-001",
+      "title": "Kulhad Makhni Sweet Lassi",
+      "category": "drinks",
+      "station": "drinks_meetha",
+      "price": 290,
+      "rating": 4.9,
+      "prepTime": "5 min",
+      "calories": "340 kcal",
+      "dietary": "Thick Hand-Churned Yogurt",
+      "isSpicy": false,
+      "isChef": true,
+      "desc": "Authentic chilled Punjabi lassi served in an earthen clay kulhad, crowned with a thick dollop of fresh milk malai, pistachio slivers, and saffron syrup.",
+      "image": "https://images.unsplash.com/photo-1571006687694-7a557729a788?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "Standard Kulhad",
+          "extra": 0,
+          "desc": "350 ml"
+        },
+        {
+          "name": "Jumbo Kulhad",
+          "extra": 160,
+          "desc": "500 ml"
+        }
+      ]
+    },
+    {
+      "id": "dish-8",
+      "restaurantId": "REST-001",
+      "title": "Shahi Gulab Jamun",
+      "category": "desserts",
+      "station": "drinks_meetha",
+      "price": 320,
+      "rating": 4.9,
+      "prepTime": "5 min",
+      "calories": "390 kcal",
+      "dietary": "Desi Ghee Fried",
+      "isSpicy": false,
+      "isChef": false,
+      "desc": "Warm melt-in-mouth milk solid dumplings fried in pure desi ghee, soaked in rose cardamom sugar syrup, and dusted with silver leaf.",
+      "image": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "sizeOptions": [
+        {
+          "name": "2 Pieces",
+          "extra": 0,
+          "desc": "Served hot"
+        },
+        {
+          "name": "4 Pieces",
+          "extra": 280,
+          "desc": "With Rabri"
+        }
+      ]
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "AUDIT-1789642019613-301",
+      "action": "ORDER_VOIDED",
+      "details": {
+        "ticketId": "#TKT-VOID-9604",
+        "table": "Table 05",
+        "amount": 998,
+        "reason": "Customer cancelled before food entered tandoor",
+        "authorizedBy": "Manager (PIN Verified)"
+      },
+      "actor": "Manager (PIN Verified)",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789642019613,
+      "isoTime": "2026-09-17T10:46:59.613Z"
+    },
+    {
+      "id": "AUDIT-1789642019608-951",
+      "action": "VOID_REJECTED",
+      "details": {
+        "ticketId": "#TKT-VOID-9604",
+        "reason": "Customer walked out",
+        "enteredPin": "****"
+      },
+      "actor": "Unknown Staff",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789642019608,
+      "isoTime": "2026-09-17T10:46:59.608Z"
+    },
+    {
+      "id": "AUDIT-1789642019605-884",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-VOID-9604",
+        "table": "Table 05",
+        "total": 998,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Walkout Customer",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789642019605,
+      "isoTime": "2026-09-17T10:46:59.605Z"
+    },
+    {
+      "id": "AUDIT-1789642019602-308",
+      "action": "SHIFT_CLOSED",
+      "details": {
+        "shiftId": "SHIFT-1789642019593",
+        "openingFloat": 5000,
+        "expectedCash": 7625,
+        "countedCash": 7625,
+        "variance": 0,
+        "varianceLabel": "BALANCED",
+        "totalSales": 2625,
+        "transactionsCount": 1,
+        "notes": "End of lunch shift - balanced"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642019602,
+      "isoTime": "2026-09-17T10:46:59.602Z"
+    },
+    {
+      "id": "AUDIT-1789642019598-652",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01005",
+        "ticketId": "#TKT-TAMPER-9585",
+        "table": "Table 08",
+        "total": 2625,
+        "paymentMethod": "Cash",
+        "cashReceived": 3125,
+        "changeGiven": 500,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789642019598,
+      "isoTime": "2026-09-17T10:46:59.598Z"
+    },
+    {
+      "id": "AUDIT-1789642019593-120",
+      "action": "SHIFT_OPENED",
+      "details": {
+        "shiftId": "SHIFT-1789642019593",
+        "openingFloat": 5000
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642019593,
+      "isoTime": "2026-09-17T10:46:59.593Z"
+    },
+    {
+      "id": "AUDIT-1789642019586-267",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TAMPER-9585",
+        "table": "Table 08",
+        "total": 2625,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Price Tampering Attacker",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789642019586,
+      "isoTime": "2026-09-17T10:46:59.586Z"
+    },
+    {
+      "id": "AUDIT-1789642019582-534",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "super_admin",
+        "email": "superadmin@deragourmet.com"
+      },
+      "actor": "Platform Super Admin",
+      "restaurantId": "ALL",
+      "timestamp": 1789642019582,
+      "isoTime": "2026-09-17T10:46:59.582Z"
+    },
+    {
+      "id": "AUDIT-1789642019578-226",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642019578,
+      "isoTime": "2026-09-17T10:46:59.578Z"
+    },
+    {
+      "id": "AUDIT-1789642019574-642",
+      "action": "LOGIN_FAILED",
+      "details": {
+        "email": "hacker@evil.com",
+        "attemptedRole": "unknown"
+      },
+      "actor": "Anonymous",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789642019574,
+      "isoTime": "2026-09-17T10:46:59.574Z"
+    },
+    {
+      "id": "AUDIT-1789642013670-396",
+      "action": "TABLE_DELETED",
+      "details": {
+        "id": "99",
+        "name": "VIP Cabin 99",
+        "zone": "Rooftop Skylight"
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642013670,
+      "isoTime": "2026-09-17T10:46:53.670Z"
+    },
+    {
+      "id": "AUDIT-1789642013661-313",
+      "action": "FLOOR_LAYOUT_REARRANGED",
+      "details": {
+        "updatedTables": 1
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642013661,
+      "isoTime": "2026-09-17T10:46:53.661Z"
+    },
+    {
+      "id": "AUDIT-1789642013657-422",
+      "action": "TABLE_CREATED",
+      "details": {
+        "id": "99",
+        "name": "VIP Cabin 99",
+        "zone": "Rooftop Skylight",
+        "capacity": 8,
+        "shape": "booth",
+        "x": 75,
+        "y": 75
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642013657,
+      "isoTime": "2026-09-17T10:46:53.657Z"
+    },
+    {
+      "id": "AUDIT-1789642013653-236",
+      "action": "SECTION_CREATED",
+      "details": {
+        "section": "Rooftop Skylight"
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642013653,
+      "isoTime": "2026-09-17T10:46:53.653Z"
+    },
+    {
+      "id": "AUDIT-1789642013649-838",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "restaurant_admin",
+        "email": "owner@deragourmet.com",
+        "restaurantId": "REST-001"
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642013649,
+      "isoTime": "2026-09-17T10:46:53.649Z"
+    },
+    {
+      "id": "AUDIT-1789641798424-580",
+      "action": "ORDER_VOIDED",
+      "details": {
+        "ticketId": "#TKT-VOID-8414",
+        "table": "Table 05",
+        "amount": 998,
+        "reason": "Customer cancelled before food entered tandoor",
+        "authorizedBy": "Manager (PIN Verified)"
+      },
+      "actor": "Manager (PIN Verified)",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789641798424,
+      "isoTime": "2026-09-17T10:43:18.424Z"
+    },
+    {
+      "id": "AUDIT-1789641798419-557",
+      "action": "VOID_REJECTED",
+      "details": {
+        "ticketId": "#TKT-VOID-8414",
+        "reason": "Customer walked out",
+        "enteredPin": "****"
+      },
+      "actor": "Unknown Staff",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789641798419,
+      "isoTime": "2026-09-17T10:43:18.419Z"
+    },
+    {
+      "id": "AUDIT-1789641798415-756",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-VOID-8414",
+        "table": "Table 05",
+        "total": 998,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Walkout Customer",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789641798415,
+      "isoTime": "2026-09-17T10:43:18.415Z"
+    },
+    {
+      "id": "AUDIT-1789641798412-442",
+      "action": "SHIFT_CLOSED",
+      "details": {
+        "shiftId": "SHIFT-1789641798375",
+        "openingFloat": 5000,
+        "expectedCash": 7625,
+        "countedCash": 7625,
+        "variance": 0,
+        "varianceLabel": "BALANCED",
+        "totalSales": 2625,
+        "transactionsCount": 1,
+        "notes": "End of lunch shift - balanced"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789641798412,
+      "isoTime": "2026-09-17T10:43:18.412Z"
+    },
+    {
+      "id": "AUDIT-1789641798407-969",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01004",
+        "ticketId": "#TKT-TAMPER-8365",
+        "table": "Table 08",
+        "total": 2625,
+        "paymentMethod": "Cash",
+        "cashReceived": 3125,
+        "changeGiven": 500,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789641798407,
+      "isoTime": "2026-09-17T10:43:18.407Z"
+    },
+    {
+      "id": "AUDIT-1789641798375-887",
+      "action": "SHIFT_OPENED",
+      "details": {
+        "shiftId": "SHIFT-1789641798375",
+        "openingFloat": 5000
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789641798375,
+      "isoTime": "2026-09-17T10:43:18.375Z"
+    },
+    {
+      "id": "AUDIT-1789641798367-391",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TAMPER-8365",
+        "table": "Table 08",
+        "total": 2625,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Price Tampering Attacker",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789641798367,
+      "isoTime": "2026-09-17T10:43:18.367Z"
+    },
+    {
+      "id": "AUDIT-1789641798362-916",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "super_admin",
+        "email": "superadmin@deragourmet.com"
+      },
+      "actor": "Platform Super Admin",
+      "restaurantId": "ALL",
+      "timestamp": 1789641798362,
+      "isoTime": "2026-09-17T10:43:18.362Z"
+    },
+    {
+      "id": "AUDIT-1789641798359-943",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789641798359,
+      "isoTime": "2026-09-17T10:43:18.359Z"
+    },
+    {
+      "id": "AUDIT-1789641798354-298",
+      "action": "LOGIN_FAILED",
+      "details": {
+        "email": "hacker@evil.com",
+        "attemptedRole": "unknown"
+      },
+      "actor": "Anonymous",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789641798354,
+      "isoTime": "2026-09-17T10:43:18.354Z"
+    },
+    {
+      "id": "AUDIT-1789640654608-254",
+      "action": "ORDER_VOIDED",
+      "details": {
+        "ticketId": "#TKT-VOID-4593",
+        "table": "Table 05",
+        "amount": 998,
+        "reason": "Customer cancelled before food entered tandoor",
+        "authorizedBy": "Manager (PIN Verified)"
+      },
+      "actor": "Manager (PIN Verified)",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640654608,
+      "isoTime": "2026-09-17T10:24:14.608Z"
+    },
+    {
+      "id": "AUDIT-1789640654601-990",
+      "action": "VOID_REJECTED",
+      "details": {
+        "ticketId": "#TKT-VOID-4593",
+        "reason": "Customer walked out",
+        "enteredPin": "****"
+      },
+      "actor": "Unknown Staff",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640654602,
+      "isoTime": "2026-09-17T10:24:14.602Z"
+    },
+    {
+      "id": "AUDIT-1789640654594-630",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-VOID-4593",
+        "table": "Table 05",
+        "total": 998,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Walkout Customer",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640654594,
+      "isoTime": "2026-09-17T10:24:14.594Z"
+    },
+    {
+      "id": "AUDIT-1789640654591-423",
+      "action": "SHIFT_CLOSED",
+      "details": {
+        "shiftId": "SHIFT-1789640654579",
+        "openingFloat": 5000,
+        "expectedCash": 7625,
+        "countedCash": 7625,
+        "variance": 0,
+        "varianceLabel": "BALANCED",
+        "totalSales": 2625,
+        "transactionsCount": 1,
+        "notes": "End of lunch shift - balanced"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640654591,
+      "isoTime": "2026-09-17T10:24:14.591Z"
+    },
+    {
+      "id": "AUDIT-1789640654586-756",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01003",
+        "ticketId": "#TKT-TAMPER-4570",
+        "table": "Table 08",
+        "total": 2625,
+        "paymentMethod": "Cash",
+        "cashReceived": 3125,
+        "changeGiven": 500,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640654586,
+      "isoTime": "2026-09-17T10:24:14.586Z"
+    },
+    {
+      "id": "AUDIT-1789640654579-520",
+      "action": "SHIFT_OPENED",
+      "details": {
+        "shiftId": "SHIFT-1789640654579",
+        "openingFloat": 5000
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640654579,
+      "isoTime": "2026-09-17T10:24:14.579Z"
+    },
+    {
+      "id": "AUDIT-1789640654572-605",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TAMPER-4570",
+        "table": "Table 08",
+        "total": 2625,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Price Tampering Attacker",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640654572,
+      "isoTime": "2026-09-17T10:24:14.572Z"
+    },
+    {
+      "id": "AUDIT-1789640654566-545",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "super_admin",
+        "email": "superadmin@deragourmet.com"
+      },
+      "actor": "Platform Super Admin",
+      "restaurantId": "ALL",
+      "timestamp": 1789640654566,
+      "isoTime": "2026-09-17T10:24:14.566Z"
+    },
+    {
+      "id": "AUDIT-1789640654561-621",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640654561,
+      "isoTime": "2026-09-17T10:24:14.561Z"
+    },
+    {
+      "id": "AUDIT-1789640654558-386",
+      "action": "LOGIN_FAILED",
+      "details": {
+        "email": "hacker@evil.com",
+        "attemptedRole": "unknown"
+      },
+      "actor": "Anonymous",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640654558,
+      "isoTime": "2026-09-17T10:24:14.558Z"
+    },
+    {
+      "id": "AUDIT-1789640540993-146",
+      "action": "ORDER_VOIDED",
+      "details": {
+        "ticketId": "#TKT-VOID-0982",
+        "table": "Table 05",
+        "amount": 998,
+        "reason": "Customer cancelled before food entered tandoor",
+        "authorizedBy": "Manager (PIN Verified)"
+      },
+      "actor": "Manager (PIN Verified)",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640540993,
+      "isoTime": "2026-09-17T10:22:20.993Z"
+    },
+    {
+      "id": "AUDIT-1789640540988-336",
+      "action": "VOID_REJECTED",
+      "details": {
+        "ticketId": "#TKT-VOID-0982",
+        "reason": "Customer walked out",
+        "enteredPin": "****"
+      },
+      "actor": "Unknown Staff",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640540988,
+      "isoTime": "2026-09-17T10:22:20.988Z"
+    },
+    {
+      "id": "AUDIT-1789640540985-523",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-VOID-0982",
+        "table": "Table 05",
+        "total": 998,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Walkout Customer",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640540985,
+      "isoTime": "2026-09-17T10:22:20.985Z"
+    },
+    {
+      "id": "AUDIT-1789640540979-867",
+      "action": "SHIFT_CLOSED",
+      "details": {
+        "shiftId": "SHIFT-1789640540968",
+        "openingFloat": 5000,
+        "expectedCash": 7625,
+        "countedCash": 7625,
+        "variance": 0,
+        "varianceLabel": "BALANCED",
+        "totalSales": 2625,
+        "transactionsCount": 1,
+        "notes": "End of lunch shift - balanced"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640540979,
+      "isoTime": "2026-09-17T10:22:20.979Z"
+    },
+    {
+      "id": "AUDIT-1789640540973-410",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01002",
+        "ticketId": "#TKT-TAMPER-0958",
+        "table": "Table 08",
+        "total": 2625,
+        "paymentMethod": "Cash",
+        "cashReceived": 3125,
+        "changeGiven": 500,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640540973,
+      "isoTime": "2026-09-17T10:22:20.973Z"
+    },
+    {
+      "id": "AUDIT-1789640540968-208",
+      "action": "SHIFT_OPENED",
+      "details": {
+        "shiftId": "SHIFT-1789640540968",
+        "openingFloat": 5000
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640540968,
+      "isoTime": "2026-09-17T10:22:20.968Z"
+    },
+    {
+      "id": "AUDIT-1789640540959-361",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TAMPER-0958",
+        "table": "Table 08",
+        "total": 2625,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Price Tampering Attacker",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640540959,
+      "isoTime": "2026-09-17T10:22:20.959Z"
+    },
+    {
+      "id": "AUDIT-1789640540956-971",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "super_admin",
+        "email": "superadmin@deragourmet.com"
+      },
+      "actor": "Platform Super Admin",
+      "restaurantId": "ALL",
+      "timestamp": 1789640540956,
+      "isoTime": "2026-09-17T10:22:20.956Z"
+    },
+    {
+      "id": "AUDIT-1789640540953-401",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640540953,
+      "isoTime": "2026-09-17T10:22:20.953Z"
+    },
+    {
+      "id": "AUDIT-1789640540949-726",
+      "action": "LOGIN_FAILED",
+      "details": {
+        "email": "hacker@evil.com",
+        "attemptedRole": "unknown"
+      },
+      "actor": "Anonymous",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789640540949,
+      "isoTime": "2026-09-17T10:22:20.949Z"
+    },
+    {
+      "id": "AUDIT-1789640372500-474",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "super_admin",
+        "email": "superadmin@deragourmet.com"
+      },
+      "actor": "Platform Super Admin",
+      "restaurantId": "ALL",
+      "timestamp": 1789640372500,
+      "isoTime": "2026-09-17T10:19:32.500Z"
+    },
+    {
+      "id": "AUDIT-1789640342506-623",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "waiter",
+        "email": "hamza@deragourmet.com",
+        "staffId": "waiter-01"
+      },
+      "actor": "Hamza Abbasi",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640342506,
+      "isoTime": "2026-09-17T10:19:02.506Z"
+    },
+    {
+      "id": "AUDIT-1789640316698-565",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01001",
+        "ticketId": "#TKT-3424",
+        "table": "Table 04",
+        "total": 1712,
+        "paymentMethod": "Cash",
+        "cashReceived": 1712,
+        "changeGiven": 0,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640316698,
+      "isoTime": "2026-09-17T10:18:36.698Z"
+    },
+    {
+      "id": "AUDIT-1789640276321-478",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789640276321,
+      "isoTime": "2026-09-17T10:17:56.321Z"
+    }
+  ],
+  "shifts": [
+    {
+      "id": "SHIFT-1789642019593",
+      "restaurantId": "REST-001",
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "openedAt": "2026-09-17T10:46:59.593Z",
+      "openingFloat": 5000,
+      "expectedCash": 7625,
+      "totalSales": 2625,
+      "transactionsCount": 1,
+      "status": "closed",
+      "closedAt": "2026-09-17T10:46:59.602Z",
+      "countedCash": 7625,
+      "variance": 0,
+      "notes": "End of lunch shift - balanced"
+    },
+    {
+      "id": "SHIFT-1789641798375",
+      "restaurantId": "REST-001",
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "openedAt": "2026-09-17T10:43:18.375Z",
+      "openingFloat": 5000,
+      "expectedCash": 7625,
+      "totalSales": 2625,
+      "transactionsCount": 1,
+      "status": "closed",
+      "closedAt": "2026-09-17T10:43:18.412Z",
+      "countedCash": 7625,
+      "variance": 0,
+      "notes": "End of lunch shift - balanced"
+    },
+    {
+      "id": "SHIFT-1789640654579",
+      "restaurantId": "REST-001",
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "openedAt": "2026-09-17T10:24:14.579Z",
+      "openingFloat": 5000,
+      "expectedCash": 7625,
+      "totalSales": 2625,
+      "transactionsCount": 1,
+      "status": "closed",
+      "closedAt": "2026-09-17T10:24:14.590Z",
+      "countedCash": 7625,
+      "variance": 0,
+      "notes": "End of lunch shift - balanced"
+    },
+    {
+      "id": "SHIFT-1789640540968",
+      "restaurantId": "REST-001",
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "openedAt": "2026-09-17T10:22:20.968Z",
+      "openingFloat": 5000,
+      "expectedCash": 7625,
+      "totalSales": 2625,
+      "transactionsCount": 1,
+      "status": "closed",
+      "closedAt": "2026-09-17T10:22:20.979Z",
+      "countedCash": 7625,
+      "variance": 0,
+      "notes": "End of lunch shift - balanced"
+    }
+  ],
+  "superAdmin": {
+    "email": "superadmin@deragourmet.com",
+    "password": "SuperAdmin#2026",
+    "name": "Master Super Admin"
+  },
+  "nextInvoiceNumber": 1006
+}

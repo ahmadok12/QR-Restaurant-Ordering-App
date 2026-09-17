@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-100 text-slate-900" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Kitchen Display KDS - Mobile Chef</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            kds: "#f59e0b",
+            "kds-dark": "#d97706"
+          },
+          fontFamily: {
+            sans: ["'Plus Jakarta Sans'", "sans-serif"],
+            mono: ["'JetBrains Mono'", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="h-full flex justify-center items-center bg-slate-200/70 p-0 sm:p-4 text-slate-800">
+
+  <!-- Mobile App Frame Shell -->
+  <div class="w-full max-w-md h-full sm:h-[92vh] sm:max-h-[860px] bg-slate-50 sm:rounded-[36px] sm:shadow-2xl sm:border-[6px] sm:border-slate-300 flex flex-col overflow-hidden relative">
+
+    <!-- Mobile Top Notch / Status Bar -->
+    <div class="px-6 pt-3 pb-1 flex justify-between items-center text-[12px] font-semibold text-slate-500 select-none flex-shrink-0 bg-white border-b border-slate-100">
+      <span id="current-time">09:41</span>
+      <div class="flex items-center gap-1.5 text-slate-600">
+        <span class="material-symbols-outlined text-[16px]">signal_cellular_4_bar</span>
+        <span class="material-symbols-outlined text-[16px]">wifi</span>
+        <span class="material-symbols-outlined text-[16px]">battery_charging_full</span>
+      </div>
+    </div>
+
+    <!-- App Header -->
+    <header class="px-5 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0 shadow-xs">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
+          <span class="material-symbols-outlined text-[20px]">soup_kitchen</span>
+        </div>
+        <div>
+          <h1 class="text-[15px] font-extrabold text-slate-900 tracking-tight leading-none">Kitchen KDS</h1>
+          <p class="text-[10px] text-amber-700 font-bold mt-0.5">Chef Line Station &bull; Live Queue</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <a href="hub.html" title="Apps Hub" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+          <span class="material-symbols-outlined text-[18px]">grid_view</span>
+        </a>
+        <button onclick="refreshKds()" title="Refresh" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+          <span class="material-symbols-outlined text-[18px]">refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Station Filter Pill Bar -->
+    <div class="px-4 py-2 bg-white border-b border-slate-200 flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-shrink-0 text-[11px] font-bold">
+      <button onclick="setStationFilter('all')" id="filter-all" class="station-pill px-3 py-1 rounded-full bg-amber-500 text-white shadow-xs">
+        All Stations
+      </button>
+      <button onclick="setStationFilter('karahi')" id="filter-karahi" class="station-pill px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900">
+        Karahi / Grill
+      </button>
+      <button onclick="setStationFilter('bbq')" id="filter-bbq" class="station-pill px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900">
+        BBQ Boti
+      </button>
+      <button onclick="setStationFilter('rice_naan')" id="filter-rice_naan" class="station-pill px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900">
+        Rice &amp; Naan
+      </button>
+    </div>
+
+    <!-- Active Tickets Queue List -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3.5 pb-20">
+      
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-[13px] font-black text-slate-900">Live Kitchen Tickets</h2>
+        <span id="active-tickets-badge" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold">
+          2 Pending
+        </span>
+      </div>
+
+      <div id="tickets-container" class="space-y-3.5">
+        <!-- Rendered via JS -->
+      </div>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-20 shadow-lg">
+      <button onclick="refreshKds()" class="flex flex-col items-center gap-1 text-amber-600 font-bold text-[10px]">
+        <span class="material-symbols-outlined text-[20px]">soup_kitchen</span>
+        <span>Kitchen Tickets</span>
+      </button>
+      <a href="waiter.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 font-medium text-[10px]">
+        <span class="material-symbols-outlined text-[20px]">room_service</span>
+        <span>Waiter Floor</span>
+      </a>
+      <a href="restaurant_admin.html" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 font-medium text-[10px]">
+        <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        <span>Rest. Admin</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    let dbCache = null;
+    let currentStation = 'all';
+
+    function getApiBase() {
+      return (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
+    }
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('current-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function setStationFilter(st) {
+      currentStation = st;
+      document.querySelectorAll('.station-pill').forEach(btn => {
+        btn.className = "station-pill px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900";
+      });
+      document.getElementById(`filter-${st}`).className = "station-pill px-3 py-1 rounded-full bg-amber-500 text-white shadow-xs";
+      renderTickets();
+    }
+
+    async function refreshKds() {
+      let ticketsFromApi = [];
+      try {
+        const res = await fetch(`${getApiBase()}/api/db`);
+        if (res.ok) {
+          dbCache = await res.json();
+          ticketsFromApi = dbCache.tickets || [];
+        }
+      } catch (err) {
+        console.warn('Backend fetch failed, using local cache:', err);
+      }
+
+      // Merge with localStorage tickets (ensures tickets created offline or via file:// are never lost)
+      try {
+        const localTickets = JSON.parse(localStorage.getItem('gourmet_kds_tickets') || '[]');
+        if (!dbCache) dbCache = { tickets: [] };
+        const map = new Map();
+        (dbCache.tickets || []).forEach(t => map.set(t.ticketId, t));
+        localTickets.forEach(t => {
+          if (!map.has(t.ticketId)) {
+            map.set(t.ticketId, t);
+          }
+        });
+        dbCache.tickets = Array.from(map.values());
+      } catch (e) {}
+
+      renderTickets();
+    }
+
+    function renderTickets() {
+      const container = document.getElementById('tickets-container');
+      container.innerHTML = '';
+      const tickets = (dbCache ? dbCache.tickets || [] : []).filter(t => t.status !== 'Settled');
+
+      document.getElementById('active-tickets-badge').textContent = `${tickets.length} Active`;
+
+      if (tickets.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 bg-white border border-slate-200 rounded-2xl text-center text-slate-400 text-[12px] space-y-1 shadow-2xs">
+            <span class="material-symbols-outlined text-[32px] text-emerald-500 block">check_circle</span>
+            <p class="font-bold text-slate-800">Kitchen Line is Clear!</p>
+            <p>No active orders waiting to be cooked.</p>
+          </div>
+        `;
+        return;
+      }
+
+      tickets.forEach(t => {
+        const elapsedMins = Math.max(1, Math.round((Date.now() - (t.timestamp || Date.now())) / 60000));
+        let timerColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+        if (elapsedMins > 10 && elapsedMins <= 20) timerColor = 'text-amber-800 bg-amber-50 border-amber-200';
+        else if (elapsedMins > 20) timerColor = 'text-rose-700 bg-rose-50 border-rose-200 animate-pulse';
+
+        const isReady = t.status === 'Plated & Ready';
+        const isCooking = t.status === 'In Kitchen';
+        const isServed = t.status === 'Served';
+
+        const card = document.createElement('div');
+        card.className = "p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs";
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <strong class="text-[16px] font-black text-slate-900">${t.table}</strong>
+                <span class="text-[11px] font-mono font-bold text-slate-500">${t.ticketId}</span>
+              </div>
+              <!-- Assigned Waiter Display -->
+              <p class="text-[11px] text-sky-700 font-bold mt-0.5 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[13px] text-sky-600">person</span>
+                <span>Assigned: <strong>${t.assignedWaiterName || 'Auto-assigning...'}</strong></span>
+              </p>
+            </div>
+
+            <!-- Elapsed Time Pill -->
+            <div class="px-2.5 py-1 rounded-xl border text-[11px] font-mono font-black flex items-center gap-1 ${timerColor}">
+              <span class="material-symbols-outlined text-[14px]">timer</span>
+              <span>${elapsedMins}m ago</span>
+            </div>
+          </div>
+
+          <!-- Items list -->
+          <div class="space-y-1.5 p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[12px] text-slate-700">
+            ${(t.items || []).map(item => `
+              <div class="flex justify-between items-start border-b border-slate-200/60 pb-1 last:border-0 last:pb-0">
+                <div>
+                  <strong class="text-slate-900 text-[13px]">${item.qty}x</strong> ${item.title}
+                  <div class="text-[10px] text-slate-500">${item.size || 'Standard'}</div>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[10px]">
+                  ${item.spice || 'Normal'}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+
+          ${t.notes ? `
+            <div class="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
+              <strong>Chef Note:</strong> ${t.notes}
+            </div>
+          ` : ''}
+
+          <!-- Status Action Buttons -->
+          <div class="pt-1 flex items-center gap-2">
+            ${t.status === 'New' ? `
+              <button onclick="advanceStatus('${t.ticketId}', 'In Kitchen')" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-[12px] flex items-center justify-center gap-1 shadow-xs active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[16px]">skillet</span>
+                <span>Start Prep</span>
+              </button>
+            ` : ''}
+
+            ${isCooking ? `
+              <button onclick="advanceStatus('${t.ticketId}', 'Plated & Ready')" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[12px] flex items-center justify-center gap-1 shadow-xs active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[16px]">notifications_active</span>
+                <span>Plated &amp; Ready (Alert Waiter)</span>
+              </button>
+            ` : ''}
+
+            ${isReady ? `
+              <button onclick="advanceStatus('${t.ticketId}', 'Served')" class="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-[12px] flex items-center justify-center gap-1 shadow-xs active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                <span>Bump Order (Handed Over)</span>
+              </button>
+            ` : ''}
+
+            ${isServed ? `
+              <span class="text-emerald-700 font-bold text-[12px] py-2 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">done_all</span> Order Served
+              </span>
+            ` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function advanceStatus(ticketId, newStatus) {
+      try {
+        await fetch(`${getApiBase()}/api/broadcast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'STATUS_UPDATE',
+            ticketId: ticketId,
+            status: newStatus
+          })
+        });
+        await refreshKds();
+      } catch (e) {
+        alert('Failed to update status');
+      }
+    }
+
+    // SSE Sync
+    try {
+      const evtSource = new EventSource(`${getApiBase()}/api/events`);
+      evtSource.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (['NEW_ORDER', 'STATUS_UPDATE', 'BILL_SETTLED'].includes(d.type)) {
+            refreshKds();
+          }
+        } catch (err) {}
+      };
+      evtSource.onerror = () => { evtSource.close(); };
+    } catch(err) {}
+
+    // Storage Event Listener for instant cross-tab / file:// sync
+    window.addEventListener('storage', (e) => {
+      if (['gourmet_kds_tickets', 'gourmet_sync_event'].includes(e.key)) {
+        refreshKds();
+      }
+    });
+
+    // Auto-refresh interval (every 2s)
+    setInterval(refreshKds, 2000);
+
+    refreshKds();
+  </script>
+</body>
+</html>

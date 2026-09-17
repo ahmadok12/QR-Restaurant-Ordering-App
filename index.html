@@ -1,0 +1,3114 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>Dera Gourmet - Authentic Pakistani Cuisine • QR Table Ordering</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Outfit:wght@400..700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <style>
+    @layer base {
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(172, 45, 0, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(172, 45, 0, 0); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.22s ease-out forwards;
+    }
+  </style>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#ac2d00",
+            "primary-container": "#d53e0b",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#ffdbd1",
+            "on-primary-fixed": "#3b0900",
+            "surface": "#f8f9ff",
+            "surface-dim": "#cbdbf5",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e5eeff",
+            "surface-container-high": "#dce9ff",
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#5b4139",
+            "secondary": "#545f73",
+            "secondary-container": "#d5e0f8",
+            "tertiary": "#825100",
+            "tertiary-container": "#a36700",
+            "tertiary-fixed-dim": "#ffb95f"
+          },
+          borderRadius: {
+            "DEFAULT": "0.5rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+          fontFamily: {
+            "body": ["DM Sans", "sans-serif"],
+            "headline": ["Outfit", "sans-serif"]
+          },
+          spacing: {
+            "margin": "1.25rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="bg-surface font-body text-on-surface antialiased min-h-full flex flex-col select-none">
+
+  <!-- ================= TOP APP HEADER ================= -->
+  <header class="fixed top-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl pt-safe shadow-[0_1px_10px_rgba(11,28,48,0.05)] border-b border-surface-container-high/40">
+    <div class="h-16 px-margin flex items-center justify-between gap-3 max-w-xl mx-auto">
+      
+      <!-- Brand & Table Info -->
+      <div class="flex items-center gap-2.5 min-w-0 flex-1">
+        <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+          <span class="material-symbols-outlined text-[22px]">restaurant</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="font-headline font-bold text-[17px] text-on-surface leading-tight tracking-tight">Dera Gourmet</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">Desi Dine-In</span>
+          </div>
+          <!-- Clickable Table Binding Switcher -->
+          <button onclick="openTableModal()" type="button" class="flex items-center gap-1 text-left text-[12px] text-secondary hover:text-primary transition-colors group">
+            <span class="material-symbols-outlined text-[14px] text-primary">table_restaurant</span>
+            <span class="font-semibold text-on-surface" id="header-table-label">Table 04</span>
+            <span class="text-secondary/70 truncate">• Main Hall</span>
+            <span class="material-symbols-outlined text-[14px] opacity-60 group-hover:opacity-100">expand_more</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Portal Switcher for Multi-Role Testing -->
+      <div class="hidden sm:flex items-center gap-1 bg-surface-container-low px-2.5 py-1 rounded-full text-[11px] font-semibold border border-surface-container">
+        <span class="text-primary font-bold">Customer</span>
+        <span class="text-secondary/40">&bull;</span>
+        <a href="kds.html" target="_blank" class="text-secondary hover:text-primary transition-colors">KDS</a>
+        <span class="text-secondary/40">&bull;</span>
+        <a href="waiter.html" target="_blank" class="text-secondary hover:text-primary transition-colors">Waiter</a>
+        <span class="text-secondary/40">&bull;</span>
+        <a href="admin.html" target="_blank" class="text-secondary hover:text-primary transition-colors">Admin</a>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <!-- Call Waiter Bell -->
+        <button onclick="openWaiterModal()" aria-label="Call Waiter" class="w-10 h-10 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center text-secondary hover:text-primary transition-colors active:scale-95" type="button">
+          <span class="material-symbols-outlined text-[20px]">notifications_active</span>
+        </button>
+
+        <!-- Cart Quick Peek -->
+        <button onclick="switchView('cart')" aria-label="View Cart" class="relative w-10 h-10 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center text-on-surface hover:text-primary transition-colors active:scale-95" type="button">
+          <span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+          <span id="cart-badge-count" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-on-primary font-bold text-[10px] flex items-center justify-center leading-none shadow-sm">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 w-full max-w-xl mx-auto pt-20 pb-28 px-0 flex flex-col">
+
+    <!-- ================= VIEW 1: MENU & EXPLORATION ================= -->
+    <section id="view-menu" class="w-full flex flex-col">
+      
+      <!-- Table Welcome Banner -->
+      <div class="px-margin pt-1 pb-2">
+        <div class="w-full bg-gradient-to-r from-primary-container to-primary text-on-primary rounded-xl p-4 shadow-[0_6px_20px_rgba(172,45,0,0.24)] relative overflow-hidden flex items-center justify-between">
+          <div class="relative z-10">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="material-symbols-outlined text-[18px] opacity-90">qr_code_scanner</span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-white/90">QR Menu Active</span>
+            </div>
+            <h2 class="font-headline text-[20px] font-bold text-white tracking-tight" id="banner-table-title">Dine-In • Table #04</h2>
+            <p class="text-[12px] text-white/80 mt-0.5">Authentic Karahi, Charcoal BBQ &amp; Biryani &bull; Cash Checkout</p>
+          </div>
+          <div class="relative z-10 flex flex-col items-end gap-1.5">
+            <button onclick="openTableModal()" type="button" class="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[12px] font-semibold hover:bg-white/30 transition-all active:scale-95 flex items-center gap-1">
+              <span>Change</span>
+              <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+            </button>
+          </div>
+          <!-- Ambient decorative circles -->
+          <div class="absolute -right-6 -bottom-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+      </div>
+
+      <!-- Active Order In-Progress Floating Banner (Shown when an active order is cooking/served and user is browsing menu) -->
+      <div id="active-cooking-banner" class="hidden px-margin mb-2">
+        <button onclick="switchView('confirmation')" class="w-full bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-2xl flex items-center justify-between shadow-2xs hover:bg-emerald-100 transition-all active:scale-98">
+          <div class="flex items-center gap-2.5">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div class="text-left">
+              <span class="text-[13px] font-bold block leading-tight">Order <span id="banner-tkt-id">#TKT-0000</span> &bull; <span id="banner-status-text">Cooking In Kitchen 🔥</span></span>
+              <span class="text-[11px] text-emerald-700" id="banner-status-sub">Tap to track status, add items or call waiter</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 text-[12px] font-bold text-emerald-800 bg-emerald-200/70 px-2.5 py-1 rounded-xl">
+            <span>View Tab</span>
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Live Search & Dietary Quick Filters -->
+      <div class="px-margin py-1.5">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1 flex items-center bg-surface-container-lowest rounded-full shadow-[0_3px_14px_rgba(15,23,42,0.05)] border border-surface-container px-4 py-2.5">
+            <span class="material-symbols-outlined text-secondary text-[20px] mr-2">search</span>
+            <input id="search-input" oninput="handleSearch()" class="w-full bg-transparent text-[14px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search Karahi, Biryani, Malai Boti, Naan..." type="text"/>
+            <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-secondary hover:text-on-surface" type="button">
+              <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+          <button onclick="toggleFilterDietary('spicy')" id="filter-spicy-btn" type="button" class="h-11 px-3 rounded-xl bg-surface-container-lowest border border-surface-container text-secondary text-[12px] font-semibold flex items-center gap-1 shadow-sm transition-all hover:text-primary active:scale-95" title="Filter Chatpata / Spicy Dishes">
+            <span class="material-symbols-outlined text-[18px] text-primary">local_fire_department</span>
+            <span class="hidden sm:inline">Spicy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sticky Category Filter Pills (Docked below header) -->
+      <div class="sticky top-16 z-20 bg-surface/95 backdrop-blur-md py-2 overflow-x-auto no-scrollbar border-y border-surface-container/60 shadow-2xs">
+        <div class="flex items-center gap-2 px-margin min-w-max" id="category-pill-list">
+          <button onclick="selectCategory('all', this)" class="cat-pill active flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary font-semibold text-[13px] shadow-[0_3px_10px_rgba(172,45,0,0.2)] transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">restaurant_menu</span>
+            <span>All Menu</span>
+          </button>
+          <button onclick="selectCategory('karahi', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
+            <span>Karahi &amp; Handi</span>
+          </button>
+          <button onclick="selectCategory('bbq', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">outdoor_grill</span>
+            <span>Tandoor &amp; BBQ</span>
+          </button>
+          <button onclick="selectCategory('rice', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">rice_bowl</span>
+            <span>Dum Biryani</span>
+          </button>
+          <button onclick="selectCategory('naan', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">bakery_dining</span>
+            <span>Tandoori Naan</span>
+          </button>
+          <button onclick="selectCategory('drinks', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">local_cafe</span>
+            <span>Lassi &amp; Chai</span>
+          </button>
+          <button onclick="selectCategory('meetha', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
+            <span class="material-symbols-outlined text-[16px]">icecream</span>
+            <span>Shahi Meetha</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Instant Table Essentials (1-Tap Quick Add Strip) -->
+      <div class="px-margin pt-2.5 pb-1">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[12px] font-bold text-on-surface uppercase tracking-wider flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-amber-500">bolt</span>
+            <span>Instant Table Essentials</span>
+          </span>
+          <span class="text-[11px] text-secondary font-medium">1-Tap Fast Add</span>
+        </div>
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          <button onclick="quickAddCustom('Sesame Roghni Naan', 140, 7, 'Single Naan', 'rice_naan')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
+            <span>🫓 +1 Roghni Naan</span>
+            <span class="text-primary font-mono text-[11px]">Rs. 140</span>
+          </button>
+          <button onclick="quickAddCustom('Garlic Butter Naan', 160, 8, 'Single Naan', 'rice_naan')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
+            <span>🧄 +1 Garlic Naan</span>
+            <span class="text-primary font-mono text-[11px]">Rs. 160</span>
+          </button>
+          <button onclick="quickAddCustom('Kulhad Makhni Sweet Lassi', 290, 9, 'Standard Kulhad', 'drinks_meetha')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
+            <span>🥛 +1 Sweet Lassi</span>
+            <span class="text-primary font-mono text-[11px]">Rs. 290</span>
+          </button>
+          <button onclick="quickAddCustom('Peshawari Mint Margarita', 260, 10, 'Chilled Glass', 'drinks_meetha')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
+            <span>🍋 +1 Mint Cooler</span>
+            <span class="text-primary font-mono text-[11px]">Rs. 260</span>
+          </button>
+          <button onclick="quickAddCustom('Doodh Patti Karak Matka Chai', 180, 12, 'Single Matka Cup', 'drinks_meetha')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
+            <span>☕ +1 Matka Chai</span>
+            <span class="text-primary font-mono text-[11px]">Rs. 180</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dera Family Feasts & Curated Combos -->
+      <div class="px-margin my-2">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-headline font-bold text-[15px] text-on-surface flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
+            <span>Popular Table Feasts</span>
+          </h3>
+          <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">Save up to 15%</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <!-- Combo 1: Dera Karahi Feast -->
+          <div class="bg-gradient-to-r from-amber-500/10 via-primary/5 to-surface-container-lowest p-3 rounded-2xl border border-amber-500/25 flex items-center justify-between gap-3 shadow-2xs">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <span class="font-headline font-bold text-[14px] text-on-surface">Dera Karahi Feast</span>
+                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-primary/10 text-primary">Serves 3-4</span>
+              </div>
+              <p class="text-[11px] text-secondary mt-0.5 leading-tight">1kg Karahi + 4 Roghni Naan + 3 Sweet Lassi</p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-headline font-bold text-[15px] text-primary">Rs. 3,450</span>
+                <span class="text-[11px] text-secondary line-through font-mono">Rs. 3,900</span>
+              </div>
+            </div>
+            <button onclick="addComboFeast('karahi_feast')" class="flex-shrink-0 px-3 py-2 rounded-xl bg-primary hover:bg-primary-container text-white font-headline font-bold text-[11px] flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[15px]">add</span>
+              <span>Add Feast</span>
+            </button>
+          </div>
+
+          <!-- Combo 2: BBQ & Biryani Platter -->
+          <div class="bg-gradient-to-r from-emerald-500/10 via-primary/5 to-surface-container-lowest p-3 rounded-2xl border border-emerald-500/25 flex items-center justify-between gap-3 shadow-2xs">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <span class="font-headline font-bold text-[14px] text-on-surface">BBQ &amp; Biryani Platter</span>
+                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-emerald-800/10 text-emerald-800">Serves 2</span>
+              </div>
+              <p class="text-[11px] text-secondary mt-0.5 leading-tight">Malai Boti + Chapli Kabab + Dum Biryani + 2 Margarita</p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-headline font-bold text-[15px] text-emerald-800">Rs. 2,150</span>
+                <span class="text-[11px] text-secondary line-through font-mono">Rs. 2,380</span>
+              </div>
+            </div>
+            <button onclick="addComboFeast('bbq_platter')" class="flex-shrink-0 px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-headline font-bold text-[11px] flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[15px]">add</span>
+              <span>Add Feast</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chef Recommendation Spotlight Card -->
+      <div class="px-margin my-2" id="chef-spotlight-card">
+        <div class="bg-surface-container-lowest rounded-2xl p-3 border border-surface-container shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative">
+          <div class="relative w-full h-44 rounded-xl overflow-hidden cursor-pointer" onclick="openSpotlightDetail()">
+            <img class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="Chicken Makhni Karahi" src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80"/>
+            <div class="absolute top-2.5 left-2.5 bg-primary text-on-primary font-bold text-[11px] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">local_fire_department</span>
+              <span>Chef's Special</span>
+            </div>
+            <div class="absolute bottom-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white font-bold text-[12px] px-2.5 py-1 rounded-full flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px] text-amber-400">schedule</span>
+              <span>20-25 min prep</span>
+            </div>
+          </div>
+          <div class="pt-3 px-1 flex items-center justify-between">
+            <div class="cursor-pointer" onclick="openSpotlightDetail()">
+              <h3 class="font-headline font-bold text-[16px] text-on-surface leading-snug">Chicken Makhni Karahi</h3>
+              <p class="text-[12px] text-secondary mt-0.5">Simmered in desi butter, fresh tomatoes, ginger &amp; green chilies</p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-headline font-bold text-primary text-[17px]">Rs. 1,250</span>
+                <span class="text-[11px] text-secondary bg-surface-container px-2 py-0.5 rounded-full">Half (0.5 kg)</span>
+              </div>
+            </div>
+            <div id="spotlight-action-slot">
+              <button onclick="handleSpotlightAddClick()" type="button" class="px-3.5 py-2 rounded-full bg-primary text-on-primary font-headline font-bold text-[13px] flex items-center gap-1 shadow-[0_4px_12px_rgba(172,45,0,0.3)] hover:brightness-105 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>ADD</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dish Grid Section -->
+      <div class="px-margin mt-3">
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="font-headline font-bold text-[18px] text-on-surface" id="menu-section-heading">Popular Food Items</h2>
+          <span class="text-[12px] text-secondary" id="items-count-indicator">8 items</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3" id="dish-grid-container">
+          <!-- Dynamic Dish Cards injected via JS with In-Card Steppers -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ================= VIEW 2: CART / TABLE BASKET ================= -->
+    <section id="view-cart" class="w-full flex flex-col hidden animate-fade-in">
+      
+      <!-- Cart Header Bar -->
+      <div class="px-margin pt-1 pb-3 flex items-center justify-between border-b border-surface-container">
+        <div class="flex items-center gap-2">
+          <button onclick="switchView('menu')" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-on-surface active:scale-95 transition-all" type="button">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+          </button>
+          <div>
+            <h1 class="font-headline font-bold text-[20px] text-on-surface leading-tight">Table Basket</h1>
+            <span class="text-[12px] text-secondary" id="cart-table-subtitle">Ordering for Table 04</span>
+          </div>
+        </div>
+        <button onclick="clearEntireCart()" class="text-[12px] text-secondary hover:text-error flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest border border-surface-container transition-colors" type="button">
+          <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
+          <span>Clear</span>
+        </button>
+      </div>
+
+      <!-- Offline Service Info Banner -->
+      <div class="px-margin mt-3">
+        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-[20px]">payments</span>
+          </div>
+          <div class="text-[12px]">
+            <p class="font-semibold text-on-surface">Zero Digital Payment Required</p>
+            <p class="text-secondary">Pay cash to server or settle at the counter when finished.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart Items List Container -->
+      <div class="px-margin mt-4 flex flex-col gap-2.5" id="cart-items-list">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty Cart State (Hidden when items exist) -->
+      <div id="cart-empty-state" class="hidden flex-col items-center justify-center py-12 px-margin text-center">
+        <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
+          <span class="material-symbols-outlined text-[32px]">dinner_dining</span>
+        </div>
+        <h3 class="font-headline font-bold text-[18px] text-on-surface">Your table basket is empty</h3>
+        <p class="text-[13px] text-secondary max-w-xs mt-1">Explore our chef-curated dishes and add items for your table.</p>
+        <button onclick="switchView('menu')" class="mt-4 px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
+          Browse Menu
+        </button>
+      </div>
+
+      <!-- Bill & Split Calculator Module -->
+      <div id="cart-pricing-section" class="px-margin mt-5 flex flex-col gap-3">
+        
+        <!-- Interactive Bill Split Calculator -->
+        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3.5 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-headline font-bold text-[14px] text-on-surface flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[17px] text-primary">group</span>
+              <span>Split Cash Bill Calculator</span>
+            </span>
+            <div class="flex items-center gap-1">
+              <button onclick="adjustSplitDiners(-1)" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-on-surface active:scale-90">-</button>
+              <span class="font-bold text-[13px] w-6 text-center" id="split-diners-count">2</span>
+              <button onclick="adjustSplitDiners(1)" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary hover:text-on-surface active:scale-90">+</button>
+              <span class="text-[11px] text-secondary ml-1">guests</span>
+            </div>
+          </div>
+          <div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between">
+            <span class="text-[12px] text-secondary">Estimated per guest (Cash):</span>
+            <span class="font-headline font-bold text-primary text-[15px]" id="split-amount-display">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Price Breakdown Card -->
+        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-4 shadow-sm space-y-2">
+          <div class="flex items-center justify-between text-[13px] text-secondary">
+            <span>Subtotal (<span id="cart-total-qty">0</span> items)</span>
+            <span class="font-semibold text-on-surface" id="cart-subtotal-display">$0.00</span>
+          </div>
+          <div class="flex items-center justify-between text-[13px] text-secondary">
+            <span>Restaurant Dine-In Tax (5%)</span>
+            <span class="font-semibold text-on-surface" id="cart-tax-display">$0.00</span>
+          </div>
+          <div class="pt-2 border-t border-surface-container flex items-center justify-between">
+            <span class="font-headline font-bold text-[16px] text-on-surface">Total Amount</span>
+            <span class="font-headline font-bold text-[20px] text-primary" id="cart-grandtotal-display">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Diner Name & Table Note Inputs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 shadow-sm">
+            <label class="block text-[12px] font-semibold text-secondary mb-1">Diner / Guest Name (Optional)</label>
+            <input id="guest-name-input" type="text" placeholder="e.g. Sarah / Table Guest" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 shadow-sm">
+            <label class="block text-[12px] font-semibold text-secondary mb-1">Kitchen Note for Chef</label>
+            <input id="general-order-notes" type="text" placeholder="e.g. Serve drinks first, less salt" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
+          </div>
+        </div>
+
+        <!-- Submit Order Directly to Kitchen Button -->
+        <button onclick="submitOrderToKitchen()" id="btn-proceed-checkout" class="w-full py-4 px-5 rounded-full bg-primary text-on-primary font-headline font-bold text-[16px] flex items-center justify-between shadow-[0_6px_22px_rgba(172,45,0,0.32)] hover:brightness-105 active:scale-95 transition-all">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[22px]">soup_kitchen</span>
+            <span>Fire Order to Kitchen</span>
+          </div>
+          <div class="flex items-center gap-1.5 font-mono">
+            <span id="btn-checkout-total">Rs. 0</span>
+            <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+          </div>
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= VIEW: LIVE ORDER COOKING STATUS & ADD-ONS ================= -->
+    <section id="view-confirmation" class="w-full flex flex-col hidden animate-fade-in">
+      
+      <!-- Top Header / Back to Menu Bar -->
+      <div class="px-margin pt-1 pb-2 flex items-center justify-between border-b border-surface-container">
+        <button onclick="orderMoreItems()" class="flex items-center gap-1.5 text-[13px] font-bold text-secondary hover:text-primary transition-colors py-1.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container active:scale-95">
+          <span class="material-symbols-outlined text-[18px]">restaurant_menu</span>
+          <span>View Full Menu</span>
+        </button>
+        <div class="flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+          <span>Live Order Tracking</span>
+        </div>
+      </div>
+
+      <!-- Celebratory Served Banner (Active when kitchen or waiter marks dishes as Served) -->
+      <div id="served-celebration-banner" class="hidden px-margin mt-3 animate-fade-in">
+        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-4 rounded-2xl shadow-[0_6px_22px_rgba(5,150,105,0.3)] flex items-start gap-3 border border-emerald-400/40">
+          <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center flex-shrink-0 text-[26px]">
+            🍽️
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/25 text-white px-2 py-0.5 rounded-full">Dishes Served at Table</span>
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+            </div>
+            <h3 class="font-headline font-bold text-[16px] text-white leading-tight">Your Meal Is Served! Enjoy Your Feast</h3>
+            <p class="text-[12px] text-white/90 mt-1 leading-snug">Hot rotis, extra cold drinks, raita or chai? Use 1-tap add-ons below or call server anytime. Your order remains open!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Kitchen Status Tracker Card -->
+      <div class="px-margin mt-3">
+        <div class="bg-surface-container-lowest border border-surface-container rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-surface-container">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-[22px]">timer</span>
+              <div>
+                <span class="font-headline font-bold text-[15px] text-on-surface block leading-tight">Kitchen Cooking Status</span>
+                <span class="text-[11px] text-secondary">Table #<span class="font-bold text-on-surface" id="conf-table-badge">04</span> &bull; <span id="ticket-number-display" class="font-mono">#TKT-0000</span></span>
+              </div>
+            </div>
+            <span class="text-[12px] font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed transition-colors" id="status-chip-text">Cooking In Kitchen 🔥</span>
+          </div>
+
+          <!-- Stepper Timeline -->
+          <div class="relative flex items-center justify-between px-2 pt-2 pb-1">
+            <div class="absolute left-6 right-6 top-5 h-0.5 bg-surface-container-high z-0"></div>
+            <div id="timeline-progress-bar" class="absolute left-6 top-5 h-0.5 bg-primary z-0 transition-all duration-500" style="width: 50%;"></div>
+
+            <!-- Step 1: Received -->
+            <div class="relative z-10 flex flex-col items-center">
+              <div id="step-recv-dot" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">done</span>
+              </div>
+              <span class="text-[11px] font-bold text-on-surface mt-1.5">Received</span>
+            </div>
+
+            <!-- Step 2: In Prep -->
+            <div class="relative z-10 flex flex-col items-center">
+              <div id="step-prep-dot" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors">
+                <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
+              </div>
+              <span class="text-[11px] font-bold text-primary mt-1.5">In Kitchen</span>
+            </div>
+
+            <!-- Step 3: Plating/Serving -->
+            <div class="relative z-10 flex flex-col items-center">
+              <div id="step-served-dot" class="w-8 h-8 rounded-full bg-surface-container text-secondary flex items-center justify-center text-[14px] font-bold transition-colors">
+                <span class="material-symbols-outlined text-[16px]">dinner_dining</span>
+              </div>
+              <span class="text-[11px] text-secondary mt-1.5" id="step-served-label">Serving</span>
+            </div>
+          </div>
+
+          <!-- Time info & demo status advance -->
+          <div class="mt-3 pt-2.5 border-t border-surface-container/60 flex items-center justify-between text-[11px] text-secondary">
+            <span id="prep-time-estimate-text">Estimated prep: ~18-22 mins</span>
+            <button onclick="advanceDemoStatus()" class="text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
+              <span>Advance Status (Demo)</span>
+              <span class="material-symbols-outlined text-[12px]">fast_forward</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Add-Ons for Your Table Section (1-Tap Fast Add) -->
+      <div class="px-margin mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="font-headline font-bold text-[15px] text-on-surface flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-amber-500 text-[18px]">bolt</span>
+              <span id="addon-section-title">Need Extra Items While Waiting?</span>
+            </h3>
+            <p class="text-[11px] text-secondary" id="addon-section-subtitle">Tap any item to add directly to your kitchen order</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <!-- Add-on 1: Garam Roghni Naan -->
+          <button onclick="addQuickAddonToActiveOrder('Sesame Roghni Naan', 140, 'rice_naan')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">🫓</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Roghni Naan</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 140</span>
+          </button>
+
+          <!-- Add-on 2: Garlic Butter Naan -->
+          <button onclick="addQuickAddonToActiveOrder('Garlic Butter Naan', 160, 'rice_naan')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">🧄</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Garlic Naan</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 160</span>
+          </button>
+
+          <!-- Add-on 3: Mineral Water -->
+          <button onclick="addQuickAddonToActiveOrder('Chilled Mineral Water', 90, 'drinks_meetha')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">💧</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Mineral Water</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 90</span>
+          </button>
+
+          <!-- Add-on 4: Fresh Raita & Salad -->
+          <button onclick="addQuickAddonToActiveOrder('Fresh Raita & Salad', 120, 'rice_naan')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">🥣</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Raita &amp; Salad</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 120</span>
+          </button>
+
+          <!-- Add-on 5: Sweet Lassi -->
+          <button onclick="addQuickAddonToActiveOrder('Kulhad Makhni Sweet Lassi', 290, 'drinks_meetha')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">🥛</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Sweet Lassi</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 290</span>
+          </button>
+
+          <!-- Add-on 6: Mint Margarita -->
+          <button onclick="addQuickAddonToActiveOrder('Peshawari Mint Margarita', 260, 'drinks_meetha')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">🍋</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Mint Cooler</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 260</span>
+          </button>
+
+          <!-- Add-on 7: Matka Chai -->
+          <button onclick="addQuickAddonToActiveOrder('Doodh Patti Karak Matka Chai', 180, 'drinks_meetha')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">☕</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Matka Chai</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 180</span>
+          </button>
+
+          <!-- Add-on 8: Gulab Jamun Dessert -->
+          <button onclick="addQuickAddonToActiveOrder('Shahi Gulab Jamun (2 pcs)', 220, 'drinks_meetha')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
+            <div class="flex items-center justify-between w-full mb-1">
+              <span class="text-[20px]">🍨</span>
+              <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
+            </div>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">Gulab Jamun</span>
+            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. 220</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Calling Table Services Grid (1-Tap Direct Calls) -->
+      <div class="px-margin mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="font-headline font-bold text-[15px] text-on-surface flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">room_service</span>
+              <span>Calling Service &amp; Table Care</span>
+            </h3>
+            <p class="text-[11px] text-secondary">Instant notification sent to your assigned floor server</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <!-- Service 1: Cold Water Refill -->
+          <button onclick="sendWaiterRequest('💧 Cold Water Refill')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
+            <span class="text-[20px] mb-1">💧</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Water Refill</span>
+          </button>
+
+          <!-- Service 2: Extra Cutlery & Plates -->
+          <button onclick="sendWaiterRequest('🥢 Extra Cutlery & Plates')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
+            <span class="text-[20px] mb-1">🥢</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Extra Cutlery</span>
+          </button>
+
+          <!-- Service 3: Tissue & Napkins -->
+          <button onclick="sendWaiterRequest('🧻 Napkins / Tissue')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
+            <span class="text-[20px] mb-1">🧻</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Napkins</span>
+          </button>
+
+          <!-- Service 4: Clean & Wipe Table -->
+          <button onclick="sendWaiterRequest('🧹 Clean / Wipe Table')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
+            <span class="text-[20px] mb-1">🧹</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Clean Table</span>
+          </button>
+
+          <!-- Service 5: Call Waiter -->
+          <button onclick="openWaiterModal()" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
+            <span class="text-[20px] mb-1">🔔</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Call Waiter</span>
+          </button>
+
+          <!-- Service 6: Request Physical Bill -->
+          <button onclick="requestPhysicalBill()" id="btn-quick-bring-bill" class="bg-amber-50 border border-amber-300 hover:border-amber-400 p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
+            <span class="text-[20px] mb-1">🧾</span>
+            <span class="font-bold text-[11px] text-amber-900 group-hover:text-amber-950 leading-tight">Bring Bill</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons Bar: Order More Items & Call Waiter -->
+      <div class="px-margin mt-4 grid grid-cols-2 gap-2.5">
+        <!-- Order More Items Action Button -->
+        <button onclick="orderMoreItems()" class="py-3.5 px-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-[14px] flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(172,45,0,0.28)] hover:brightness-105 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[20px]">add_circle</span>
+          <span>Order Full Dishes</span>
+        </button>
+
+        <!-- Call Waiter Button -->
+        <button onclick="openWaiterModal()" class="py-3.5 px-3 rounded-2xl bg-surface-container-lowest border border-surface-container font-headline font-bold text-[14px] text-on-surface hover:text-primary hover:border-primary flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[20px] text-primary">notifications_active</span>
+          <span>Call Waiter</span>
+        </button>
+      </div>
+
+      <!-- Itemized Table Order Breakdown (Receipt Style) -->
+      <div class="px-margin mt-4 mb-6">
+        <div class="bg-surface-container-lowest border border-surface-container rounded-2xl p-4 shadow-sm" id="printable-ticket">
+          <div class="flex items-center justify-between pb-3 border-b border-surface-container">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] uppercase tracking-wider text-secondary font-bold block">Current Table Tab</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> Open Tab
+                </span>
+              </div>
+              <span class="font-headline font-bold text-[16px] text-on-surface" id="ticket-table-val">Table 04 (Main Hall)</span>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] text-secondary block" id="ticket-time-val">12:30 PM</span>
+              <span class="text-[11px] font-semibold text-primary" id="ticket-pay-val">Pay Cash at Table</span>
+            </div>
+          </div>
+
+          <!-- Items list -->
+          <div class="py-2.5 flex flex-col gap-1.5" id="ticket-items-list">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Total due -->
+          <div class="pt-3 border-t border-surface-container flex items-center justify-between">
+            <span class="font-headline font-bold text-[15px] text-on-surface">Total Due (Incl. 5% Tax):</span>
+            <span class="font-headline font-bold text-[18px] text-primary" id="ticket-total-val">Rs. 0</span>
+          </div>
+
+          <div class="mt-3 pt-2.5 border-t border-surface-container flex items-center justify-between text-[11px] text-secondary">
+            <span>Diner: <strong class="text-on-surface" id="ticket-guest-val">Guest</strong></span>
+            <button onclick="requestPhysicalBill()" id="btn-request-bill-tab" class="text-primary font-bold hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+              <span id="btn-request-bill-tab-label">Request Physical Bill</span>
+            </button>
+          </div>
+
+          <div class="mt-2.5 p-2 rounded-xl bg-surface-container-low border border-surface-container text-center text-[10px] text-secondary">
+            🔒 Table tab remains open. You can add extra rounds or services until cleared by Cashier.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ================= FLOATING ACTION CART BAR ================= -->
+  <div id="floating-cart-bar" class="fixed bottom-4 inset-x-0 z-40 px-margin pointer-events-none transition-all duration-300 transform translate-y-24 opacity-0 pb-safe">
+    <div class="max-w-xl mx-auto pointer-events-auto">
+      <button onclick="switchView('cart')" class="w-full bg-primary text-on-primary py-3.5 px-4 rounded-2xl shadow-[0_8px_30px_rgba(172,45,0,0.45)] flex items-center justify-between border border-white/20 active:scale-[0.98] transition-transform">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-[14px]">
+            <span id="float-cart-qty">0</span>
+          </div>
+          <div class="text-left leading-tight">
+            <span class="block text-[11px] uppercase tracking-wider text-white/80 font-medium">Table <span id="float-cart-table">04</span> Order</span>
+            <span class="font-headline font-bold text-[15px]" id="float-cart-total">Rs. 0</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 font-bold text-[13px] bg-white/20 px-3.5 py-1.5 rounded-xl shadow-xs">
+          <span id="float-cart-cta-text">View Basket</span>
+          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ================= DISH DETAIL & CUSTOMIZATION MODAL ================= -->
+  <div id="dish-detail-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex-col justify-end">
+    <div class="w-full max-w-xl mx-auto bg-surface rounded-t-3xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl animate-slide-up flex flex-col">
+      
+      <!-- Modal Header Bar -->
+      <div class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md px-margin py-3 flex items-center justify-between border-b border-surface-container">
+        <span class="font-headline font-bold text-[16px] text-on-surface">Dish Customization</span>
+        <button onclick="closeDishDetail()" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface transition-colors" type="button">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Dish Image & Glance Cards -->
+      <div class="p-margin flex flex-col items-center">
+        
+        <!-- Circular Hero Plate Stage -->
+        <div class="relative w-56 h-56 sm:w-64 sm:h-64 my-1 flex items-center justify-center">
+          <div class="relative w-52 h-52 sm:w-60 sm:h-60 rounded-full overflow-hidden shadow-xl ring-4 ring-surface-container-lowest">
+            <img id="modal-dish-img" class="w-full h-full object-cover" alt="Dish photo" src=""/>
+          </div>
+          <div class="absolute -bottom-1 right-2 bg-surface-container-lowest px-3 py-1 rounded-full shadow-md text-on-surface font-semibold text-[11px] flex items-center gap-1">
+            <span class="material-symbols-outlined text-tertiary text-[14px]">schedule</span>
+            <span id="modal-dish-time">20 min</span>
+          </div>
+        </div>
+
+        <!-- Title, Badges & Description -->
+        <div class="w-full mt-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-headline font-bold text-[22px] text-on-surface leading-snug" id="modal-dish-title">Dish Title</h2>
+            <span class="font-headline font-bold text-[22px] text-primary" id="modal-dish-price">$0.00</span>
+          </div>
+          <p class="text-[13px] text-secondary mt-1 leading-relaxed" id="modal-dish-desc">Savory dish description...</p>
+        </div>
+
+        <!-- Nutrition Glance Badges -->
+        <div class="w-full mt-3 grid grid-cols-3 gap-2">
+          <div class="bg-surface-container-lowest p-2 rounded-xl text-center shadow-sm">
+            <span class="text-[10px] text-secondary block font-medium">Calories</span>
+            <span class="font-headline font-bold text-[13px] text-on-surface" id="modal-dish-cals">520 kcal</span>
+          </div>
+          <div class="bg-surface-container-lowest p-2 rounded-xl text-center shadow-sm">
+            <span class="text-[10px] text-secondary block font-medium">Protein</span>
+            <span class="font-headline font-bold text-[13px] text-on-surface" id="modal-dish-protein">34g</span>
+          </div>
+          <div class="bg-surface-container-lowest p-2 rounded-xl text-center shadow-sm">
+            <span class="text-[10px] text-secondary block font-medium">Dietary</span>
+            <span class="font-headline font-bold text-[13px] text-primary" id="modal-dish-diet">Fresh</span>
+          </div>
+        </div>
+
+        <!-- Portion Size Options -->
+        <div class="w-full mt-4">
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1.5">Choose Serving Size</label>
+          <div class="grid grid-cols-2 gap-2" id="modal-size-container">
+            <!-- Dynamically populated per dish (e.g. Half kg vs Full kg) -->
+          </div>
+        </div>
+
+        <!-- Desi Mirch / Spice Preference -->
+        <div class="w-full mt-4">
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1.5">Desi Mirch &amp; Spice Level</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selectSpice('Normal 🍃', this)" type="button" class="spice-btn py-2 px-2 rounded-xl border border-surface-container bg-surface-container-lowest text-[12px] font-semibold text-secondary hover:text-on-surface text-center">
+              Normal 🍃
+            </button>
+            <button onclick="selectSpice('Chatpata 🌶️', this)" type="button" class="spice-btn active py-2 px-2 rounded-xl border-2 border-primary bg-primary/5 text-[12px] font-bold text-primary text-center">
+              Chatpata 🌶️
+            </button>
+            <button onclick="selectSpice('Tez Desi Mirch 🔥', this)" type="button" class="spice-btn py-2 px-2 rounded-xl border border-surface-container bg-surface-container-lowest text-[12px] font-semibold text-secondary hover:text-on-surface text-center">
+              Tez Mirch 🔥
+            </button>
+          </div>
+        </div>
+
+        <!-- Add-Ons & Extras (Upsells) -->
+        <div class="w-full mt-4 hidden" id="modal-addons-section">
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1.5">Add-Ons &amp; Extras</label>
+          <div class="space-y-1.5" id="modal-addons-container">
+            <!-- Dynamically populated from dish.addons -->
+          </div>
+        </div>
+
+        <!-- Special Item Note -->
+        <div class="w-full mt-4" id="modal-note-section">
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1">Special Cooking Instructions</label>
+          <input id="modal-dish-note" type="text" placeholder="e.g. No onions, sauce on side, extra crispy" class="w-full bg-surface-container-lowest border border-surface-container rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
+        </div>
+
+        <!-- Stepper & Add to Order Bar -->
+        <div class="w-full mt-5 pt-3 border-t border-surface-container flex items-center gap-3">
+          <!-- Stepper -->
+          <div class="flex items-center bg-surface-container-low rounded-full p-1 border border-surface-container">
+            <button onclick="adjustModalQty(-1)" class="w-9 h-9 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center text-on-surface active:scale-90 transition-transform">
+              <span class="material-symbols-outlined text-[18px]">remove</span>
+            </button>
+            <span id="modal-qty-val" class="w-8 text-center font-bold text-[15px]">1</span>
+            <button onclick="adjustModalQty(1)" class="w-9 h-9 rounded-full bg-primary text-on-primary shadow-sm flex items-center justify-center active:scale-90 transition-transform">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+            </button>
+          </div>
+
+          <!-- Add Button -->
+          <button id="modal-add-btn" onclick="commitModalToCart()" class="flex-1 py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-between shadow-[0_4px_16px_rgba(172,45,0,0.28)] hover:brightness-105 active:scale-95 transition-all">
+            <span>Add to Table Order</span>
+            <span id="modal-add-total">$0.00</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ================= TABLE BINDING SWITCHER MODAL ================= -->
+  <div id="table-switcher-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-margin">
+    <div class="w-full max-w-sm bg-surface rounded-2xl p-5 shadow-2xl animate-fade-in flex flex-col">
+      <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">table_restaurant</span>
+          <h3 class="font-headline font-bold text-[16px] text-on-surface">Select Dining Table</h3>
+        </div>
+        <button onclick="closeTableModal()" class="text-secondary hover:text-on-surface">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <p class="text-[12px] text-secondary mt-2">QR codes automatically bind to your table. You can also manually switch tables below:</p>
+
+      <!-- Section Filter Pills -->
+      <div class="flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-none" id="customer-table-sections">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Pre-set Tables Grid -->
+      <div class="grid grid-cols-4 gap-2 my-2 max-h-48 overflow-y-auto pr-1" id="customer-tables-grid">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <!-- Custom Number Input -->
+      <div class="flex items-center gap-2 mt-1">
+        <input id="custom-table-input" type="number" min="1" max="99" placeholder="Custom Table #" class="flex-1 bg-surface-container-low border border-surface-container rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none"/>
+        <button onclick="applyCustomTable()" class="px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-[13px]">Set</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= CALL WAITER / SERVICE MODAL ================= -->
+  <div id="waiter-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-margin">
+    <div class="w-full max-w-sm bg-surface rounded-2xl p-5 shadow-2xl animate-fade-in flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-2 border-b border-surface-container sticky top-0 bg-surface z-10">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">notifications_active</span>
+          <div>
+            <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight">Call Server to Table</h3>
+            <span class="text-[11px] text-secondary">Table <span id="waiter-modal-table" class="font-bold text-on-surface">04</span></span>
+          </div>
+        </div>
+        <button onclick="closeWaiterModal()" class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <p class="text-[12px] text-secondary mt-2 mb-1">Tap any option to alert staff. Food &amp; drinks will automatically add to your table order:</p>
+
+      <div class="grid grid-cols-2 gap-2 my-2">
+        <!-- 1. Mineral Water -->
+        <button onclick="sendServiceAction('Chilled Mineral Water', 90, 'drinks_meetha')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="text-[22px]">💧</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Mineral Water</span>
+          <span class="text-[10px] text-primary font-mono font-bold">+ Rs. 90</span>
+        </button>
+
+        <!-- 2. Garam Roti / Naan -->
+        <button onclick="sendServiceAction('Garam Roghni Naan', 140, 'rice_naan')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="text-[22px]">🫓</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Garam Roti / Naan</span>
+          <span class="text-[10px] text-primary font-mono font-bold">+ Rs. 140</span>
+        </button>
+
+        <!-- 3. Fresh Raita -->
+        <button onclick="sendServiceAction('Fresh Zeera Raita', 80, 'rice_naan')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="text-[22px]">🥣</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Fresh Raita</span>
+          <span class="text-[10px] text-primary font-mono font-bold">+ Rs. 80</span>
+        </button>
+
+        <!-- 4. Fresh Salad -->
+        <button onclick="sendServiceAction('Fresh Green Salad', 80, 'rice_naan')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="text-[22px]">🥗</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Fresh Salad</span>
+          <span class="text-[10px] text-primary font-mono font-bold">+ Rs. 80</span>
+        </button>
+
+        <!-- 5. Tea -->
+        <button onclick="sendServiceAction('Doodh Patti Karak Chai', 180, 'drinks_meetha')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="text-[22px]">☕</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Tea (Matka Chai)</span>
+          <span class="text-[10px] text-primary font-mono font-bold">+ Rs. 180</span>
+        </button>
+
+        <!-- 6. Dessert -->
+        <button onclick="sendServiceAction('Shahi Gulab Jamun (2 pcs)', 220, 'drinks_meetha')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="text-[22px]">🍨</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Dessert (Meetha)</span>
+          <span class="text-[10px] text-primary font-mono font-bold">+ Rs. 220</span>
+        </button>
+
+        <!-- 7. Tissue Paper -->
+        <button onclick="sendServiceAction('Tissue Paper / Napkins', 0, 'service')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="material-symbols-outlined text-[24px] text-neutral-600">dry_cleaning</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Tissue Paper</span>
+          <span class="text-[10px] text-secondary">Free Service</span>
+        </button>
+
+        <!-- 8. Extra Cutlery -->
+        <button onclick="sendServiceAction('Extra Cutlery & Plates', 0, 'service')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="material-symbols-outlined text-[24px] text-orange-600">flatware</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Extra Cutlery</span>
+          <span class="text-[10px] text-secondary">Free Service</span>
+        </button>
+
+        <!-- 9. Bring Bill -->
+        <button onclick="sendServiceAction('Bring Cash Bill to Table', 0, 'service')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="material-symbols-outlined text-[24px] text-emerald-600">receipt_long</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Bring Bill</span>
+          <span class="text-[10px] text-secondary">Cash / Card</span>
+        </button>
+
+        <!-- 10. Clear Table -->
+        <button onclick="sendServiceAction('Clear Used Plates & Clean', 0, 'service')" class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center">
+          <span class="material-symbols-outlined text-[24px] text-blue-600">cleaning_services</span>
+          <span class="text-[12px] font-bold text-on-surface leading-tight">Clear Table</span>
+          <span class="text-[10px] text-secondary">Free Service</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- ================= BILL SETTLED & THANK YOU MODAL ================= -->
+  <div id="bill-settled-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-margin">
+    <div class="w-full max-w-sm bg-surface rounded-3xl p-6 shadow-2xl animate-fade-in flex flex-col items-center text-center">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+        <span class="material-symbols-outlined text-[36px]">verified</span>
+      </div>
+      <span class="text-[11px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full mb-1">Payment Confirmed</span>
+      <h3 class="font-headline font-bold text-[20px] text-on-surface">Bill Settled by Server!</h3>
+      <p class="text-[12px] text-secondary mt-1">Your cash payment for <span id="settled-table-name" class="font-bold text-on-surface">Table 04</span> has been confirmed by staff.</p>
+
+      <!-- 5-Star Feedback Form -->
+      <div class="w-full bg-surface-container-low rounded-2xl p-4 my-4">
+        <p class="text-[12px] font-semibold text-on-surface mb-2">How was your culinary experience?</p>
+        <div class="flex items-center justify-center gap-1.5 text-tertiary">
+          <button onclick="rateDining(1)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button onclick="rateDining(2)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button onclick="rateDining(3)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button onclick="rateDining(4)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button onclick="rateDining(5)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+        </div>
+        <span id="rating-feedback-label" class="text-[11px] text-secondary mt-1 block">Tap stars to rate</span>
+      </div>
+
+      <button onclick="closeSettledModalAndReset()" class="w-full py-3.5 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
+        Start New Dining Order
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION ================= -->
+  <div id="toast" class="fixed top-5 inset-x-0 z-50 flex justify-center pointer-events-none transition-all duration-300 opacity-0 -translate-y-4">
+    <div class="bg-on-surface text-surface px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-[13px] font-semibold max-w-sm pointer-events-auto">
+      <span class="material-symbols-outlined text-[18px] text-emerald-400" id="toast-icon">check_circle</span>
+      <span id="toast-message">Message here</span>
+    </div>
+  </div>
+
+
+  <!-- ================= APPLICATION LOGIC SCRIPT ================= -->
+  <script>
+    function getApiBase() {
+      return (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
+    }
+
+    // --- 1. DATA REPOSITORY ---
+    let DISH_CATALOG = [
+      {
+        id: 1,
+        title: "Chicken Makhni Karahi",
+        category: "karahi",
+        station: "karahi",
+        price: 1250,
+        rating: 4.9,
+        prepTime: "20-25 min",
+        calories: "680 kcal",
+        protein: "48g",
+        dietary: "Desi Makhan & Tomatoes",
+        isSpicy: true,
+        isChef: true,
+        desc: "Fresh tender chicken simmered in a traditional clay handi with ripe Sindh tomatoes, freshly pounded ginger juliennes, green chilies, and authentic Desi Makhan.",
+        image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Half (0.5 kg)", extra: 0, desc: "Serves 1-2 persons" },
+          { name: "Full (1.0 kg)", extra: 1100, desc: "Serves 3-4 persons" }
+        ]
+      },
+      {
+        id: 2,
+        title: "Mutton Shinwari Karahi",
+        category: "karahi",
+        station: "karahi",
+        price: 1850,
+        rating: 5.0,
+        prepTime: "30-35 min",
+        calories: "790 kcal",
+        protein: "54g",
+        dietary: "KPK Tribal Special",
+        isSpicy: false,
+        isChef: true,
+        desc: "Pure Peshawari Shinwari style fresh young mutton cooked in its own natural fat, coarse sea salt, black pepper, and whole tomatoes. No onions.",
+        image: "https://images.unsplash.com/photo-1545247181-516773cae754?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Half (0.5 kg)", extra: 0, desc: "Serves 1-2 persons" },
+          { name: "Full (1.0 kg)", extra: 1650, desc: "Serves 3-4 persons" }
+        ]
+      },
+      {
+        id: 3,
+        title: "Special Chicken Dum Biryani",
+        category: "rice",
+        station: "rice_naan",
+        price: 690,
+        rating: 4.9,
+        prepTime: "10-15 min",
+        calories: "720 kcal",
+        protein: "36g",
+        dietary: "Karachi Dum Special",
+        isSpicy: true,
+        isChef: true,
+        desc: "Long-grain aged Basmati rice layered with succulent marinated chicken, saffron milk, caramelized brown onions, golden potato, and aromatic kewra.",
+        image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Single Plate", extra: 0, desc: "1 Chicken piece & Aloo" },
+          { name: "Double Special", extra: 560, desc: "2 Chicken pieces & Double Rice" }
+        ]
+      },
+      {
+        id: 4,
+        title: "Reshmi Chicken Malai Boti",
+        category: "bbq",
+        station: "bbq",
+        price: 780,
+        rating: 4.8,
+        prepTime: "18-20 min",
+        calories: "510 kcal",
+        protein: "44g",
+        dietary: "Melt-In-Mouth BBQ",
+        isSpicy: false,
+        isChef: false,
+        desc: "Boneless chicken cubes marinated overnight in heavy cream, green cardamom, yogurt, white pepper, grilled slowly over glowing charcoal embers.",
+        image: "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Single Plate (8 pcs)", extra: 0, desc: "With Mint Raita" },
+          { name: "Double Platter (16 pcs)", extra: 720, desc: "Feast portion" }
+        ]
+      },
+      {
+        id: 5,
+        title: "Peshawari Beef Chapli Kabab",
+        category: "bbq",
+        station: "bbq",
+        price: 650,
+        rating: 4.9,
+        prepTime: "15-20 min",
+        calories: "640 kcal",
+        protein: "46g",
+        dietary: "Khyber Heritage",
+        isSpicy: true,
+        isChef: false,
+        desc: "Crisp outer crust beef patties blended with crushed coriander seeds, pomegranate anardana, fresh tomato slices, and fried in pure tallow.",
+        image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Standard (2 Kababs)", extra: 0, desc: "With Onion Salad" },
+          { name: "Family (4 Kababs)", extra: 600, desc: "Great for sharing" }
+        ]
+      },
+      {
+        id: 6,
+        title: "Mutton Seekh Kabab",
+        category: "bbq",
+        station: "bbq",
+        price: 980,
+        rating: 4.8,
+        prepTime: "15-18 min",
+        calories: "580 kcal",
+        protein: "42g",
+        dietary: "Charcoal Smoked",
+        isSpicy: true,
+        isChef: false,
+        desc: "Finely minced prime mutton infused with raw papaya, roasted gram flour, fresh mint, and toasted garam masala char-grilled on seekh rods.",
+        image: "https://images.unsplash.com/photo-1628294895950-9805252327bc?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Order of 4", extra: 0, desc: "Served on hot onions" },
+          { name: "Order of 8", extra: 900, desc: "Sharing platter" }
+        ]
+      },
+      {
+        id: 7,
+        title: "Sesame Roghni Naan",
+        category: "naan",
+        station: "rice_naan",
+        price: 140,
+        rating: 4.9,
+        prepTime: "5-7 min",
+        calories: "260 kcal",
+        protein: "8g",
+        dietary: "Clay Oven Tandoor",
+        isSpicy: false,
+        isChef: false,
+        desc: "Pillowy soft traditional leavened flatbread brushed with pure desi ghee, milk wash, and sprinkled generously with toasted white sesame seeds.",
+        image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Single Naan", extra: 0, desc: "Fresh from Tandoor" },
+          { name: "Basket of 4", extra: 400, desc: "4 Fresh Naans" }
+        ]
+      },
+      {
+        id: 8,
+        title: "Garlic Butter Naan",
+        category: "naan",
+        station: "rice_naan",
+        price: 160,
+        rating: 4.8,
+        prepTime: "5-7 min",
+        calories: "280 kcal",
+        protein: "8g",
+        dietary: "Garlic & Desi Makhan",
+        isSpicy: false,
+        isChef: false,
+        desc: "Artisanal tandoori naan infused with minced roasted garlic, fresh green coriander leaves, and topped with melted butter.",
+        image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Single Naan", extra: 0, desc: "Golden crust" },
+          { name: "Basket of 4", extra: 450, desc: "4 Garlic Naans" }
+        ]
+      },
+      {
+        id: 9,
+        title: "Kulhad Makhni Sweet Lassi",
+        category: "drinks",
+        station: "drinks_meetha",
+        price: 290,
+        rating: 4.9,
+        prepTime: "5 min",
+        calories: "320 kcal",
+        protein: "10g",
+        dietary: "Traditional Yogurt",
+        isSpicy: false,
+        isChef: false,
+        desc: "Thick, creamy churned Punjab yogurt drink served ice-cold in rustic earthenware kulhad, crowned with a thick layer of fresh clotted malai.",
+        image: "https://images.unsplash.com/photo-1571006682878-3a25d2b79a51?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Standard Kulhad", extra: 0, desc: "Topped with Balooshahi Malai" },
+          { name: "Jumbo Pitcher", extra: 480, desc: "Serves 3-4" }
+        ]
+      },
+      {
+        id: 10,
+        title: "Peshawari Mint Margarita",
+        category: "drinks",
+        station: "drinks_meetha",
+        price: 260,
+        rating: 4.8,
+        prepTime: "4 min",
+        calories: "110 kcal",
+        protein: "1g",
+        dietary: "Digestive Cooler",
+        isSpicy: false,
+        isChef: false,
+        desc: "Refreshing cooler crafted with garden-fresh mint leaves, squeezed lemons, Kala Namak (black rock salt), and sparkling soda over crushed ice.",
+        image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Chilled Glass", extra: 0, desc: "Crushed ice" },
+          { name: "Pitcher (1L)", extra: 440, desc: "Great for table" }
+        ]
+      },
+      {
+        id: 11,
+        title: "Hot Gulab Jamun With Shahi Rabri",
+        category: "meetha",
+        station: "drinks_meetha",
+        price: 340,
+        rating: 5.0,
+        prepTime: "5 min",
+        calories: "420 kcal",
+        protein: "9g",
+        dietary: "Warm Desi Meetha",
+        isSpicy: false,
+        isChef: true,
+        desc: "Golden fried khoya dumplings soaked in fragrant cardamom & saffron sugar syrup, served piping hot over chilled thick pistachio-slivered rabri.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "2 Pieces + Rabri", extra: 0, desc: "Served steaming hot" },
+          { name: "Family Bowl (6 pcs)", extra: 620, desc: "Generous Shahi Rabri" }
+        ]
+      },
+      {
+        id: 12,
+        title: "Doodh Patti Karak Matka Chai",
+        category: "drinks",
+        station: "drinks_meetha",
+        price: 180,
+        rating: 5.0,
+        prepTime: "8 min",
+        calories: "160 kcal",
+        protein: "5g",
+        dietary: "Strong Pakistani Tea",
+        isSpicy: false,
+        isChef: false,
+        desc: "Slow-simmered whole milk brewed with premium black tea leaves, crushed green cardamom pods, and caramelized brown sugar served in hot clay matka.",
+        image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80",
+        sizeOptions: [
+          { name: "Single Matka Cup", extra: 0, desc: "Clay cup" },
+          { name: "Thermos Pot (3 cups)", extra: 320, desc: "For the table" }
+        ]
+      }
+    ];
+
+    // Currency Formatting Utility
+    function formatPrice(amt) {
+      return 'Rs. ' + Math.round(amt).toLocaleString();
+    }
+
+    // --- 2. MULTI-CHANNEL SYNC ENGINE (SSE + HTTP Broadcast + BroadcastChannel + localStorage Event Bus + Storage Event + Polling) ---
+    const PosSync = {
+      channel: (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('gourmet_pos_sync') : null,
+      listeners: [],
+      lastEventId: null,
+      eventSource: null,
+
+      init(handler) {
+        if (handler) this.listeners.push(handler);
+
+        // 1. Connect to Server-Sent Events (SSE) for instant cross-tab / cross-device sync
+        try {
+          this.eventSource = new EventSource(`${getApiBase()}/api/events`);
+          this.eventSource.onmessage = (e) => {
+            try {
+              const data = JSON.parse(e.data);
+              if (data && data.eventId !== this.lastEventId) {
+                this.lastEventId = data.eventId;
+                this.dispatch(data);
+              }
+            } catch (err) {}
+          };
+          this.eventSource.onerror = () => {
+            if (this.eventSource) this.eventSource.close();
+          };
+        } catch (e) {
+          console.warn('SSE connection skipped:', e);
+        }
+
+        // 2. BroadcastChannel
+        if (this.channel) {
+          this.channel.onmessage = (e) => {
+            if (e.data && e.data.eventId !== this.lastEventId) {
+              this.lastEventId = e.data.eventId;
+              this.dispatch(e.data);
+            }
+          };
+        }
+
+        // 3. Storage event
+        window.addEventListener('storage', (e) => {
+          if (e.key === 'gourmet_sync_event' && e.newValue) {
+            try {
+              const data = JSON.parse(e.newValue);
+              if (data && data.eventId !== this.lastEventId) {
+                this.lastEventId = data.eventId;
+                this.dispatch(data);
+              }
+            } catch (err) {}
+          }
+        });
+
+        // 4. Polling interval fallback for isolated file:/// origins
+        setInterval(() => {
+          try {
+            const raw = localStorage.getItem('gourmet_sync_event');
+            if (raw) {
+              const data = JSON.parse(raw);
+              if (data && data.eventId !== this.lastEventId) {
+                this.lastEventId = data.eventId;
+                this.dispatch(data);
+              }
+            }
+          } catch (err) {}
+        }, 800);
+      },
+
+      emit(data) {
+        const eventId = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        const payload = { ...data, eventId, _sentAt: Date.now() };
+        this.lastEventId = eventId;
+
+        // 1. Post to Server via getApiBase()
+        try {
+          fetch(`${getApiBase()}/api/broadcast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch((err) => {
+            console.warn('PosSync emit fetch failed:', err);
+          });
+        } catch (err) {}
+
+        // 2. Post to BroadcastChannel
+        try {
+          if (this.channel) this.channel.postMessage(payload);
+        } catch (err) {}
+
+        // 3. Write to localStorage event bus
+        try {
+          localStorage.setItem('gourmet_sync_event', JSON.stringify(payload));
+        } catch (err) {}
+      },
+
+      dispatch(data) {
+        this.listeners.forEach(fn => {
+          try { fn(data); } catch (err) { console.error('Sync listener error:', err); }
+        });
+      }
+    };
+
+    let soldOutSet = new Set(JSON.parse(localStorage.getItem('gourmet_86_items') || '[]'));
+
+    let appState = {
+      tableNumber: "04",
+      tableZone: "Main Hall",
+      activeCategory: "all",
+      filterSpicyOnly: false,
+      searchQuery: "",
+      cart: [],
+      splitGuests: 2,
+      paymentMethod: "cash_table",
+      currentTicket: null,
+      activeModalDish: null,
+      modalQty: 1,
+      modalExtraPrice: 0,
+      modalSpice: "Medium 🌶️"
+    };
+
+    // Dynamic Ticket Status Visual Updater
+    function applyTicketStatusUI(status) {
+      if (!appState.currentTicket) return;
+      const curStatus = status || appState.currentTicket.status || 'New';
+      appState.currentTicket.status = curStatus;
+
+      const chip = document.getElementById('status-chip-text');
+      const bar = document.getElementById('timeline-progress-bar');
+      const prepDot = document.getElementById('step-prep-dot');
+      const servedDot = document.getElementById('step-served-dot');
+      const servedLabel = document.getElementById('step-served-label');
+      const celebrationBanner = document.getElementById('served-celebration-banner');
+      const prepTimeText = document.getElementById('prep-time-estimate-text');
+      const addonTitle = document.getElementById('addon-section-title');
+      const addonSub = document.getElementById('addon-section-subtitle');
+      const bannerStatus = document.getElementById('banner-status-text');
+      const bannerSub = document.getElementById('banner-status-sub');
+      const bannerTkt = document.getElementById('banner-tkt-id');
+
+      if (bannerTkt) bannerTkt.textContent = appState.currentTicket.ticketId;
+
+      if (curStatus === 'Served' || curStatus === 'Plated & Ready') {
+        if (chip) {
+          chip.textContent = (curStatus === 'Served') ? "Dishes Served! 🍽️" : "Plated & Serving 🍽️";
+          chip.className = "text-[12px] font-bold text-emerald-800 px-2.5 py-1 rounded-full bg-emerald-100 transition-colors";
+        }
+        if (bar) bar.style.width = '100%';
+        if (prepDot) {
+          prepDot.className = "w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors";
+          prepDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span>';
+        }
+        if (servedDot) {
+          servedDot.className = "w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors";
+          servedDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span>';
+        }
+        if (servedLabel) {
+          servedLabel.textContent = "Served";
+          servedLabel.className = "text-[11px] font-bold text-emerald-700 mt-1.5";
+        }
+        if (celebrationBanner) celebrationBanner.classList.remove('hidden');
+        if (prepTimeText) prepTimeText.textContent = "Dishes served hot at table. Tab remains open.";
+        if (addonTitle) addonTitle.textContent = "Dining Add-Ons & Extra Rounds";
+        if (addonSub) addonSub.textContent = "Hot rotis, cold drinks, raita, meetha & chai — 1 tap appends to your table tab";
+        if (bannerStatus) bannerStatus.textContent = "Dishes Served! 🍽️";
+        if (bannerSub) bannerSub.textContent = "Tap to view table tab, add items or request bill";
+      } else if (curStatus === 'In Kitchen' || curStatus === 'Cooking') {
+        if (chip) {
+          chip.textContent = "Cooking In Kitchen 🔥";
+          chip.className = "text-[12px] font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed transition-colors";
+        }
+        if (bar) bar.style.width = '50%';
+        if (prepDot) {
+          prepDot.className = "w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors";
+          prepDot.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">soup_kitchen</span>';
+        }
+        if (servedDot) {
+          servedDot.className = "w-8 h-8 rounded-full bg-surface-container text-secondary flex items-center justify-center text-[14px] font-bold transition-colors";
+          servedDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">dinner_dining</span>';
+        }
+        if (servedLabel) {
+          servedLabel.textContent = "Serving";
+          servedLabel.className = "text-[11px] text-secondary mt-1.5";
+        }
+        if (celebrationBanner) celebrationBanner.classList.add('hidden');
+        if (prepTimeText) prepTimeText.textContent = "Estimated prep: ~15-20 mins";
+        if (addonTitle) addonTitle.textContent = "Need Extra Items While Waiting?";
+        if (addonSub) addonSub.textContent = "Tap any item to add directly to your kitchen order";
+        if (bannerStatus) bannerStatus.textContent = "Cooking In Kitchen 🔥";
+        if (bannerSub) bannerSub.textContent = "Tap to track status, add items or call waiter";
+      } else {
+        // New / Received
+        if (chip) {
+          chip.textContent = "Order Received 👨‍🍳";
+          chip.className = "text-[12px] font-bold text-sky-800 px-2.5 py-1 rounded-full bg-sky-100 transition-colors";
+        }
+        if (bar) bar.style.width = '20%';
+        if (celebrationBanner) celebrationBanner.classList.add('hidden');
+        if (prepTimeText) prepTimeText.textContent = "Order received by kitchen station.";
+        if (bannerStatus) bannerStatus.textContent = "Received by Kitchen 👨‍🍳";
+        if (bannerSub) bannerSub.textContent = "Tap to track status or call waiter";
+      }
+    }
+
+    // Initialize PosSync listener
+    PosSync.init((data) => {
+      if (!data) return;
+
+      if (data.type === 'STATUS_UPDATE') {
+        const ourTable = `Table ${appState.tableNumber}`;
+        const ourNum = appState.tableNumber.toString().padStart(2, '0');
+        const isOurOrder = (appState.currentTicket && (
+          appState.currentTicket.ticketId === data.ticketId ||
+          data.table === ourTable ||
+          data.table === `Table ${ourNum}` ||
+          data.table === ourNum ||
+          data.table === appState.tableNumber
+        ));
+
+        if (isOurOrder && appState.currentTicket) {
+          appState.currentTicket.status = data.status;
+          localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
+          applyTicketStatusUI(data.status);
+          renderTicketDetails();
+
+          if (data.status === 'In Kitchen') {
+            showToast("👨‍🍳 Kitchen has started cooking your order!");
+          } else if (data.status === 'Plated & Ready' || data.status === 'Served') {
+            showToast("🍽️ Dishes are served! Enjoy your feast.");
+          }
+        }
+      } else if (data.type === 'BILL_SETTLED') {
+        const ourTable = `Table ${appState.tableNumber}`;
+        const ourNum = appState.tableNumber.toString().padStart(2, '0');
+        const eventTable = (data.table || '').trim();
+        const isMatch = (
+          eventTable === ourTable ||
+          eventTable === `Table ${ourNum}` ||
+          eventTable === ourNum ||
+          eventTable === appState.tableNumber ||
+          (appState.currentTicket && data.ticketId === appState.currentTicket.ticketId)
+        );
+
+        if (isMatch) {
+          const tableNameEl = document.getElementById('settled-table-name');
+          if (tableNameEl) tableNameEl.textContent = ourTable;
+          const modal = document.getElementById('bill-settled-modal');
+          if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+          }
+        }
+      } else if (data.type === 'ITEM_86_UPDATE') {
+        soldOutSet = new Set(data.soldOutList || []);
+        renderDishGrid();
+      } else if (data.type === 'MENU_UPDATE') {
+        loadMenuFromBackend();
+      }
+    });
+
+    // Load dynamic menu from backend REST API
+    async function loadMenuFromBackend() {
+      try {
+        const restId = appState.restaurantId || 'REST-001';
+        const res = await fetch(`${getApiBase()}/api/menu?restaurantId=${restId}`);
+        const dishes = await res.json();
+        if (Array.isArray(dishes) && dishes.length > 0) {
+          DISH_CATALOG = dishes.map(d => ({
+            id: d.id,
+            title: d.title,
+            category: (d.category === 'desserts' || d.category === 'meetha') ? 'meetha' : d.category,
+            station: d.station,
+            price: Number(d.price) || 0,
+            rating: d.rating || 4.9,
+            prepTime: d.prepTime || '15-20 min',
+            calories: d.calories || '550 kcal',
+            protein: d.protein || '35g',
+            dietary: d.dietary || 'Chef Specialty',
+            isSpicy: !!d.isSpicy,
+            isChef: !!d.isChef,
+            desc: d.desc || d.title,
+            image: d.image || 'https://images.unsplash.com/photo-1545247181-516773cae754?auto=format&fit=crop&w=800&q=80',
+            sizeOptions: d.sizeOptions || [
+              { name: "Standard Portion", extra: 0, desc: "Standard serving" }
+            ],
+            isAvailable: d.isAvailable !== false
+          }));
+
+          dishes.forEach(d => {
+            if (d.isAvailable === false) {
+              soldOutSet.add(d.id);
+            } else {
+              soldOutSet.delete(d.id);
+            }
+          });
+
+          renderDishGrid();
+          updateCartUI();
+        }
+      } catch (e) {
+        console.warn('Backend menu fetch skipped:', e);
+      }
+    }
+
+    // Periodic check for order status updates & authentic bill settlement from storage
+    setInterval(async () => {
+      try {
+        if (appState.currentTicket) {
+          const kdsData = localStorage.getItem('gourmet_kds_tickets');
+          if (kdsData) {
+            const ticketList = JSON.parse(kdsData);
+            const found = ticketList.find(t => t.ticketId === appState.currentTicket.ticketId);
+            if (found) {
+              if (found.status === 'Settled') {
+                const modal = document.getElementById('bill-settled-modal');
+                if (modal && modal.classList.contains('hidden')) {
+                  PosSync.dispatch({
+                    type: 'BILL_SETTLED',
+                    table: `Table ${appState.tableNumber}`,
+                    ticketId: found.ticketId
+                  });
+                }
+              } else if (found.status !== appState.currentTicket.status) {
+                appState.currentTicket.status = found.status;
+                localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
+                applyTicketStatusUI(found.status);
+                renderTicketDetails();
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }, 1200);
+
+    // Load persisted state or URL table param on startup
+    window.addEventListener('DOMContentLoaded', async () => {
+      initTableFromUrl();
+      loadCartFromStorage();
+      await loadActiveTicketFromStorage();
+      loadMenuFromBackend();
+      renderDishGrid();
+      updateCartUI();
+    });
+
+    function initTableFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tableParam = urlParams.get('table');
+      const modeParam = urlParams.get('mode');
+      const restParam = urlParams.get('restaurantId');
+
+      if (restParam && restParam !== 'rest-dera-01') {
+        appState.restaurantId = restParam;
+      } else {
+        appState.restaurantId = 'REST-001';
+      }
+
+      if (modeParam === 'online') {
+        appState.isOnlineOrder = true;
+        appState.tableNumber = "Online";
+        appState.tableZone = "Takeaway";
+      } else if (tableParam) {
+        appState.tableNumber = tableParam.padStart(2, '0');
+        appState.tableZone = "QR Detected";
+      }
+
+      applyTableLabels();
+      checkRestaurantSubscriptionStatus();
+    }
+
+    async function checkRestaurantSubscriptionStatus() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/public/info?restaurantId=${encodeURIComponent(appState.restaurantId)}`);
+        const data = await res.json();
+        if (data) {
+          appState.availableTables = data.tables || [];
+          appState.availableSections = data.sections || [];
+        }
+        const r = data && data.restaurant;
+        if (r) {
+          document.title = `${r.name} - Digital Menu & Ordering`;
+          const brandTitle = document.getElementById('restaurant-title-display');
+          if (brandTitle) brandTitle.textContent = r.name;
+
+          if (r.subscriptionCancelled || r.status === 'cancelled') {
+            const overlay = document.createElement('div');
+            overlay.id = 'inactive-rest-overlay';
+            overlay.className = 'fixed inset-0 bg-white/95 backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-6 text-center text-slate-800';
+            overlay.innerHTML = `
+              <div class="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-4 shadow-sm">
+                <span class="material-symbols-outlined text-[36px]">storefront</span>
+              </div>
+              <h2 class="text-[20px] font-black tracking-tight text-slate-900">${r.name}</h2>
+              <p class="text-[13px] text-slate-600 mt-2 max-w-[280px]">
+                Ordering service is temporarily inactive for this restaurant.
+              </p>
+              <p class="text-[11px] text-slate-400 mt-1">Please contact restaurant staff directly.</p>
+            `;
+            document.body.appendChild(overlay);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function applyTableLabels() {
+      const lbl = `Table ${appState.tableNumber}`;
+      document.getElementById('header-table-label').textContent = lbl;
+      document.getElementById('banner-table-title').textContent = `Dine-In • Table #${appState.tableNumber}`;
+      document.getElementById('cart-table-subtitle').textContent = `Ordering for Table #${appState.tableNumber}`;
+      document.getElementById('conf-table-badge').textContent = appState.tableNumber;
+      document.getElementById('waiter-modal-table').textContent = `Table #${appState.tableNumber}`;
+      const floatTable = document.getElementById('float-cart-table');
+      if (floatTable) floatTable.textContent = appState.tableNumber;
+    }
+
+    async function loadActiveTicketFromStorage() {
+      try {
+        const tNum = appState.tableNumber.toString().padStart(2, '0');
+        const ourTableStr = `Table ${appState.tableNumber}`;
+
+        // 1. Check dedicated localStorage key for this table
+        let savedTicket = null;
+        const activeOrderRaw = localStorage.getItem('gourmet_active_order_' + appState.tableNumber);
+        if (activeOrderRaw) {
+          try {
+            const parsed = JSON.parse(activeOrderRaw);
+            if (parsed && parsed.status !== 'Settled') {
+              savedTicket = parsed;
+            }
+          } catch (e) {}
+        }
+
+        // 2. Check floor tables in localStorage
+        if (!savedTicket) {
+          const tablesData = localStorage.getItem('gourmet_floor_tables');
+          if (tablesData) {
+            const tableList = JSON.parse(tablesData);
+            const myTable = tableList.find(t => t.id === tNum);
+            if (myTable && myTable.status === 'dining' && myTable.order) {
+              savedTicket = {
+                ticketId: myTable.order.ticketId || '#TKT-1000',
+                table: ourTableStr,
+                guest: myTable.order.guest || `Table #${appState.tableNumber} Guest`,
+                time: myTable.order.time || '12:00 PM',
+                timestamp: Date.now(),
+                payment: myTable.order.payment || 'Pay Cash at Table',
+                items: myTable.order.items || [],
+                subtotal: myTable.order.subtotal || 0,
+                total: myTable.order.total || 0,
+                status: myTable.order.status || 'In Kitchen'
+              };
+            }
+          }
+        }
+
+        // 3. Fallback: check gourmet_kds_tickets in localStorage
+        if (!savedTicket) {
+          const kdsData = localStorage.getItem('gourmet_kds_tickets');
+          if (kdsData) {
+            const kdsList = JSON.parse(kdsData);
+            const activeKds = kdsList.find(t => (t.table === ourTableStr || t.table === `Table ${tNum}`) && t.status !== 'Settled');
+            if (activeKds) {
+              savedTicket = activeKds;
+            }
+          }
+        }
+
+        // 4. Verify against backend /api/db
+        try {
+          const res = await fetch(`${getApiBase()}/api/db`);
+          if (res.ok) {
+            const db = await res.json();
+            // Check if savedTicket was settled by cashier on backend
+            if (savedTicket) {
+              const backendSettled = (db.tickets || []).find(t => t.ticketId === savedTicket.ticketId && t.status === 'Settled');
+              if (backendSettled) {
+                localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
+                savedTicket = null;
+                PosSync.dispatch({
+                  type: 'BILL_SETTLED',
+                  table: ourTableStr
+                });
+              }
+            }
+
+            // If no active local ticket, check if backend has an active unsettled ticket for this table
+            if (!savedTicket) {
+              const serverTicket = (db.tickets || []).find(t => 
+                (t.table === ourTableStr || t.table === `Table ${tNum}`) && t.status !== 'Settled'
+              );
+              if (serverTicket) {
+                savedTicket = serverTicket;
+              }
+            }
+          }
+        } catch (e) {}
+
+        // 5. If active ticket exists, restore and navigate to follow-up screen
+        if (savedTicket && savedTicket.status !== 'Settled') {
+          appState.currentTicket = savedTicket;
+          localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
+          renderTicketDetails();
+          applyTicketStatusUI(appState.currentTicket.status || 'In Kitchen');
+          switchView('confirmation');
+        }
+      } catch (e) {
+        console.error("Failed to load active ticket from storage", e);
+      }
+    }
+
+    // --- 3. VIEW ROUTING (SPA) ---
+    function switchView(viewName) {
+      ['menu', 'cart', 'confirmation'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const target = document.getElementById(`view-${viewName}`);
+      if (target) {
+        target.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Active cooking banner visibility on menu screen
+      const banner = document.getElementById('active-cooking-banner');
+      if (banner) {
+        if (viewName === 'menu' && appState.currentTicket) {
+          const tktIdEl = document.getElementById('banner-tkt-id');
+          if (tktIdEl) tktIdEl.textContent = appState.currentTicket.ticketId;
+          applyTicketStatusUI(appState.currentTicket.status);
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+
+      if (viewName === 'cart') {
+        renderCartItems();
+      }
+
+      if (viewName === 'confirmation') {
+        renderTicketDetails();
+      }
+
+      updateCartUI();
+    }
+
+    // --- 4. MENU RENDERING & FILTERING ---
+    function findDishById(dishId) {
+      if (dishId === undefined || dishId === null) return null;
+      const targetStr = String(dishId).trim().toLowerCase();
+      const targetNum = targetStr.replace(/[^0-9]/g, '');
+      return DISH_CATALOG.find(d => {
+        const dStr = String(d.id).trim().toLowerCase();
+        const dNum = dStr.replace(/[^0-9]/g, '');
+        if (dStr === targetStr) return true;
+        if (targetNum && dNum && targetNum === dNum) return true;
+        if (d.title && d.title.toLowerCase() === targetStr) return true;
+        return false;
+      }) || null;
+    }
+
+    function selectCategory(cat, btn) {
+      appState.activeCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(b => {
+        b.classList.remove('active', 'bg-primary', 'text-on-primary');
+        b.classList.add('bg-surface-container-lowest', 'text-secondary');
+      });
+      if (btn) {
+        btn.classList.add('active', 'bg-primary', 'text-on-primary');
+        btn.classList.remove('bg-surface-container-lowest', 'text-secondary');
+      }
+      renderDishGrid();
+    }
+
+    function toggleFilterDietary(type) {
+      if (type === 'spicy') {
+        appState.filterSpicyOnly = !appState.filterSpicyOnly;
+        const btn = document.getElementById('filter-spicy-btn');
+        if (appState.filterSpicyOnly) {
+          btn.classList.add('bg-primary/10', 'border-primary', 'text-primary');
+        } else {
+          btn.classList.remove('bg-primary/10', 'border-primary', 'text-primary');
+        }
+        renderDishGrid();
+      }
+    }
+
+    function handleSearch() {
+      const input = document.getElementById('search-input');
+      appState.searchQuery = input.value.trim().toLowerCase();
+      const clearBtn = document.getElementById('search-clear-btn');
+      if (appState.searchQuery) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      renderDishGrid();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      appState.searchQuery = '';
+      document.getElementById('search-clear-btn').classList.add('hidden');
+      renderDishGrid();
+    }
+
+    function renderDishGrid() {
+      const grid = document.getElementById('dish-grid-container');
+      const filtered = DISH_CATALOG.filter(dish => {
+        const matchesCategory = (appState.activeCategory === 'all') || 
+          (dish.category === appState.activeCategory) || 
+          ((appState.activeCategory === 'meetha' || appState.activeCategory === 'desserts') && (dish.category === 'meetha' || dish.category === 'desserts'));
+        const matchesSpicy = !appState.filterSpicyOnly || dish.isSpicy;
+        const matchesQuery = !appState.searchQuery || 
+          dish.title.toLowerCase().includes(appState.searchQuery) ||
+          dish.desc.toLowerCase().includes(appState.searchQuery) ||
+          dish.dietary.toLowerCase().includes(appState.searchQuery);
+        return matchesCategory && matchesSpicy && matchesQuery;
+      });
+
+      document.getElementById('items-count-indicator').textContent = `${filtered.length} dishes`;
+
+      // Also update Chef Spotlight Card action slot if present
+      const spotSlot = document.getElementById('spotlight-action-slot');
+      if (spotSlot) {
+        const spotDish = DISH_CATALOG.find(d => d.isChef) || DISH_CATALOG[0];
+        const spotDishId = spotDish ? spotDish.id : 'dish-1';
+        const spotQty = getDishCartQty(spotDishId);
+        if (spotQty > 0) {
+          spotSlot.innerHTML = `
+            <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-full p-1 shadow-xs">
+              <button onclick="decrementDish('${spotDishId}')" class="w-8 h-8 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 shadow-xs hover:bg-primary/20 transition-all" title="Remove one">
+                <span class="material-symbols-outlined text-[16px] font-bold">remove</span>
+              </button>
+              <span class="font-headline font-bold text-primary text-[14px] px-2.5 min-w-[24px] text-center">${spotQty}</span>
+              <button onclick="incrementDish('${spotDishId}')" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs hover:brightness-110 transition-all" title="Add another">
+                <span class="material-symbols-outlined text-[16px] font-bold">add</span>
+              </button>
+            </div>
+          `;
+        } else {
+          spotSlot.innerHTML = `
+            <button onclick="handleDishAddClick('${spotDishId}')" type="button" class="px-3.5 py-2 rounded-full bg-primary text-on-primary font-headline font-bold text-[13px] flex items-center gap-1 shadow-[0_4px_12px_rgba(172,45,0,0.3)] hover:brightness-105 active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              <span>ADD</span>
+            </button>
+          `;
+        }
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-2 py-10 text-center text-secondary">
+            <span class="material-symbols-outlined text-[32px] text-secondary/60">search_off</span>
+            <p class="mt-1 font-semibold text-[14px]">No dishes match your filter</p>
+            <button onclick="clearSearch(); selectCategory('all', document.querySelector('.cat-pill'))" class="mt-2 text-[12px] text-primary underline">Reset filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(dish => {
+        const isSoldOut = soldOutSet.has(dish.id);
+        const cartQty = getDishCartQty(dish.id);
+        const escapedId = String(dish.id).replace(/'/g, "\\'");
+        return `
+        <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] border border-surface-container flex flex-col justify-between group transition-all ${isSoldOut ? 'opacity-70' : ''}">
+          <div>
+            <!-- Image & Badges Viewport -->
+            <div class="relative w-full aspect-square rounded-lg overflow-hidden mb-2 ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer'}" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : `openDishDetail('${escapedId}')`}">
+              <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105'} transition-transform duration-300" src="${dish.image}" alt="${dish.title}"/>
+              
+              <!-- Floating Price Badge -->
+              <span class="absolute bottom-1.5 left-1.5 bg-primary text-on-primary font-bold text-[12px] px-2 py-0.5 rounded-full shadow-sm">
+                ${formatPrice(dish.price)}
+              </span>
+
+              ${isSoldOut ? `
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-[1px] flex items-center justify-center">
+                  <span class="bg-red-600 text-white font-headline font-bold text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md">
+                    Sold Out
+                  </span>
+                </div>
+              ` : dish.isSpicy ? `
+                <span class="absolute top-1.5 left-1.5 bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
+                  <span class="material-symbols-outlined text-[12px]">local_fire_department</span> Desi Mirch
+                </span>
+              ` : ''}
+
+              <button onclick="event.stopPropagation(); toggleFav(this)" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center text-secondary hover:text-primary transition-colors shadow-sm" type="button">
+                <span class="material-symbols-outlined text-[14px]">favorite</span>
+              </button>
+            </div>
+
+            <!-- Title & Metadata -->
+            <h3 onclick="${isSoldOut ? "showToast('Dish is sold out!')" : `openDishDetail('${escapedId}')`}" class="font-headline font-bold text-[14px] text-on-surface leading-snug line-clamp-1 ${isSoldOut ? 'line-through text-secondary' : 'cursor-pointer hover:text-primary'} transition-colors">${dish.title}</h3>
+            <p class="text-[11px] text-secondary truncate mt-0.5">${dish.dietary}</p>
+          </div>
+
+          <!-- Bottom Action Row -->
+          <div class="flex items-center justify-between mt-2 pt-1 border-t border-surface-container/60">
+            <div class="flex items-center gap-1 text-secondary text-[11px]">
+              <span class="material-symbols-outlined text-tertiary text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="font-bold text-on-surface">${dish.rating}</span>
+              <span class="text-[10px] opacity-70">• ${dish.prepTime}</span>
+            </div>
+            
+            ${isSoldOut ? `
+              <span class="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">86'd</span>
+            ` : cartQty > 0 ? `
+              <!-- In-Card Interactive Stepper -->
+              <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-full p-0.5 shadow-xs" onclick="event.stopPropagation()">
+                <button onclick="decrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 shadow-xs hover:bg-primary/20 transition-all" title="Remove one">
+                  <span class="material-symbols-outlined text-[14px] font-bold">remove</span>
+                </button>
+                <span class="font-headline font-bold text-primary text-[12px] px-1.5 min-w-[18px] text-center leading-none">${cartQty}</span>
+                <button onclick="incrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs hover:brightness-110 transition-all" title="Add another">
+                  <span class="material-symbols-outlined text-[14px] font-bold">add</span>
+                </button>
+              </div>
+            ` : `
+              <button onclick="handleDishAddClick('${escapedId}')" class="h-7 px-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[12px] flex items-center gap-1 shadow-sm hover:brightness-105 active:scale-95 transition-all" title="Add to table order" type="button">
+                <span class="material-symbols-outlined text-[15px]">add</span>
+                <span>ADD</span>
+              </button>
+            `}
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+
+    function toggleFav(btn) {
+      const icon = btn.querySelector('.material-symbols-outlined');
+      if (icon.style.fontVariationSettings?.includes("'FILL' 1")) {
+        icon.style.fontVariationSettings = "'FILL' 0";
+        btn.classList.remove('text-primary');
+        btn.classList.add('text-secondary');
+      } else {
+        icon.style.fontVariationSettings = "'FILL' 1";
+        btn.classList.add('text-primary');
+        btn.classList.remove('text-secondary');
+      }
+    }
+
+    // --- 5. DISH DETAIL & MODIFIERS MODAL ---
+    function openDishDetail(dishId) {
+      const dish = findDishById(dishId);
+      if (!dish) return;
+
+      appState.activeModalDish = dish;
+      appState.modalQty = 1;
+      appState.modalSpice = "Chatpata 🌶️";
+      appState.modalSelectedAddons = [];
+
+      document.getElementById('modal-dish-img').src = dish.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+      document.getElementById('modal-dish-title').textContent = dish.title || 'Special Dish';
+      document.getElementById('modal-dish-desc').textContent = dish.desc || '';
+      document.getElementById('modal-dish-price').textContent = formatPrice(dish.price || 0);
+      document.getElementById('modal-dish-time').textContent = dish.prepTime || '15-20 min';
+      document.getElementById('modal-dish-cals').textContent = dish.calories || '550 kcal';
+      document.getElementById('modal-dish-protein').textContent = dish.protein || 'High Protein';
+      document.getElementById('modal-dish-diet').textContent = dish.dietary || 'Chef Fresh Special';
+      document.getElementById('modal-dish-note').value = '';
+      document.getElementById('modal-qty-val').textContent = "1";
+
+      // Render Dynamic Portion Size Options (e.g. Half vs Full, Single vs Double)
+      const sizeContainer = document.getElementById('modal-size-container');
+      const sizes = (dish.sizeOptions && dish.sizeOptions.length > 0) ? dish.sizeOptions : [{ name: "Standard Portion", extra: 0, desc: "Standard serving" }];
+      appState.modalSelectedSizeName = sizes[0].name;
+      appState.modalExtraPrice = sizes[0].extra || 0;
+
+      sizeContainer.innerHTML = sizes.map((s, idx) => `
+        <label class="size-opt ${idx === 0 ? 'active border-primary bg-primary/5' : 'border-surface-container bg-surface-container-lowest'} border-2 rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all" onclick="selectSize('${s.name.replace(/'/g, "\\'")}', ${s.extra || 0}, this)">
+          <div>
+            <span class="text-[13px] font-bold text-on-surface block">${s.name}</span>
+            <span class="text-[11px] text-secondary">${s.desc || ''}</span>
+          </div>
+          <span class="text-[12px] font-bold text-primary">${(s.extra && s.extra > 0) ? '+ ' + formatPrice(s.extra) : 'Base'}</span>
+        </label>
+      `).join('');
+
+      // Render Dynamic Add-Ons & Extras if configured
+      const addonsSec = document.getElementById('modal-addons-section');
+      const addonsContainer = document.getElementById('modal-addons-container');
+      if (dish.addons && dish.addons.length > 0 && addonsSec && addonsContainer) {
+        addonsSec.classList.remove('hidden');
+        addonsContainer.innerHTML = dish.addons.map((addon, idx) => `
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest cursor-pointer hover:border-primary transition-all">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" onchange="toggleModalAddon(${idx}, this.checked)" class="w-4 h-4 text-primary rounded border-surface-container focus:ring-primary"/>
+              <span class="text-[12px] font-bold text-on-surface">${addon.name}</span>
+            </div>
+            <span class="text-[11px] font-bold text-primary">+ ${formatPrice(addon.price || 0)}</span>
+          </label>
+        `).join('');
+      } else if (addonsSec) {
+        addonsSec.classList.add('hidden');
+      }
+
+      // Hide or show Customer Notes section based on dish.allowNotes
+      const noteSec = document.getElementById('modal-note-section');
+      if (noteSec) {
+        if (dish.allowNotes === false) {
+          noteSec.classList.add('hidden');
+        } else {
+          noteSec.classList.remove('hidden');
+        }
+      }
+
+      // Reset Spice Level UI to Chatpata
+      document.querySelectorAll('.spice-btn').forEach(b => {
+        if (b.textContent.includes('Chatpata')) {
+          b.classList.add('active', 'border-2', 'border-primary', 'bg-primary/5', 'text-primary');
+          b.classList.remove('border', 'border-surface-container', 'bg-surface-container-lowest', 'text-secondary');
+        } else {
+          b.classList.remove('active', 'border-2', 'border-primary', 'bg-primary/5', 'text-primary');
+          b.classList.add('border', 'border-surface-container', 'bg-surface-container-lowest', 'text-secondary');
+        }
+      });
+
+      updateModalTotals();
+      document.getElementById('dish-detail-modal').classList.remove('hidden');
+      document.getElementById('dish-detail-modal').classList.add('flex');
+    }
+
+    function toggleModalAddon(idx, isChecked) {
+      if (!appState.activeModalDish || !appState.activeModalDish.addons) return;
+      const addon = appState.activeModalDish.addons[idx];
+      if (!addon) return;
+      if (!appState.modalSelectedAddons) appState.modalSelectedAddons = [];
+      if (isChecked) {
+        if (!appState.modalSelectedAddons.some(a => a.name === addon.name)) {
+          appState.modalSelectedAddons.push(addon);
+        }
+      } else {
+        appState.modalSelectedAddons = appState.modalSelectedAddons.filter(a => a.name !== addon.name);
+      }
+      updateModalTotals();
+    }
+
+    function openSpotlightDetail() {
+      const spotDish = DISH_CATALOG.find(d => d.isChef) || DISH_CATALOG[0];
+      if (spotDish) openDishDetail(spotDish.id);
+    }
+
+    function handleSpotlightAddClick() {
+      const spotDish = DISH_CATALOG.find(d => d.isChef) || DISH_CATALOG[0];
+      if (spotDish) handleDishAddClick(spotDish.id);
+    }
+
+    function closeDishDetail() {
+      document.getElementById('dish-detail-modal').classList.add('hidden');
+      document.getElementById('dish-detail-modal').classList.remove('flex');
+    }
+
+    function selectSize(sizeName, extra, el) {
+      appState.modalSelectedSizeName = sizeName;
+      appState.modalExtraPrice = extra;
+      document.querySelectorAll('.size-opt').forEach(opt => {
+        opt.classList.remove('active', 'border-primary', 'bg-primary/5');
+        opt.classList.add('border-surface-container', 'bg-surface-container-lowest');
+      });
+      if (el) {
+        el.classList.add('active', 'border-primary', 'bg-primary/5');
+        el.classList.remove('border-surface-container', 'bg-surface-container-lowest');
+      }
+      updateModalTotals();
+    }
+
+    function selectSpice(spiceLevel, btn) {
+      appState.modalSpice = spiceLevel;
+      document.querySelectorAll('.spice-btn').forEach(b => {
+        b.classList.remove('active', 'border-2', 'border-primary', 'bg-primary/5', 'text-primary');
+        b.classList.add('border', 'border-surface-container', 'bg-surface-container-lowest', 'text-secondary');
+      });
+      btn.classList.add('active', 'border-2', 'border-primary', 'bg-primary/5', 'text-primary');
+      btn.classList.remove('border', 'border-surface-container', 'bg-surface-container-lowest', 'text-secondary');
+    }
+
+    function adjustModalQty(delta) {
+      const next = appState.modalQty + delta;
+      if (next >= 1 && next <= 15) {
+        appState.modalQty = next;
+        document.getElementById('modal-qty-val').textContent = appState.modalQty;
+        updateModalTotals();
+      }
+    }
+
+    function updateModalTotals() {
+      if (!appState.activeModalDish) return;
+      const addonsTotal = (appState.modalSelectedAddons || []).reduce((sum, a) => sum + (a.price || 0), 0);
+      const base = appState.activeModalDish.price + (appState.modalExtraPrice || 0) + addonsTotal;
+      const total = base * appState.modalQty;
+      document.getElementById('modal-add-total').textContent = formatPrice(total);
+    }
+
+    function commitModalToCart() {
+      if (!appState.activeModalDish) return;
+      const note = document.getElementById('modal-dish-note').value.trim();
+      const sizeName = appState.modalSelectedSizeName || "Standard Portion";
+      const addonsTotal = (appState.modalSelectedAddons || []).reduce((sum, a) => sum + (a.price || 0), 0);
+      const addonsSummary = (appState.modalSelectedAddons || []).map(a => a.name).join(', ');
+      
+      const cartItem = {
+        dishId: appState.activeModalDish.id,
+        title: appState.activeModalDish.title,
+        price: appState.activeModalDish.price + (appState.modalExtraPrice || 0) + addonsTotal,
+        qty: appState.modalQty,
+        image: appState.activeModalDish.image,
+        size: sizeName,
+        spice: appState.modalSpice,
+        addons: appState.modalSelectedAddons || [],
+        note: addonsSummary ? (note ? `${addonsSummary} • Note: ${note}` : addonsSummary) : note,
+        station: appState.activeModalDish.station
+      };
+
+      addItemToCart(cartItem);
+      closeDishDetail();
+      renderDishGrid();
+      showToast(`Added ${appState.modalQty}x ${appState.activeModalDish.title} to Table Basket!`);
+    }
+
+    function getDishCartQty(dishId) {
+      const targetDish = findDishById(dishId);
+      const targetId = targetDish ? targetDish.id : dishId;
+      const targetTitle = targetDish ? targetDish.title.toLowerCase() : '';
+      return appState.cart
+        .filter(i => {
+          if (i.dishId === targetId) return true;
+          if (targetTitle && i.title && i.title.toLowerCase() === targetTitle) return true;
+          const iNum = String(i.dishId).replace(/[^0-9]/g, '');
+          const tNum = String(dishId).replace(/[^0-9]/g, '');
+          return Boolean(iNum && tNum && iNum === tNum);
+        })
+        .reduce((sum, i) => sum + i.qty, 0);
+    }
+
+    function handleDishAddClick(dishId) {
+      const dish = findDishById(dishId);
+      if (!dish) return;
+      if (dish.sizeOptions && dish.sizeOptions.length > 1) {
+        openDishDetail(dish.id);
+      } else {
+        quickAddToCart(dish.id);
+      }
+    }
+
+    function incrementDish(dishId) {
+      const dish = findDishById(dishId);
+      if (dish) {
+        quickAddToCart(dish.id);
+      }
+    }
+
+    function decrementDish(dishId) {
+      const targetDish = findDishById(dishId);
+      const targetId = targetDish ? targetDish.id : dishId;
+      const targetTitle = targetDish ? targetDish.title.toLowerCase() : '';
+
+      for (let i = appState.cart.length - 1; i >= 0; i--) {
+        const item = appState.cart[i];
+        const iNum = String(item.dishId).replace(/[^0-9]/g, '');
+        const tNum = String(dishId).replace(/[^0-9]/g, '');
+        const matches = (item.dishId === targetId) || 
+                        (targetTitle && item.title && item.title.toLowerCase() === targetTitle) ||
+                        (iNum && tNum && iNum === tNum);
+        if (matches) {
+          item.qty -= 1;
+          if (item.qty <= 0) {
+            appState.cart.splice(i, 1);
+          }
+          break;
+        }
+      }
+      saveCartToStorage();
+      updateCartUI();
+      renderDishGrid();
+    }
+
+    function quickAddCustom(title, price, dishId, size, station) {
+      const dish = findDishById(dishId);
+      const img = dish ? dish.image : "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=800&q=80";
+      addItemToCart({
+        dishId: dish ? dish.id : (dishId || `custom-${Date.now()}`),
+        title: title,
+        price: price,
+        qty: 1,
+        image: img,
+        size: size || "Standard Portion",
+        spice: "Normal 🍃",
+        note: "",
+        station: station || (dish ? dish.station : "rice_naan")
+      });
+      renderDishGrid();
+      showToast(`Added +1 ${title} to Table Basket!`);
+    }
+
+    function addComboFeast(comboType) {
+      if (comboType === 'karahi_feast') {
+        addItemToCart({
+          dishId: 101,
+          title: "Dera Karahi Feast (Family)",
+          price: 3450,
+          qty: 1,
+          image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80",
+          size: "Serves 3-4",
+          spice: "Chatpata 🌶️",
+          note: "1kg Karahi + 4 Roghni Naan + 3 Sweet Lassi",
+          station: "karahi"
+        });
+        showToast("Added 'Dera Karahi Feast' (Serves 3-4) to Table Basket!");
+      } else if (comboType === 'bbq_platter') {
+        addItemToCart({
+          dishId: 102,
+          title: "BBQ & Biryani Platter (Duo)",
+          price: 2150,
+          qty: 1,
+          image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80",
+          size: "Serves 2",
+          spice: "Chatpata 🌶️",
+          note: "Malai Boti + Chapli Kabab + Dum Biryani + 2 Margarita",
+          station: "bbq"
+        });
+        showToast("Added 'BBQ & Biryani Platter' (Serves 2) to Table Basket!");
+      }
+      renderDishGrid();
+    }
+
+    function quickAddToCart(dishId) {
+      const dish = findDishById(dishId);
+      if (!dish) return;
+
+      const defaultSize = (dish.sizeOptions && dish.sizeOptions.length > 0) ? dish.sizeOptions[0].name : "Standard Portion";
+      addItemToCart({
+        dishId: dish.id,
+        title: dish.title,
+        price: dish.price,
+        qty: 1,
+        image: dish.image,
+        size: defaultSize,
+        spice: "Chatpata 🌶️",
+        note: "",
+        station: dish.station || "karahi"
+      });
+
+      renderDishGrid();
+      showToast(`Added ${dish.title} to Table Basket!`);
+    }
+
+    // --- 6. CART MANAGEMENT ---
+    function addItemToCart(item) {
+      // Find matching item with identical modifiers
+      const existing = appState.cart.find(ci => 
+        ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
+      );
+
+      if (existing) {
+        existing.qty += item.qty;
+      } else {
+        appState.cart.push(item);
+      }
+
+      saveCartToStorage();
+      updateCartUI();
+    }
+
+    function adjustCartItemQty(index, delta) {
+      if (!appState.cart[index]) return;
+      appState.cart[index].qty += delta;
+      if (appState.cart[index].qty <= 0) {
+        appState.cart.splice(index, 1);
+      }
+      saveCartToStorage();
+      updateCartUI();
+      renderCartItems();
+      renderDishGrid();
+    }
+
+    function removeCartItem(index) {
+      appState.cart.splice(index, 1);
+      saveCartToStorage();
+      updateCartUI();
+      renderCartItems();
+      renderDishGrid();
+      showToast("Item removed from basket");
+    }
+
+    function clearEntireCart() {
+      if (appState.cart.length === 0) return;
+      if (confirm("Clear all dishes from table basket?")) {
+        appState.cart = [];
+        saveCartToStorage();
+        updateCartUI();
+        renderCartItems();
+        renderDishGrid();
+        showToast("Basket cleared");
+      }
+    }
+
+    function saveCartToStorage() {
+      try {
+        localStorage.setItem(`gourmet_cart_${appState.tableNumber}`, JSON.stringify(appState.cart));
+      } catch (e) {}
+    }
+
+    function loadCartFromStorage() {
+      try {
+        const saved = localStorage.getItem(`gourmet_cart_${appState.tableNumber}`);
+        if (saved) {
+          appState.cart = JSON.parse(saved);
+        }
+      } catch (e) {}
+    }
+
+    function updateCartUI() {
+      const totalQty = appState.cart.reduce((sum, i) => sum + i.qty, 0);
+      const subtotal = appState.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+      const tax = subtotal * 0.05;
+      const grandTotal = subtotal + tax;
+
+      // Badges
+      const badge = document.getElementById('cart-badge-count');
+      if (totalQty > 0) {
+        if (badge) { badge.textContent = totalQty; badge.classList.remove('hidden'); }
+      } else {
+        if (badge) badge.classList.add('hidden');
+      }
+
+      // Displays
+      const cartTotalQtyEl = document.getElementById('cart-total-qty');
+      if (cartTotalQtyEl) cartTotalQtyEl.textContent = totalQty;
+      const cartSubEl = document.getElementById('cart-subtotal-display');
+      if (cartSubEl) cartSubEl.textContent = formatPrice(subtotal);
+      const cartTaxEl = document.getElementById('cart-tax-display');
+      if (cartTaxEl) cartTaxEl.textContent = formatPrice(tax);
+      const cartGrandEl = document.getElementById('cart-grandtotal-display');
+      if (cartGrandEl) cartGrandEl.textContent = formatPrice(grandTotal);
+      const btnTotalEl = document.getElementById('btn-checkout-total');
+      if (btnTotalEl) btnTotalEl.textContent = formatPrice(grandTotal);
+      
+      // Split Calculator
+      const perGuest = grandTotal > 0 ? grandTotal / appState.splitGuests : 0;
+      const splitAmountEl = document.getElementById('split-amount-display');
+      if (splitAmountEl) splitAmountEl.textContent = formatPrice(perGuest);
+
+      // Floating Action Cart Bar update
+      const floatBar = document.getElementById('floating-cart-bar');
+      const floatQty = document.getElementById('float-cart-qty');
+      const floatTotal = document.getElementById('float-cart-total');
+      const floatTable = document.getElementById('float-cart-table');
+      const floatCta = document.getElementById('float-cart-cta-text');
+
+      if (floatTable) floatTable.textContent = appState.tableNumber;
+      if (floatQty) floatQty.textContent = totalQty;
+      if (floatTotal) floatTotal.textContent = formatPrice(grandTotal);
+      if (floatCta) {
+        floatCta.textContent = appState.currentTicket ? "Add to Kitchen Order" : "View Basket";
+      }
+
+      if (floatBar) {
+        const menuVisible = !document.getElementById('view-menu')?.classList.contains('hidden');
+        if (totalQty > 0 && menuVisible) {
+          floatBar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+          floatBar.classList.add('translate-y-0', 'opacity-100');
+        } else {
+          floatBar.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+          floatBar.classList.remove('translate-y-0', 'opacity-100');
+        }
+      }
+    }
+
+    function adjustSplitDiners(delta) {
+      const next = appState.splitGuests + delta;
+      if (next >= 1 && next <= 12) {
+        appState.splitGuests = next;
+        document.getElementById('split-diners-count').textContent = appState.splitGuests;
+        updateCartUI();
+      }
+    }
+
+    function renderCartItems() {
+      const container = document.getElementById('cart-items-list');
+      const emptyState = document.getElementById('cart-empty-state');
+      const pricingSection = document.getElementById('cart-pricing-section');
+
+      if (appState.cart.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        pricingSection.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+      pricingSection.classList.remove('hidden');
+
+      container.innerHTML = appState.cart.map((item, idx) => `
+        <div class="bg-surface-container-lowest rounded-xl p-3 border border-surface-container shadow-sm flex items-center gap-3">
+          <img src="${item.image}" alt="${item.title}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-surface-container"/>
+          
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between">
+              <h4 class="font-headline font-bold text-[14px] text-on-surface truncate">${item.title}</h4>
+              <button onclick="removeCartItem(${idx})" class="text-secondary hover:text-error transition-colors p-1" title="Remove item">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+
+            <p class="text-[11px] text-secondary mt-0.5">
+              ${item.size} • ${item.spice} ${item.note ? `• <span class="italic">"${item.note}"</span>` : ''}
+            </p>
+
+            <div class="flex items-center justify-between mt-2">
+              <span class="font-headline font-bold text-primary text-[15px]">${formatPrice(item.price * item.qty)}</span>
+
+              <!-- Quantity Stepper Pill -->
+              <div class="inline-flex items-center bg-surface-container rounded-full px-1 py-0.5">
+                <button onclick="adjustCartItemQty(${idx}, -1)" class="w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center active:scale-90 shadow-xs">
+                  <span class="material-symbols-outlined text-[14px]">remove</span>
+                </button>
+                <span class="font-bold text-[12px] px-2 min-w-[20px] text-center">${item.qty}</span>
+                <button onclick="adjustCartItemQty(${idx}, 1)" class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs">
+                  <span class="material-symbols-outlined text-[14px]">add</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- 7. DINE-IN CHECKOUT & ORDER SUBMISSION ---
+    function selectPaymentMethod(method, labelEl) {
+      appState.paymentMethod = method;
+      document.querySelectorAll('.payment-option').forEach(opt => {
+        opt.classList.remove('selected', 'border-primary', 'bg-primary/5');
+        opt.classList.add('border-surface-container', 'bg-surface-container-lowest');
+        const icon = opt.querySelector('.material-symbols-outlined:last-child');
+        if (icon) {
+          icon.textContent = 'radio_button_unchecked';
+          icon.classList.remove('text-primary');
+          icon.classList.add('text-secondary');
+          icon.style.fontVariationSettings = "'FILL' 0";
+        }
+      });
+
+      labelEl.classList.add('selected', 'border-primary', 'bg-primary/5');
+      labelEl.classList.remove('border-surface-container', 'bg-surface-container-lowest');
+      const icon = labelEl.querySelector('.material-symbols-outlined:last-child');
+      if (icon) {
+        icon.textContent = 'radio_button_checked';
+        icon.classList.add('text-primary');
+        icon.classList.remove('text-secondary');
+        icon.style.fontVariationSettings = "'FILL' 1";
+      }
+    }
+
+    function submitOrderToKitchen() {
+      if (appState.cart.length === 0) {
+        showToast("Basket is empty!");
+        switchView('menu');
+        return;
+      }
+
+      const guestName = document.getElementById('guest-name-input')?.value.trim() || (`Table #${appState.tableNumber} Guest`);
+      const kitchenNotes = document.getElementById('general-order-notes')?.value.trim() || "";
+      const randomTicketNum = Math.floor(1000 + Math.random() * 9000);
+      const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let payLabel = "Pay Cash to Server at Table";
+      if (appState.paymentMethod === 'cashier_counter') payLabel = "Pay Cash/Card at Cashier";
+      if (appState.paymentMethod === 'table_tab') payLabel = "Open Table Tab (Settle Later)";
+
+      const subtotal = appState.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+      const grandTotal = Math.round(subtotal * 1.05);
+
+      const itemsWithStation = appState.cart.map(item => {
+        const dishInfo = findDishById(item.dishId) || DISH_CATALOG.find(d => d.title === item.title);
+        return {
+          ...item,
+          station: item.station || (dishInfo ? dishInfo.station : 'karahi')
+        };
+      });
+
+      if (appState.currentTicket) {
+        // Appending new round of dishes to currently open order
+        appState.currentTicket.items.push(...itemsWithStation);
+        appState.currentTicket.subtotal += subtotal;
+        appState.currentTicket.total = Math.round(appState.currentTicket.subtotal * 1.05);
+        if (kitchenNotes) {
+          appState.currentTicket.notes = (appState.currentTicket.notes ? appState.currentTicket.notes + " | " : "") + kitchenNotes;
+        }
+      } else {
+        // Brand new order ticket for table
+        appState.currentTicket = {
+          ticketId: `#TKT-${randomTicketNum}`,
+          restaurantId: (appState.restaurantId === 'rest-dera-01' ? 'REST-001' : (appState.restaurantId || 'REST-001')),
+          table: appState.isOnlineOrder ? 'Online Order' : `Table ${appState.tableNumber}`,
+          guest: guestName,
+          time: currentTime,
+          timestamp: Date.now(),
+          notes: kitchenNotes,
+          payment: payLabel,
+          items: itemsWithStation,
+          subtotal: subtotal,
+          total: grandTotal,
+          status: "New"
+        };
+      }
+
+      // 1. Dedicated Active Order Storage
+      localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
+
+      // 2. Direct Persistence: Save ticket directly to gourmet_kds_tickets in localStorage
+      try {
+        const existingKds = JSON.parse(localStorage.getItem('gourmet_kds_tickets') || '[]');
+        const idx = existingKds.findIndex(t => t.ticketId === appState.currentTicket.ticketId);
+        if (idx !== -1) {
+          existingKds[idx] = appState.currentTicket;
+        } else {
+          existingKds.unshift(appState.currentTicket);
+        }
+        localStorage.setItem('gourmet_kds_tickets', JSON.stringify(existingKds));
+      } catch (e) {
+        console.error("Failed to persist ticket to gourmet_kds_tickets", e);
+      }
+
+      // 3. Direct Persistence: Update table order in gourmet_floor_tables in localStorage
+      try {
+        let existingTables = JSON.parse(localStorage.getItem('gourmet_floor_tables') || '[]');
+        const tNum = appState.tableNumber.toString().padStart(2, '0');
+        let targetTable = existingTables.find(t => t.id === tNum);
+        if (!targetTable) {
+          targetTable = { id: tNum, name: `Table ${tNum}`, zone: 'Main Dining', status: 'dining', order: null };
+          existingTables.push(targetTable);
+        }
+        targetTable.status = 'dining';
+        targetTable.order = {
+          ticketId: appState.currentTicket.ticketId,
+          guest: appState.currentTicket.guest,
+          time: appState.currentTicket.time,
+          total: appState.currentTicket.total,
+          subtotal: appState.currentTicket.subtotal,
+          payment: appState.currentTicket.payment,
+          items: appState.currentTicket.items,
+          status: appState.currentTicket.status
+        };
+        localStorage.setItem('gourmet_floor_tables', JSON.stringify(existingTables));
+      } catch (e) {
+        console.error("Failed to update floor tables", e);
+      }
+
+      // Clear the cart
+      appState.cart = [];
+      saveCartToStorage();
+      updateCartUI();
+      renderDishGrid();
+
+      // Render details and show follow-up screen
+      renderTicketDetails();
+      applyTicketStatusUI(appState.currentTicket.status);
+      switchView('confirmation');
+      showToast("Order ticket sent directly to Kitchen Station!");
+
+      // Broadcast to KDS, Waiter Floor & Cashier across all channels
+      PosSync.emit({
+        type: 'NEW_ORDER',
+        order: appState.currentTicket
+      });
+    }
+
+    // --- 8. MULTI-ROUND ORDERING & DEMO STATUS ---
+    function orderMoreItems() {
+      switchView('menu');
+      showToast(`Adding more dishes for Table #${appState.tableNumber}...`);
+    }
+
+    let demoStatusStep = 1; // 1: In kitchen, 2: Plated & Ready, 3: Served
+    function advanceDemoStatus() {
+      demoStatusStep = (demoStatusStep % 3) + 1;
+      let newStatus = 'In Kitchen';
+      if (demoStatusStep === 2) newStatus = 'Plated & Ready';
+      if (demoStatusStep === 3) newStatus = 'Served';
+
+      if (appState.currentTicket) {
+        appState.currentTicket.status = newStatus;
+        localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
+
+        try {
+          const existingKds = JSON.parse(localStorage.getItem('gourmet_kds_tickets') || '[]');
+          const found = existingKds.find(t => t.ticketId === appState.currentTicket.ticketId);
+          if (found) {
+            found.status = newStatus;
+            localStorage.setItem('gourmet_kds_tickets', JSON.stringify(existingKds));
+          }
+        } catch(e) {}
+
+        try {
+          const tNum = appState.tableNumber.toString().padStart(2, '0');
+          const tables = JSON.parse(localStorage.getItem('gourmet_floor_tables') || '[]');
+          const tbl = tables.find(t => t.id === tNum);
+          if (tbl && tbl.order) {
+            tbl.order.status = newStatus;
+            localStorage.setItem('gourmet_floor_tables', JSON.stringify(tables));
+          }
+        } catch(e) {}
+
+        applyTicketStatusUI(newStatus);
+        renderTicketDetails();
+
+        PosSync.emit({
+          type: 'STATUS_UPDATE',
+          ticketId: appState.currentTicket.ticketId,
+          table: `Table ${appState.tableNumber}`,
+          status: newStatus
+        });
+
+        if (newStatus === 'Served') {
+          showToast("🍽️ Order marked as Served! Enjoy your feast.");
+        } else if (newStatus === 'Plated & Ready') {
+          showToast("👨‍🍳 Dishes plated and ready for server.");
+        } else {
+          showToast("🔥 Kitchen actively preparing your meal.");
+        }
+      }
+    }
+
+    function renderTicketDetails() {
+      if (!appState.currentTicket) return;
+      const tkt = appState.currentTicket;
+      const ticketNumEl = document.getElementById('ticket-number-display');
+      if (ticketNumEl) ticketNumEl.textContent = tkt.ticketId;
+      const tableValEl = document.getElementById('ticket-table-val');
+      if (tableValEl) tableValEl.textContent = `${tkt.table} (${appState.tableZone})`;
+      const guestValEl = document.getElementById('ticket-guest-val');
+      if (guestValEl) guestValEl.textContent = tkt.guest || `Table #${appState.tableNumber} Guest`;
+      const timeValEl = document.getElementById('ticket-time-val');
+      if (timeValEl) timeValEl.textContent = tkt.time || 'Just now';
+      const payValEl = document.getElementById('ticket-pay-val');
+      if (payValEl) payValEl.textContent = tkt.payment || 'Pay at Table';
+      const totalValEl = document.getElementById('ticket-total-val');
+      if (totalValEl) totalValEl.textContent = formatPrice(tkt.total);
+
+      const ticketItemsContainer = document.getElementById('ticket-items-list');
+      if (ticketItemsContainer && tkt.items) {
+        ticketItemsContainer.innerHTML = tkt.items.map(item => `
+          <div class="flex items-start justify-between text-[12px]">
+            <div>
+              <span class="font-bold text-on-surface">${item.qty}x ${item.title}</span>
+              <span class="text-secondary text-[11px] block pl-3">${item.size || 'Standard'} • ${item.spice || 'Normal'}</span>
+            </div>
+            <span class="font-semibold text-on-surface">${formatPrice((item.price || 0) * (item.qty || 1))}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function addQuickAddonToActiveOrder(title, price, station) {
+      const addonItem = {
+        dishId: `addon-${Date.now()}`,
+        title: title,
+        price: price,
+        qty: 1,
+        image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=800&q=80",
+        size: "Standard Portion",
+        spice: "Normal 🍃",
+        note: "Add-on Round",
+        station: station || "rice_naan"
+      };
+
+      if (appState.currentTicket) {
+        appState.currentTicket.items.push(addonItem);
+        appState.currentTicket.subtotal += price;
+        appState.currentTicket.total = Math.round(appState.currentTicket.subtotal * 1.05);
+
+        // Dedicated active order storage
+        localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
+
+        renderTicketDetails();
+
+        // Direct Persistence to local storage kds tickets
+        try {
+          const existingKds = JSON.parse(localStorage.getItem('gourmet_kds_tickets') || '[]');
+          const idx = existingKds.findIndex(t => t.ticketId === appState.currentTicket.ticketId);
+          if (idx !== -1) {
+            existingKds[idx] = appState.currentTicket;
+          } else {
+            existingKds.unshift(appState.currentTicket);
+          }
+          localStorage.setItem('gourmet_kds_tickets', JSON.stringify(existingKds));
+        } catch(e) {}
+
+        // Direct Persistence to local storage floor tables
+        try {
+          const tNum = appState.tableNumber.toString().padStart(2, '0');
+          const tables = JSON.parse(localStorage.getItem('gourmet_floor_tables') || '[]');
+          const tbl = tables.find(t => t.id === tNum);
+          if (tbl && tbl.order) {
+            tbl.order.items = appState.currentTicket.items;
+            tbl.order.subtotal = appState.currentTicket.subtotal;
+            tbl.order.total = appState.currentTicket.total;
+            localStorage.setItem('gourmet_floor_tables', JSON.stringify(tables));
+          }
+        } catch(e) {}
+
+        // Emit to KDS and server
+        PosSync.emit({
+          type: 'NEW_ORDER',
+          order: appState.currentTicket
+        });
+        showToast(`Added +1 ${title} to your Table #${appState.tableNumber} Order!`);
+      } else {
+        quickAddCustom(title, price, null, 'Standard Portion', station);
+      }
+    }
+
+    function sendServiceAction(actionName, price, station) {
+      closeWaiterModal();
+      if (price && price > 0) {
+        addQuickAddonToActiveOrder(actionName, price, station);
+      } else {
+        sendWaiterRequest(actionName);
+      }
+    }
+
+    function requestPhysicalBill() {
+      sendWaiterRequest('🧾 Bring Cash Bill to Table');
+      const btn = document.getElementById('btn-request-bill-tab-label');
+      if (btn) btn.textContent = "Bill Requested 🧾";
+      const quickBtn = document.getElementById('btn-quick-bring-bill');
+      if (quickBtn) {
+        quickBtn.classList.remove('bg-amber-50', 'border-amber-300');
+        quickBtn.classList.add('bg-emerald-50', 'border-emerald-400');
+        const text = quickBtn.querySelector('span:last-child');
+        if (text) text.textContent = "Requested ✓";
+      }
+      showToast("Server notified! Bringing physical bill to Table #" + appState.tableNumber);
+    }
+
+    // --- 9. TABLE SWITCHER & SERVICE MODAL ---
+    let customerTableFilterSection = 'ALL';
+
+    function renderCustomerTableSwitcher() {
+      const grid = document.getElementById('customer-tables-grid');
+      const secStrip = document.getElementById('customer-table-sections');
+      if (!grid) return;
+
+      const tables = appState.availableTables || [];
+      const sections = appState.availableSections || Array.from(new Set(tables.map(t => t.zone).filter(Boolean)));
+
+      if (secStrip) {
+        secStrip.innerHTML = '';
+        const allBtn = document.createElement('button');
+        allBtn.type = 'button';
+        allBtn.className = `px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all ${
+          customerTableFilterSection === 'ALL'
+            ? 'bg-primary text-on-primary'
+            : 'bg-surface-container border border-surface-container-high text-secondary hover:text-on-surface'
+        }`;
+        allBtn.textContent = `All (${tables.length})`;
+        allBtn.onclick = () => {
+          customerTableFilterSection = 'ALL';
+          renderCustomerTableSwitcher();
+        };
+        secStrip.appendChild(allBtn);
+
+        sections.forEach(sec => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          const isAct = customerTableFilterSection === sec;
+          btn.className = `px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all ${
+            isAct
+              ? 'bg-primary text-on-primary'
+              : 'bg-surface-container border border-surface-container-high text-secondary hover:text-on-surface'
+          }`;
+          btn.textContent = sec;
+          btn.onclick = () => {
+            customerTableFilterSection = sec;
+            renderCustomerTableSwitcher();
+          };
+          secStrip.appendChild(btn);
+        });
+      }
+
+      grid.innerHTML = '';
+      const filtered = customerTableFilterSection === 'ALL'
+        ? tables
+        : tables.filter(t => t.zone === customerTableFilterSection);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-4 py-4 text-center text-[12px] text-secondary">No tables found in this section.</div>`;
+        return;
+      }
+
+      filtered.forEach(t => {
+        const isCurrent = String(appState.tableNumber) === String(t.id) || (t.name && t.name.toLowerCase().includes(String(appState.tableNumber)));
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => setTableNumber(t.id, t.zone);
+        btn.className = `py-2 px-1 rounded-xl border text-center font-bold text-[12px] transition-all flex flex-col items-center justify-center gap-0.5 active:scale-95 ${
+          isCurrent
+            ? 'border-2 border-primary bg-primary/10 text-primary shadow-xs'
+            : 'border-surface-container text-on-surface hover:border-primary hover:text-primary'
+        }`;
+
+        let shortName = t.id ? `T-${t.id}` : t.name;
+        btn.innerHTML = `
+          <span class="font-headline font-black">${shortName}</span>
+          <span class="text-[9px] text-secondary truncate max-w-[65px]">${t.zone}</span>
+        `;
+        grid.appendChild(btn);
+      });
+    }
+
+    async function openTableModal() {
+      if (!appState.availableTables || appState.availableTables.length === 0) {
+        try {
+          const res = await fetch(`${getApiBase()}/api/public/info?restaurantId=${encodeURIComponent(appState.restaurantId)}`);
+          const data = await res.json();
+          if (data) {
+            appState.availableTables = data.tables || [];
+            appState.availableSections = data.sections || [];
+          }
+        } catch(e) {}
+      }
+      renderCustomerTableSwitcher();
+      document.getElementById('table-switcher-modal').classList.remove('hidden');
+      document.getElementById('table-switcher-modal').classList.add('flex');
+    }
+
+    function closeTableModal() {
+      document.getElementById('table-switcher-modal').classList.add('hidden');
+      document.getElementById('table-switcher-modal').classList.remove('flex');
+    }
+
+    function setTableNumber(num, zone) {
+      appState.tableNumber = num;
+      appState.tableZone = zone || "Main Dining";
+      applyTableLabels();
+      loadCartFromStorage();
+      updateCartUI();
+      closeTableModal();
+      showToast(`Switched to Table #${num} (${appState.tableZone})`);
+    }
+
+    function applyCustomTable() {
+      const val = document.getElementById('custom-table-input').value.trim();
+      if (val) {
+        setTableNumber(val.padStart(2, '0'), "Custom Table");
+      }
+    }
+
+    function openWaiterModal() {
+      document.getElementById('waiter-modal').classList.remove('hidden');
+      document.getElementById('waiter-modal').classList.add('flex');
+    }
+
+    function closeWaiterModal() {
+      document.getElementById('waiter-modal').classList.add('hidden');
+      document.getElementById('waiter-modal').classList.remove('flex');
+    }
+
+    function sendWaiterRequest(actionName) {
+      closeWaiterModal();
+      showToast(`Notified staff: "${actionName}" for Table #${appState.tableNumber}`);
+
+      const bell = {
+        id: `B-${Date.now()}`,
+        table: `Table ${appState.tableNumber}`,
+        request: actionName,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      try {
+        const bells = JSON.parse(localStorage.getItem('gourmet_service_bells') || '[]');
+        bells.unshift(bell);
+        localStorage.setItem('gourmet_service_bells', JSON.stringify(bells));
+      } catch (e) {}
+
+      // Broadcast to Waiter Floor Screen in real time across all channels
+      PosSync.emit({
+        type: 'SERVICE_BELL',
+        table: `Table ${appState.tableNumber}`,
+        request: actionName
+      });
+    }
+
+    // --- 10. BILL SETTLED FEEDBACK ---
+    function rateDining(stars) {
+      const label = document.getElementById('rating-feedback-label');
+      const labels = ['Needs Improvement', 'Fair', 'Good', 'Very Good', 'Exceptional! 🌟'];
+      if (label) label.textContent = `Rated ${stars}/5 Stars: ${labels[stars - 1]}`;
+      const starBtns = document.querySelectorAll('.star-btn');
+      starBtns.forEach((btn, idx) => {
+        if (idx < stars) {
+          btn.style.fontVariationSettings = "'FILL' 1";
+          btn.classList.add('text-amber-400');
+        } else {
+          btn.style.fontVariationSettings = "'FILL' 0";
+          btn.classList.remove('text-amber-400');
+        }
+      });
+    }
+
+    function closeSettledModalAndReset() {
+      const modal = document.getElementById('bill-settled-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
+      appState.currentTicket = null;
+      appState.cart = [];
+      saveCartToStorage();
+      updateCartUI();
+      renderDishGrid();
+      
+      const reqTabLabel = document.getElementById('btn-request-bill-tab-label');
+      if (reqTabLabel) reqTabLabel.textContent = "Request Physical Bill";
+      const quickBtn = document.getElementById('btn-quick-bring-bill');
+      if (quickBtn) {
+        quickBtn.classList.remove('bg-emerald-50', 'border-emerald-400');
+        quickBtn.classList.add('bg-amber-50', 'border-amber-300');
+        const text = quickBtn.querySelector('span:last-child');
+        if (text) text.textContent = "Bring Bill";
+      }
+
+      switchView('menu');
+      showToast("Table cleared! Ready for your next dining visit. Thank you!");
+    }
+
+    // --- 11. TOAST COMPONENT ---
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const msgEl = document.getElementById('toast-message');
+      msgEl.textContent = msg;
+      
+      toast.classList.remove('opacity-0', '-translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-4');
+      }, 2600);
+    }
+  </script>
+
+</body>
+</html>

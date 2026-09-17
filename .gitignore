@@ -1,0 +1,4 @@
+﻿node_modules/
+stitch_restaurant_menu_app_ui/
+.DS_Store
+*.log

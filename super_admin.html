@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-100 text-slate-900" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Platform Super Admin - Mobile Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: "#4f46e5",
+            "brand-dark": "#4338ca",
+            "brand-light": "#e0e7ff"
+          },
+          fontFamily: {
+            sans: ["'Plus Jakarta Sans'", "sans-serif"],
+            mono: ["'JetBrains Mono'", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-animate {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="h-full flex justify-center items-center bg-slate-200/70 p-0 sm:p-4 text-slate-800">
+
+  <!-- Mobile App Frame Shell -->
+  <div class="w-full max-w-md h-full sm:h-[92vh] sm:max-h-[860px] bg-slate-50 sm:rounded-[36px] sm:shadow-2xl sm:border-[6px] sm:border-slate-300 flex flex-col overflow-hidden relative">
+
+    <!-- Mobile Top Notch / Status Bar -->
+    <div class="px-6 pt-3 pb-1 flex justify-between items-center text-[12px] font-semibold text-slate-500 select-none flex-shrink-0 bg-white border-b border-slate-100">
+      <span id="current-time">09:41</span>
+      <div class="flex items-center gap-1.5 text-slate-600">
+        <span class="material-symbols-outlined text-[16px]">signal_cellular_4_bar</span>
+        <span class="material-symbols-outlined text-[16px]">wifi</span>
+        <span class="material-symbols-outlined text-[16px]">battery_charging_full</span>
+      </div>
+    </div>
+
+    <!-- App Header -->
+    <header class="px-5 py-3 border-b border-slate-200/90 bg-white flex items-center justify-between flex-shrink-0 shadow-xs">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-brand to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand/20">
+          <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        </div>
+        <div>
+          <h1 class="text-[16px] font-extrabold text-slate-900 tracking-tight leading-none">Super Admin</h1>
+          <p class="text-[11px] text-indigo-600 font-semibold mt-0.5">Platform Owner Portal</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <a href="hub.html" title="Open Apps Hub" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center justify-center">
+          <span class="material-symbols-outlined text-[18px]">grid_view</span>
+        </a>
+        <button onclick="handleSuperLogout()" title="Log Out" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 transition-colors flex items-center justify-center">
+          <span class="material-symbols-outlined text-[18px]">logout</span>
+        </button>
+        <button onclick="openAddRestaurantSheet()" class="h-9 px-3 rounded-xl bg-brand hover:bg-brand-dark text-white text-[12px] font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          <span>Add</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- App Body (Scrollable Screen) -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 pb-20">
+
+      <!-- VIEW TAB 1: RESTAURANTS -->
+      <div id="view-restaurants-tab" class="space-y-4">
+        <!-- Platform Overview Metrics -->
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-3 text-center shadow-xs">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Restaurants</span>
+            <div id="stat-total-rests" class="text-[20px] font-black text-slate-900 mt-0.5">1</div>
+            <span class="text-[10px] text-emerald-600 font-bold flex items-center justify-center gap-0.5 mt-0.5">
+              <span class="material-symbols-outlined text-[12px]">trending_up</span>Live
+            </span>
+          </div>
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-3 text-center shadow-xs">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Subs</span>
+            <div id="stat-active-subs" class="text-[20px] font-black text-indigo-600 mt-0.5">1</div>
+            <span class="text-[10px] text-slate-500 font-medium mt-0.5">Paid/Trial</span>
+          </div>
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-3 text-center shadow-xs">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trials</span>
+            <div id="stat-trial-subs" class="text-[20px] font-black text-amber-600 mt-0.5">1</div>
+            <span class="text-[10px] text-amber-600/90 font-medium mt-0.5">15-day trials</span>
+          </div>
+        </div>
+
+        <!-- Quick Filter Bar -->
+        <div class="flex items-center justify-between gap-2 pt-1">
+          <div class="relative flex-1">
+            <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+            <input id="search-input" oninput="renderRestaurants()" type="text" placeholder="Search restaurant or owner..." 
+              class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand shadow-xs transition-colors"/>
+          </div>
+          <button onclick="refreshData()" class="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[18px]">refresh</span>
+          </button>
+        </div>
+
+        <!-- Restaurants Section Header -->
+        <div class="flex items-center justify-between px-1">
+          <h2 class="text-[14px] font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+            <span>Registered Restaurants</span>
+            <span id="rest-badge-count" class="text-[10px] font-black bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">1</span>
+          </h2>
+          <span class="text-[11px] text-slate-500">Tap card to view</span>
+        </div>
+
+        <!-- Restaurant List Cards -->
+        <div id="restaurants-list" class="space-y-3">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- VIEW TAB 2: AUDIT & FRAUD LOGS -->
+      <div id="view-audit-tab" class="hidden space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <div>
+            <h2 class="text-[14px] font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+              <span>Security &amp; Fraud Ledger</span>
+              <span id="audit-badge-count" class="text-[10px] font-black bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full border border-rose-200">0 logs</span>
+            </h2>
+            <p class="text-[11px] text-slate-500">Immutable ledger of void overrides, price changes &amp; till counts</p>
+          </div>
+          <button onclick="loadAuditLogs()" class="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs">
+            <span class="material-symbols-outlined text-[18px]">refresh</span>
+          </button>
+        </div>
+
+        <!-- Audit list items -->
+        <div id="audit-logs-list" class="space-y-2.5">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-20 shadow-lg">
+      <button onclick="switchSuperView('restaurants')" id="nav-btn-rests" class="flex flex-col items-center gap-0.5 text-brand font-bold text-[10px]">
+        <span class="material-symbols-outlined text-[20px]">store</span>
+        <span>Restaurants</span>
+      </button>
+      <button onclick="switchSuperView('audit')" id="nav-btn-audit" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-800 font-medium text-[10px]">
+        <span class="material-symbols-outlined text-[20px]">verified_user</span>
+        <span>Audit Logs</span>
+      </button>
+      <button onclick="openAddRestaurantSheet()" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-800 font-medium text-[10px]">
+        <div class="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center -mt-2 shadow-md shadow-brand/30">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+        </div>
+        <span>New</span>
+      </button>
+      <a href="hub.html" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-800 font-medium text-[10px]">
+        <span class="material-symbols-outlined text-[20px]">apps</span>
+        <span>Apps Hub</span>
+      </a>
+    </nav>
+
+    <!-- ================= ADD RESTAURANT BOTTOM SHEET / MODAL ================= -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-white border-t sm:border border-slate-200 rounded-t-[28px] sm:rounded-[28px] max-h-[92vh] flex flex-col overflow-hidden sheet-animate shadow-2xl">
+        
+        <!-- Sheet Header -->
+        <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-brand text-[22px]">add_business</span>
+            <h3 class="text-[15px] font-black text-slate-900">Add New Restaurant</h3>
+          </div>
+          <button onclick="closeAddRestaurantSheet()" class="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <!-- Sheet Form (Scrollable) -->
+        <form id="add-rest-form" onsubmit="handleCreateRestaurant(event)" class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4 text-[12px]">
+          
+          <!-- Unique Serialwise Restaurant ID -->
+          <div class="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between shadow-2xs">
+            <div>
+              <span class="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider block">Unique Restaurant ID</span>
+              <span id="add-serial-id-display" class="text-[16px] font-mono font-black text-brand tracking-wide">REST-003</span>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 text-[10px] font-bold border border-indigo-200">
+              Auto Serial ID
+            </span>
+            <input type="hidden" id="add-serial-id" value="REST-003"/>
+          </div>
+
+          <!-- Basic Restaurant Info -->
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">Restaurant Name *</label>
+            <input required id="add-name" type="text" placeholder="e.g. Royal Spice Kitchen" 
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand focus:bg-white transition-colors"/>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">Address *</label>
+            <input required id="add-address" type="text" placeholder="e.g. Shop #4, MM Alam Road, Gulberg" 
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand focus:bg-white transition-colors"/>
+          </div>
+
+          <!-- Owner Info -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-slate-700 font-bold mb-1">Owner Name *</label>
+              <input required id="add-owner-name" type="text" placeholder="e.g. Tariq Mehmood" 
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand focus:bg-white"/>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-bold mb-1">Owner Mob Number *</label>
+              <input required id="add-owner-mob" type="tel" placeholder="e.g. +92 300 1234567" 
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand focus:bg-white"/>
+            </div>
+          </div>
+
+          <!-- Checkbox: Owner will manage the app -->
+          <div class="p-3 bg-slate-100/70 border border-slate-200 rounded-2xl flex items-start gap-3">
+            <input id="add-owner-manages" onchange="toggleManagerFields(this.checked)" type="checkbox" checked
+              class="mt-0.5 w-4 h-4 rounded text-brand focus:ring-brand border-slate-300 bg-white cursor-pointer"/>
+            <label for="add-owner-manages" class="cursor-pointer text-slate-800 font-semibold leading-tight select-none">
+              Owner will manage the app
+              <span class="block text-[11px] font-normal text-slate-500 mt-0.5">Manager name &amp; phone will be greyed out if checked.</span>
+            </label>
+          </div>
+
+          <!-- Manager Details (Disabled/Greyed out if Owner Manages) -->
+          <div id="manager-fields-container" class="space-y-3 opacity-40 pointer-events-none transition-opacity">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-500 font-bold mb-1">Manager Name</label>
+                <input id="add-manager-name" type="text" placeholder="Manager Name" disabled
+                  class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 disabled:bg-slate-100 disabled:text-slate-400"/>
+              </div>
+              <div>
+                <label class="block text-slate-500 font-bold mb-1">Manager Mob Number</label>
+                <input id="add-manager-mob" type="tel" placeholder="Manager Mobile" disabled
+                  class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 disabled:bg-slate-100 disabled:text-slate-400"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscription Plan Selection -->
+          <div>
+            <label class="block text-slate-700 font-bold mb-1.5">Choose Subscription Plan *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="plan-option flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-brand transition-all shadow-2xs">
+                <input type="radio" name="sub-plan" value="trial" checked class="w-4 h-4 text-brand focus:ring-brand"/>
+                <div class="leading-tight">
+                  <span class="font-bold text-slate-900 block">Free Trial</span>
+                  <span class="text-[10px] text-amber-600 font-semibold">15 Days Full Access</span>
+                </div>
+              </label>
+
+              <label class="plan-option flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-brand transition-all shadow-2xs">
+                <input type="radio" name="sub-plan" value="3m" class="w-4 h-4 text-brand focus:ring-brand"/>
+                <div class="leading-tight">
+                  <span class="font-bold text-slate-900 block">3 Months</span>
+                  <span class="text-[10px] text-indigo-600 font-semibold">Quarterly Plan</span>
+                </div>
+              </label>
+
+              <label class="plan-option flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-brand transition-all shadow-2xs">
+                <input type="radio" name="sub-plan" value="6m" class="w-4 h-4 text-brand focus:ring-brand"/>
+                <div class="leading-tight">
+                  <span class="font-bold text-slate-900 block">6 Months</span>
+                  <span class="text-[10px] text-indigo-600 font-semibold">Semi-Annual Plan</span>
+                </div>
+              </label>
+
+              <label class="plan-option flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-brand transition-all shadow-2xs">
+                <input type="radio" name="sub-plan" value="12m" class="w-4 h-4 text-brand focus:ring-brand"/>
+                <div class="leading-tight">
+                  <span class="font-bold text-slate-900 block">12 Months</span>
+                  <span class="text-[10px] text-emerald-600 font-semibold">Annual Pro Plan</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Generate Credentials Section -->
+          <div class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-indigo-900 text-[12px] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-brand">key</span>
+                <span>Generate Admin Credentials</span>
+              </span>
+              <button type="button" onclick="generateRandomPassword()" class="text-[11px] font-bold text-brand hover:text-indigo-800 flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[14px]">autorenew</span>
+                <span>Generate Pass</span>
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-slate-600 text-[11px] font-semibold mb-1">Login Email Address *</label>
+              <input required id="add-email" type="email" placeholder="owner@restaurant.com"
+                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-[12px] focus:outline-none focus:border-brand"/>
+            </div>
+
+            <div>
+              <label class="block text-slate-600 text-[11px] font-semibold mb-1">Random Generated Password *</label>
+              <div class="flex items-center gap-2">
+                <input required id="add-password" type="text" readonly
+                  class="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-brand font-mono font-bold text-[13px] tracking-wide"/>
+                <button type="button" onclick="copyPassword('add-password')" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700" title="Copy Password">
+                  <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pt-2 flex items-center gap-2.5">
+            <button type="button" onclick="closeAddRestaurantSheet()" class="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-600">
+              Cancel
+            </button>
+            <button type="submit" class="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-dark font-black text-white shadow-md shadow-brand/20 active:scale-98 transition-all">
+              Save Restaurant
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= VIEW / EDIT / MANAGE RESTAURANT DIALOG ================= -->
+    <div id="view-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-white border-t sm:border border-slate-200 rounded-t-[28px] sm:rounded-[28px] max-h-[92vh] flex flex-col overflow-hidden sheet-animate shadow-2xl">
+        
+        <!-- Sheet Header with Edit Button at Top -->
+        <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-600 text-[22px]">restaurant</span>
+            <h3 id="view-title" class="text-[15px] font-black text-slate-900">Restaurant Details</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Edit button at top as requested -->
+            <button id="view-edit-btn" onclick="toggleEditMode()" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold flex items-center gap-1 border border-indigo-200">
+              <span class="material-symbols-outlined text-[14px]">edit</span>
+              <span id="edit-btn-text">Edit</span>
+            </button>
+            <button onclick="closeViewDialog()" class="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- View / Edit Content -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4 text-[12px]">
+
+          <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Account Status</span>
+                <span id="view-serial-id" class="font-mono text-[10px] font-black bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md border border-indigo-200">REST-001</span>
+              </div>
+              <span id="view-status-pill" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Active</span>
+            </div>
+
+            <!-- Restaurant subscription cancelled checkbox which makes it inactive -->
+            <div class="pt-1.5 flex items-start gap-3 border-t border-slate-200">
+              <input id="view-sub-cancelled" onchange="toggleSubscriptionCancellation(this.checked)" type="checkbox"
+                class="mt-0.5 w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 bg-white cursor-pointer"/>
+              <label for="view-sub-cancelled" class="cursor-pointer text-slate-900 font-bold leading-tight select-none">
+                Restaurant subscription cancelled
+                <span class="block text-[11px] font-normal text-rose-600 mt-0.5">
+                  Checking this makes the restaurant inactive immediately (blocks login and orders).
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Subscription Plan & Manage Subscription Button -->
+          <div class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-2xl flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider block">Current Plan</span>
+              <span id="view-plan-name" class="text-[14px] font-extrabold text-slate-900 block">Free Trial (15 Days)</span>
+              <span id="view-plan-expiry" class="text-[11px] text-slate-500 block mt-0.5">Expires in 13 days</span>
+            </div>
+            <!-- Manage Subscription Button as requested -->
+            <button onclick="openManageSubModal()" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[16px]">tune</span>
+              <span>Manage Plan</span>
+            </button>
+          </div>
+
+          <!-- View / Edit Form Fields -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-slate-600 font-semibold mb-1">Restaurant Name</label>
+              <input id="v-name" type="text" disabled class="view-field w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-600"/>
+            </div>
+
+            <div>
+              <label class="block text-slate-600 font-semibold mb-1">Address</label>
+              <input id="v-address" type="text" disabled class="view-field w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-600"/>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-slate-600 font-semibold mb-1">Owner Name</label>
+                <input id="v-owner-name" type="text" disabled class="view-field w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-600"/>
+              </div>
+              <div>
+                <label class="block text-slate-600 font-semibold mb-1">Owner Phone</label>
+                <input id="v-owner-phone" type="text" disabled class="view-field w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-600"/>
+              </div>
+            </div>
+
+            <!-- Owner manages checkbox in view -->
+            <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2.5">
+              <input id="v-owner-manages" onchange="toggleViewManagerFields(this.checked)" type="checkbox" disabled class="w-4 h-4 rounded text-brand border-slate-300 bg-white"/>
+              <label class="text-slate-800 font-semibold text-[11px]">Owner manages the app</label>
+            </div>
+
+            <div id="v-manager-block" class="grid grid-cols-2 gap-2.5 opacity-60">
+              <div>
+                <label class="block text-slate-600 font-semibold mb-1">Manager Name</label>
+                <input id="v-manager-name" type="text" disabled class="view-field w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-600"/>
+              </div>
+              <div>
+                <label class="block text-slate-600 font-semibold mb-1">Manager Phone</label>
+                <input id="v-manager-phone" type="text" disabled class="view-field w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-600"/>
+              </div>
+            </div>
+
+            <!-- Credentials Block -->
+            <div class="p-3 bg-slate-100/80 border border-slate-200 rounded-xl space-y-2">
+              <span class="text-slate-500 font-bold text-[11px] uppercase tracking-wider block">Admin Login Credentials</span>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 text-[11px]">Email:</span>
+                <span id="v-cred-email" class="font-mono text-slate-900 font-bold">owner@deragourmet.com</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 text-[11px]">Password:</span>
+                <div class="flex items-center gap-1.5">
+                  <span id="v-cred-pass" class="font-mono text-brand font-bold">DeraAdmin#2026</span>
+                  <button type="button" onclick="copyPassword('v-cred-pass', true)" class="p-1 text-slate-500 hover:text-slate-800" title="Copy">
+                    <span class="material-symbols-outlined text-[15px]">content_copy</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save Changes button (shown only in Edit mode) -->
+            <div id="edit-actions" class="hidden pt-2">
+              <button onclick="saveRestaurantEdits()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-black text-white shadow-md active:scale-98 transition-all">
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MANAGE SUBSCRIPTION MODAL ================= -->
+    <div id="manage-sub-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-white border-t sm:border border-slate-200 rounded-t-[28px] sm:rounded-[28px] max-h-[85vh] flex flex-col overflow-hidden sheet-animate shadow-2xl">
+        
+        <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-indigo-50/60">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-700 text-[22px]">card_membership</span>
+            <h3 class="text-[15px] font-black text-slate-900">Manage Subscription</h3>
+          </div>
+          <button onclick="closeManageSubModal()" class="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <div class="p-5 space-y-4 text-[12px] overflow-y-auto custom-scrollbar">
+          
+          <!-- Option A: Extend Trial -->
+          <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2.5">
+            <span class="text-amber-800 font-extrabold text-[12px] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-amber-600">more_time</span>
+              <span>Option 1: Extend Free Trial</span>
+            </span>
+            <p class="text-slate-600 text-[11px]">Add extra free days to this restaurant's trial period:</p>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="applyExtendTrial(7)" class="py-2 rounded-xl bg-white border border-amber-300 hover:bg-amber-600 hover:text-white text-slate-800 font-bold transition-all shadow-2xs">
+                + 7 Days
+              </button>
+              <button onclick="applyExtendTrial(15)" class="py-2 rounded-xl bg-white border border-amber-300 hover:bg-amber-600 hover:text-white text-slate-800 font-bold transition-all shadow-2xs">
+                + 15 Days
+              </button>
+              <button onclick="applyExtendTrial(30)" class="py-2 rounded-xl bg-white border border-amber-300 hover:bg-amber-600 hover:text-white text-slate-800 font-bold transition-all shadow-2xs">
+                + 30 Days
+              </button>
+            </div>
+          </div>
+
+          <!-- Option B: Enable Paid Plans -->
+          <div class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-2.5">
+            <span class="text-indigo-900 font-extrabold text-[12px] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-brand">verified</span>
+              <span>Option 2: Activate Paid Plan</span>
+            </span>
+            <p class="text-slate-600 text-[11px]">Switch subscription to 3, 6, or 12 months:</p>
+            <div class="space-y-2">
+              <button onclick="applyChangePlan('3m')" class="w-full p-2.5 rounded-xl bg-white border border-indigo-200 hover:bg-brand hover:text-white text-slate-800 font-bold flex items-center justify-between transition-all shadow-2xs">
+                <span>3 Months Plan</span>
+                <span class="text-[11px] font-semibold text-indigo-600">Quarterly</span>
+              </button>
+              <button onclick="applyChangePlan('6m')" class="w-full p-2.5 rounded-xl bg-white border border-indigo-200 hover:bg-brand hover:text-white text-slate-800 font-bold flex items-center justify-between transition-all shadow-2xs">
+                <span>6 Months Plan</span>
+                <span class="text-[11px] font-semibold text-indigo-600">Semi-Annual</span>
+              </button>
+              <button onclick="applyChangePlan('12m')" class="w-full p-2.5 rounded-xl bg-white border border-emerald-300 hover:bg-emerald-600 hover:text-white text-slate-800 font-bold flex items-center justify-between transition-all shadow-2xs">
+                <span>12 Months Plan (Best Value)</span>
+                <span class="text-[11px] font-semibold text-emerald-600">Annual</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-14 inset-x-0 mx-auto w-max max-w-[90%] px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-[12px] font-semibold shadow-2xl flex items-center gap-2 pointer-events-none opacity-0 transition-opacity z-50">
+      <span id="toast-icon" class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+      <span id="toast-msg">Action completed</span>
+    </div>
+
+    <!-- ================= SUPER ADMIN LOGIN MODAL ================= -->
+    <div id="super-login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-center items-center p-4">
+      <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="text-center space-y-1">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-brand mx-auto flex items-center justify-center shadow-xs">
+            <span class="material-symbols-outlined text-[28px]">shield_person</span>
+          </div>
+          <h2 class="text-[18px] font-black text-slate-900">Super Admin Portal</h2>
+          <p class="text-[11px] text-slate-500">Master Platform Authentication</p>
+        </div>
+
+        <form onsubmit="handleSuperLogin(event)" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Super Admin Email</label>
+            <input id="super-login-email" type="email" required value="superadmin@deragourmet.com" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] font-medium text-slate-900 focus:outline-none focus:border-brand"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Master Password</label>
+            <input id="super-login-password" type="password" required value="SuperAdmin#2026" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] font-medium text-slate-900 focus:outline-none focus:border-brand"/>
+          </div>
+          <div id="super-login-error" class="hidden text-[11px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2 font-medium"></div>
+          <button type="submit" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-white font-black text-[13px] shadow-sm transition-all flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-[18px]">verified_user</span>
+            <span>Authenticate &amp; Unlock</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let restaurants = [];
+    let currentViewingRest = null;
+    let isEditMode = false;
+
+    function getApiBase() {
+      if (window.location.protocol === 'file:' || !window.location.port) {
+        return 'http://localhost:3000';
+      }
+      return '';
+    }
+
+    function getSuperAuthToken() {
+      return localStorage.getItem('pos_super_token');
+    }
+
+    function getSuperAuthHeaders() {
+      const token = getSuperAuthToken();
+      const h = { 'Content-Type': 'application/json' };
+      if (token) h['Authorization'] = `Bearer ${token}`;
+      return h;
+    }
+
+    function checkSuperAuth() {
+      const token = getSuperAuthToken();
+      if (!token) {
+        document.getElementById('super-login-modal').classList.remove('hidden');
+        return false;
+      }
+      document.getElementById('super-login-modal').classList.add('hidden');
+      return true;
+    }
+
+    async function handleSuperLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('super-login-email').value;
+      const password = document.getElementById('super-login-password').value;
+      const errBox = document.getElementById('super-login-error');
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(`${getApiBase()}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, role: 'super_admin' })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          localStorage.setItem('pos_super_token', data.token);
+          localStorage.setItem('pos_super_user', JSON.stringify(data.user || {}));
+          document.getElementById('super-login-modal').classList.add('hidden');
+          refreshData();
+          loadAuditLogs();
+          showToast('Super Admin authenticated successfully!');
+        } else {
+          errBox.textContent = data.error || 'Invalid credentials';
+          errBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        errBox.textContent = 'Server connection failed.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function handleSuperLogout() {
+      if (confirm('Log out from Platform Super Admin console?')) {
+        localStorage.removeItem('pos_super_token');
+        localStorage.removeItem('pos_super_user');
+        checkSuperAuth();
+      }
+    }
+
+    function switchSuperView(view) {
+      const restsView = document.getElementById('view-restaurants-tab');
+      const auditView = document.getElementById('view-audit-tab');
+      const navRests = document.getElementById('nav-btn-rests');
+      const navAudit = document.getElementById('nav-btn-audit');
+
+      if (view === 'restaurants') {
+        restsView.classList.remove('hidden');
+        auditView.classList.add('hidden');
+        navRests.className = "flex flex-col items-center gap-0.5 text-brand font-bold text-[10px]";
+        navAudit.className = "flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-800 font-medium text-[10px]";
+      } else {
+        restsView.classList.add('hidden');
+        auditView.classList.remove('hidden');
+        navAudit.className = "flex flex-col items-center gap-0.5 text-brand font-bold text-[10px]";
+        navRests.className = "flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-800 font-medium text-[10px]";
+        loadAuditLogs();
+      }
+    }
+
+    async function loadAuditLogs() {
+      const container = document.getElementById('audit-logs-list');
+      const countBadge = document.getElementById('audit-badge-count');
+      try {
+        const res = await fetch(`${getApiBase()}/api/audit-logs`, {
+          headers: getSuperAuthHeaders()
+        });
+        if (res.ok) {
+          const logs = await res.json();
+          countBadge.textContent = `${logs.length} logs`;
+          if (logs.length === 0) {
+            container.innerHTML = `<div class="p-8 bg-white border border-slate-200 rounded-2xl text-center text-slate-400 text-[12px]">No audit events logged yet.</div>`;
+            return;
+          }
+
+          container.innerHTML = logs.map(l => {
+            let badgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+            let icon = "info";
+            if (l.action.includes('VOID') || l.action.includes('FAILED') || l.action.includes('BLOCKED')) {
+              badgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+              icon = "gpp_bad";
+            } else if (l.action.includes('SETTLED') || l.action.includes('BALANCED')) {
+              badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+              icon = "receipt_long";
+            } else if (l.action.includes('ALTERATION') || l.action.includes('SHORT') || l.action.includes('OVER')) {
+              badgeClass = "bg-amber-50 text-amber-800 border-amber-200";
+              icon = "warning";
+            } else if (l.action.includes('LOGIN') || l.action.includes('SHIFT')) {
+              badgeClass = "bg-indigo-50 text-indigo-700 border-indigo-200";
+              icon = "manage_accounts";
+            }
+
+            const detailsStr = typeof l.details === 'object' ? JSON.stringify(l.details, null, 1).replace(/"/g, '') : String(l.details);
+
+            return `
+              <div class="bg-white border border-slate-200/90 rounded-2xl p-3 space-y-1.5 shadow-2xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px] text-slate-500">${icon}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${badgeClass}">${l.action}</span>
+                  </div>
+                  <span class="text-[10px] text-slate-400">${new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                </div>
+                <div class="text-[11px] text-slate-700 font-mono bg-slate-50 p-2 rounded-xl border border-slate-100 break-all">
+                  ${detailsStr}
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                  <span>Actor: <strong class="text-slate-600">${l.actor || 'system'}</strong></span>
+                  <span>Rest: <strong class="text-slate-600">${l.restaurantId || 'platform'}</strong></span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="p-6 bg-white border border-rose-200 text-rose-600 rounded-xl text-center text-[12px]">Failed to load audit ledger. Check backend connection.</div>`;
+      }
+    }
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('current-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function showToast(msg, icon = 'check_circle', isErr = false) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      const ic = document.getElementById('toast-icon');
+      ic.textContent = icon;
+      ic.className = `material-symbols-outlined text-[18px] ${isErr ? 'text-rose-400' : 'text-emerald-400'}`;
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 3000);
+    }
+
+    function getNextSerialId() {
+      let maxNum = 0;
+      (restaurants || []).forEach(r => {
+        if (r.id) {
+          const m = String(r.id).match(/REST-(\d+)/i);
+          if (m) {
+            const num = parseInt(m[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        }
+      });
+      return `REST-${String(maxNum + 1).padStart(3, '0')}`;
+    }
+
+    async function refreshData() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants`, {
+          headers: getSuperAuthHeaders()
+        });
+        if (res.ok) {
+          restaurants = await res.json();
+          localStorage.setItem('pos_super_restaurants', JSON.stringify(restaurants));
+          renderRestaurants();
+          updateStats();
+          return;
+        }
+      } catch (e) {
+        console.warn('Backend fetch failed, checking local cache:', e);
+      }
+      
+      const cached = localStorage.getItem('pos_super_restaurants');
+      if (cached) {
+        try {
+          restaurants = JSON.parse(cached);
+        } catch(err) {}
+      }
+      renderRestaurants();
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('stat-total-rests').textContent = restaurants.length;
+      document.getElementById('rest-badge-count').textContent = restaurants.length;
+      const active = restaurants.filter(r => !r.subscriptionCancelled && r.status === 'active').length;
+      document.getElementById('stat-active-subs').textContent = active;
+      const trials = restaurants.filter(r => r.plan === 'trial').length;
+      document.getElementById('stat-trial-subs').textContent = trials;
+    }
+
+    function renderRestaurants() {
+      const q = (document.getElementById('search-input').value || '').toLowerCase();
+      const container = document.getElementById('restaurants-list');
+      container.innerHTML = '';
+
+      const filtered = restaurants.filter(r => 
+        (r.name || '').toLowerCase().includes(q) || 
+        (r.id || '').toLowerCase().includes(q) ||
+        (r.ownerName || '').toLowerCase().includes(q)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 text-slate-400">
+            <span class="material-symbols-outlined text-[36px] text-slate-300 block mb-1">storefront</span>
+            <p class="font-bold text-[13px] text-slate-600">No restaurants found</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Click 'Add Rest.' to register a new restaurant.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(rest => {
+        const isCancelled = rest.subscriptionCancelled || rest.status === 'cancelled';
+        const daysLeft = Math.max(0, Math.ceil((new Date(rest.endDate) - new Date()) / 86400000));
+        
+        const card = document.createElement('div');
+        card.className = "bg-white border border-slate-200/90 rounded-2xl p-3.5 space-y-2.5 shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all";
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-2xl ${isCancelled ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-indigo-50 text-brand border border-indigo-200'} flex items-center justify-center font-black text-[15px]">
+                ${(rest.name || 'R').charAt(0)}
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h3 class="text-[14px] font-bold text-slate-900 tracking-tight">${rest.name}</h3>
+                  <span class="font-mono text-[10px] font-black bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200">${rest.id || 'N/A'}</span>
+                </div>
+                <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                  <span class="material-symbols-outlined text-[13px]">person</span>
+                  <span>${rest.ownerName}</span>
+                  ${rest.ownerPhone ? `&bull; <span>${rest.ownerPhone}</span>` : ''}
+                </p>
+              </div>
+            </div>
+
+            <!-- Status badge -->
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+              isCancelled 
+                ? 'bg-rose-50 text-rose-700 border border-rose-200' 
+                : rest.plan === 'trial' 
+                  ? 'bg-amber-50 text-amber-800 border border-amber-200' 
+                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            }">
+              ${isCancelled ? 'Cancelled' : rest.planLabel || 'Active'}
+            </span>
+          </div>
+
+          <div class="bg-slate-50 rounded-xl p-2 flex items-center justify-between text-[11px] border border-slate-100">
+            <div class="text-slate-500">
+              <span>Valid: </span>
+              <strong class="text-slate-800">${isCancelled ? 'Inactive' : `${daysLeft} days remaining`}</strong>
+            </div>
+            <div class="text-slate-600 font-mono font-medium text-[10px]">
+              ${rest.credentials ? rest.credentials.email : ''}
+            </div>
+          </div>
+
+          <div class="pt-1 flex items-center justify-between gap-2">
+            <span class="text-[10px] text-slate-500 font-medium">Serial ID: <strong class="font-mono text-slate-700">${rest.id || 'N/A'}</strong></span>
+            <button onclick="openViewDialog('${rest.id}')" class="px-3.5 py-1.5 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold text-[11px] flex items-center gap-1 shadow-xs active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[14px]">visibility</span>
+              <span>View &amp; Manage</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Modal Add functions
+    function openAddRestaurantSheet() {
+      generateRandomPassword();
+      const nextId = getNextSerialId();
+      const disp = document.getElementById('add-serial-id-display');
+      const inp = document.getElementById('add-serial-id');
+      if (disp) disp.textContent = nextId;
+      if (inp) inp.value = nextId;
+      document.getElementById('add-modal').classList.remove('hidden');
+    }
+
+    function closeAddRestaurantSheet() {
+      document.getElementById('add-modal').classList.add('hidden');
+    }
+
+    function toggleManagerFields(ownerManages) {
+      const container = document.getElementById('manager-fields-container');
+      const nameInp = document.getElementById('add-manager-name');
+      const mobInp = document.getElementById('add-manager-mob');
+      if (ownerManages) {
+        container.classList.add('opacity-40', 'pointer-events-none');
+        nameInp.disabled = true;
+        mobInp.disabled = true;
+        nameInp.value = '';
+        mobInp.value = '';
+      } else {
+        container.classList.remove('opacity-40', 'pointer-events-none');
+        nameInp.disabled = false;
+        mobInp.disabled = false;
+      }
+    }
+
+    function generateRandomPassword() {
+      const words = ['Chef', 'Flame', 'Grill', 'Bistro', 'Spice', 'Dine', 'Tandoor', 'Gourmet'];
+      const word = words[Math.floor(Math.random() * words.length)];
+      const num = Math.floor(100 + Math.random() * 900);
+      const pass = `${word}Pass#${num}`;
+      document.getElementById('add-password').value = pass;
+    }
+
+    function copyPassword(elementId, isText = false) {
+      const val = isText ? document.getElementById(elementId).textContent : document.getElementById(elementId).value;
+      navigator.clipboard.writeText(val);
+      showToast('Password copied to clipboard!');
+    }
+
+    async function handleCreateRestaurant(e) {
+      e.preventDefault();
+      const plan = document.querySelector('input[name="sub-plan"]:checked').value;
+      const ownerManages = document.getElementById('add-owner-manages').checked;
+      const serialId = document.getElementById('add-serial-id').value || getNextSerialId();
+
+      let planDurationDays = 15;
+      let planLabel = "Free Trial (15 Days)";
+      if (plan === '3m') { planDurationDays = 90; planLabel = "3 Months Plan"; }
+      else if (plan === '6m') { planDurationDays = 180; planLabel = "6 Months Plan"; }
+      else if (plan === '12m') { planDurationDays = 365; planLabel = "12 Months Plan"; }
+
+      const payload = {
+        id: serialId,
+        name: document.getElementById('add-name').value.trim(),
+        address: document.getElementById('add-address').value.trim(),
+        ownerName: document.getElementById('add-owner-name').value.trim(),
+        ownerPhone: document.getElementById('add-owner-mob').value.trim(),
+        ownerManagesApp: ownerManages,
+        managerName: ownerManages ? '' : document.getElementById('add-manager-name').value.trim(),
+        managerPhone: ownerManages ? '' : document.getElementById('add-manager-mob').value.trim(),
+        plan: plan,
+        email: document.getElementById('add-email').value.trim(),
+        password: document.getElementById('add-password').value.trim()
+      };
+
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants`, {
+          method: 'POST',
+          headers: getSuperAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.ok) {
+          showToast(`Restaurant ${result.restaurant.id} created successfully!`);
+          closeAddRestaurantSheet();
+          document.getElementById('add-rest-form').reset();
+          refreshData();
+          return;
+        } else {
+          showToast(result.error || 'Failed to save', 'error', true);
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend unavailable, saving locally:', err);
+        // Fallback: save to local memory & localStorage
+        const localRest = {
+          id: serialId,
+          name: payload.name,
+          address: payload.address,
+          ownerName: payload.ownerName,
+          ownerPhone: payload.ownerPhone,
+          ownerManagesApp: payload.ownerManagesApp,
+          managerName: payload.managerName,
+          managerPhone: payload.managerPhone,
+          plan: payload.plan,
+          planLabel: planLabel,
+          trialDays: payload.plan === 'trial' ? 15 : 0,
+          status: 'active',
+          subscriptionCancelled: false,
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + planDurationDays * 86400000).toISOString(),
+          credentials: { email: payload.email, password: payload.password },
+          currency: 'Rs.',
+          taxRate: 0.05
+        };
+        restaurants.unshift(localRest);
+        localStorage.setItem('pos_super_restaurants', JSON.stringify(restaurants));
+        renderRestaurants();
+        updateStats();
+        closeAddRestaurantSheet();
+        document.getElementById('add-rest-form').reset();
+        showToast(`Restaurant ${localRest.id} saved successfully!`);
+      }
+    }
+
+    // View & Edit Modal
+    function openViewDialog(restId) {
+      const rest = restaurants.find(r => r.id === restId);
+      if (!rest) return;
+      currentViewingRest = rest;
+      isEditMode = false;
+      applyViewFields(rest);
+      document.getElementById('view-modal').classList.remove('hidden');
+    }
+
+    function closeViewDialog() {
+      document.getElementById('view-modal').classList.add('hidden');
+      currentViewingRest = null;
+    }
+
+    function applyViewFields(rest) {
+      document.getElementById('view-title').textContent = rest.name;
+      const isCancelled = rest.subscriptionCancelled || rest.status === 'cancelled';
+      
+      const serialBadge = document.getElementById('view-serial-id');
+      if (serialBadge) serialBadge.textContent = rest.id || 'N/A';
+
+      const pill = document.getElementById('view-status-pill');
+      if (isCancelled) {
+        pill.textContent = 'Cancelled / Inactive';
+        pill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200';
+      } else {
+        pill.textContent = 'Active Subscription';
+        pill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200';
+      }
+
+      document.getElementById('view-sub-cancelled').checked = isCancelled;
+      document.getElementById('view-plan-name').textContent = rest.planLabel || 'Standard Plan';
+      
+      const daysLeft = Math.max(0, Math.ceil((new Date(rest.endDate) - new Date()) / 86400000));
+      document.getElementById('view-plan-expiry').textContent = isCancelled ? 'Account disabled' : `Expires in ${daysLeft} days (${new Date(rest.endDate).toLocaleDateString()})`;
+
+      document.getElementById('v-name').value = rest.name || '';
+      document.getElementById('v-address').value = rest.address || '';
+      document.getElementById('v-owner-name').value = rest.ownerName || '';
+      document.getElementById('v-owner-phone').value = rest.ownerPhone || '';
+      
+      const manages = !!rest.ownerManagesApp;
+      document.getElementById('v-owner-manages').checked = manages;
+      document.getElementById('v-manager-name').value = rest.managerName || '';
+      document.getElementById('v-manager-phone').value = rest.managerPhone || '';
+
+      const mgrBlock = document.getElementById('v-manager-block');
+      if (manages) {
+        mgrBlock.classList.add('opacity-40');
+      } else {
+        mgrBlock.classList.remove('opacity-40');
+      }
+
+      document.getElementById('v-cred-email').textContent = rest.credentials ? rest.credentials.email : 'N/A';
+      document.getElementById('v-cred-pass').textContent = rest.credentials ? rest.credentials.password : 'N/A';
+
+      setFormEditable(false);
+    }
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      setFormEditable(isEditMode);
+      document.getElementById('edit-btn-text').textContent = isEditMode ? 'Cancel' : 'Edit';
+      document.getElementById('edit-actions').classList.toggle('hidden', !isEditMode);
+    }
+
+    function setFormEditable(editable) {
+      ['v-name', 'v-address', 'v-owner-name', 'v-owner-phone'].forEach(id => {
+        document.getElementById(id).disabled = !editable;
+      });
+      document.getElementById('v-owner-manages').disabled = !editable;
+      const manages = document.getElementById('v-owner-manages').checked;
+      document.getElementById('v-manager-name').disabled = !editable || manages;
+      document.getElementById('v-manager-phone').disabled = !editable || manages;
+    }
+
+    function toggleViewManagerFields(manages) {
+      const mgrBlock = document.getElementById('v-manager-block');
+      const nameInp = document.getElementById('v-manager-name');
+      const phoneInp = document.getElementById('v-manager-phone');
+      if (manages) {
+        mgrBlock.classList.add('opacity-40');
+        nameInp.disabled = true;
+        phoneInp.disabled = true;
+      } else {
+        mgrBlock.classList.remove('opacity-40');
+        nameInp.disabled = !isEditMode;
+        phoneInp.disabled = !isEditMode;
+      }
+    }
+
+    async function toggleSubscriptionCancellation(checked) {
+      if (!currentViewingRest) return;
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants/${currentViewingRest.id}`, {
+          method: 'PUT',
+          headers: getSuperAuthHeaders(),
+          body: JSON.stringify({ subscriptionCancelled: checked })
+        });
+        const result = await res.json();
+        if (result.ok) {
+          currentViewingRest = result.restaurant;
+          applyViewFields(result.restaurant);
+          showToast(checked ? 'Subscription cancelled (Inactive)' : 'Subscription reactivated (Active)');
+          refreshData();
+          return;
+        }
+      } catch (err) {
+        console.warn('Server offline, toggling locally:', err);
+      }
+      currentViewingRest.subscriptionCancelled = checked;
+      currentViewingRest.status = checked ? 'cancelled' : 'active';
+      localStorage.setItem('pos_super_restaurants', JSON.stringify(restaurants));
+      applyViewFields(currentViewingRest);
+      renderRestaurants();
+      updateStats();
+      showToast(checked ? 'Subscription marked cancelled' : 'Subscription reactivated');
+    }
+
+    async function handleEditSubmit(e) {
+      e.preventDefault();
+      if (!currentViewingRest) return;
+
+      const ownerManages = document.getElementById('v-owner-manages').checked;
+      const payload = {
+        name: document.getElementById('v-name').value.trim(),
+        address: document.getElementById('v-address').value.trim(),
+        ownerName: document.getElementById('v-owner-name').value.trim(),
+        ownerPhone: document.getElementById('v-owner-phone').value.trim(),
+        ownerManagesApp: ownerManages,
+        managerName: ownerManages ? '' : document.getElementById('v-manager-name').value.trim(),
+        managerPhone: ownerManages ? '' : document.getElementById('v-manager-phone').value.trim()
+      };
+
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants/${currentViewingRest.id}`, {
+          method: 'PUT',
+          headers: getSuperAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.ok) {
+          currentViewingRest = result.restaurant;
+          toggleEditMode();
+          applyViewFields(result.restaurant);
+          showToast('Restaurant details updated!');
+          refreshData();
+          return;
+        }
+      } catch (err) {
+        console.warn('Server offline, applying edits locally:', err);
+      }
+      Object.assign(currentViewingRest, payload);
+      localStorage.setItem('pos_super_restaurants', JSON.stringify(restaurants));
+      toggleEditMode();
+      applyViewFields(currentViewingRest);
+      renderRestaurants();
+      showToast('Restaurant details updated!');
+    }
+
+    // Manage Subscription Actions
+    function openManageSubModal() {
+      document.getElementById('manage-sub-modal').classList.remove('hidden');
+    }
+
+    function closeManageSubModal() {
+      document.getElementById('manage-sub-modal').classList.add('hidden');
+    }
+
+    async function applyExtendTrial(days) {
+      if (!currentViewingRest) return;
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants/${currentViewingRest.id}`, {
+          method: 'PUT',
+          headers: getSuperAuthHeaders(),
+          body: JSON.stringify({
+            manageAction: 'extend_trial',
+            additionalDays: days
+          })
+        });
+        const result = await res.json();
+        if (result.ok) {
+          currentViewingRest = result.restaurant;
+          closeManageSubModal();
+          applyViewFields(result.restaurant);
+          showToast(`Trial extended by +${days} days!`);
+          refreshData();
+          return;
+        }
+      } catch (e) {
+        console.warn('Server offline, extending trial locally:', e);
+      }
+      const curEnd = new Date(currentViewingRest.endDate) > new Date() ? new Date(currentViewingRest.endDate) : new Date();
+      currentViewingRest.endDate = new Date(curEnd.getTime() + days * 86400000).toISOString();
+      currentViewingRest.plan = 'trial';
+      currentViewingRest.planLabel = `Free Trial (Extended +${days}d)`;
+      currentViewingRest.subscriptionCancelled = false;
+      currentViewingRest.status = 'active';
+      localStorage.setItem('pos_super_restaurants', JSON.stringify(restaurants));
+      closeManageSubModal();
+      applyViewFields(currentViewingRest);
+      renderRestaurants();
+      updateStats();
+      showToast(`Trial extended by +${days} days!`);
+    }
+
+    async function applyChangePlan(planCode) {
+      if (!currentViewingRest) return;
+      let days = 90;
+      let label = '3 Months Plan';
+      if (planCode === '6m') { days = 180; label = '6 Months Plan'; }
+      if (planCode === '12m') { days = 365; label = '12 Months Plan'; }
+
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants/${currentViewingRest.id}`, {
+          method: 'PUT',
+          headers: getSuperAuthHeaders(),
+          body: JSON.stringify({
+            manageAction: 'change_plan',
+            plan: planCode
+          })
+        });
+        const result = await res.json();
+        if (result.ok) {
+          currentViewingRest = result.restaurant;
+          closeManageSubModal();
+          applyViewFields(result.restaurant);
+          showToast(`Plan updated to ${result.restaurant.planLabel}!`);
+          refreshData();
+          return;
+        }
+      } catch (e) {
+        console.warn('Server offline, changing plan locally:', e);
+      }
+      currentViewingRest.plan = planCode;
+      currentViewingRest.planLabel = label;
+      currentViewingRest.endDate = new Date(Date.now() + days * 86400000).toISOString();
+      currentViewingRest.subscriptionCancelled = false;
+      currentViewingRest.status = 'active';
+      localStorage.setItem('pos_super_restaurants', JSON.stringify(restaurants));
+      closeManageSubModal();
+      applyViewFields(currentViewingRest);
+      renderRestaurants();
+      updateStats();
+      showToast(`Plan updated to ${label}!`);
+    }
+
+    // Connect SSE for live synchronization
+    try {
+      const evtSource = new EventSource(`${getApiBase()}/api/events`);
+      evtSource.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'RESTAURANTS_UPDATED') {
+            refreshData();
+          }
+        } catch (err) {}
+      };
+      evtSource.onerror = () => {
+        evtSource.close();
+      };
+    } catch (err) {}
+
+    // Initialize
+    if (checkSuperAuth()) {
+      refreshData();
+      loadAuditLogs();
+    }
+  </script>
+</body>
+</html>
