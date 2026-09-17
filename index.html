@@ -163,28 +163,6 @@
     <!-- ================= VIEW 1: MENU & EXPLORATION ================= -->
     <section id="view-menu" class="w-full flex flex-col">
       
-      <!-- Table Welcome Banner -->
-      <div class="px-margin pt-1 pb-2">
-        <div class="w-full bg-gradient-to-r from-primary-container to-primary text-on-primary rounded-xl p-4 shadow-[0_6px_20px_rgba(172,45,0,0.24)] relative overflow-hidden flex items-center justify-between">
-          <div class="relative z-10">
-            <div class="flex items-center gap-1.5 mb-1">
-              <span class="material-symbols-outlined text-[18px] opacity-90">qr_code_scanner</span>
-              <span class="text-[11px] font-bold uppercase tracking-wider text-white/90">QR Menu Active</span>
-            </div>
-            <h2 class="font-headline text-[20px] font-bold text-white tracking-tight" id="banner-table-title">Dine-In • Table #04</h2>
-            <p class="text-[12px] text-white/80 mt-0.5">Authentic Karahi, Charcoal BBQ &amp; Biryani &bull; Cash Checkout</p>
-          </div>
-          <div class="relative z-10 flex flex-col items-end gap-1.5">
-            <button onclick="openTableModal()" type="button" class="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[12px] font-semibold hover:bg-white/30 transition-all active:scale-95 flex items-center gap-1">
-              <span>Change</span>
-              <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
-            </button>
-          </div>
-          <!-- Ambient decorative circles -->
-          <div class="absolute -right-6 -bottom-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-        </div>
-      </div>
-
       <!-- Active Order In-Progress Floating Banner (Shown when an active order is cooking/served and user is browsing menu) -->
       <div id="active-cooking-banner" class="hidden px-margin mb-2">
         <button onclick="switchView('confirmation')" class="w-full bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-2xl flex items-center justify-between shadow-2xs hover:bg-emerald-100 transition-all active:scale-98">
@@ -205,184 +183,199 @@
         </button>
       </div>
 
-      <!-- Live Search & Dietary Quick Filters -->
+      <!-- Live Search & Quick Spicy Toggle -->
       <div class="px-margin py-1.5">
         <div class="flex items-center gap-2">
           <div class="relative flex-1 flex items-center bg-surface-container-lowest rounded-full shadow-[0_3px_14px_rgba(15,23,42,0.05)] border border-surface-container px-4 py-2.5">
             <span class="material-symbols-outlined text-secondary text-[20px] mr-2">search</span>
-            <input id="search-input" oninput="handleSearch()" class="w-full bg-transparent text-[14px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search Karahi, Biryani, Malai Boti, Naan..." type="text"/>
+            <input id="search-input" oninput="handleSearch()" class="w-full bg-transparent text-[14px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search Karahi, Biryani, BBQ, Naan..." type="text"/>
             <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-secondary hover:text-on-surface" type="button">
               <span class="material-symbols-outlined text-[18px]">close</span>
             </button>
           </div>
-          <button onclick="toggleFilterDietary('spicy')" id="filter-spicy-btn" type="button" class="h-11 px-3 rounded-xl bg-surface-container-lowest border border-surface-container text-secondary text-[12px] font-semibold flex items-center gap-1 shadow-sm transition-all hover:text-primary active:scale-95" title="Filter Chatpata / Spicy Dishes">
+          <button onclick="toggleFilterDietary('spicy')" id="filter-spicy-btn" type="button" class="h-11 px-3 rounded-full bg-surface-container-lowest border border-surface-container text-secondary text-[12px] font-semibold flex items-center gap-1 shadow-sm transition-all hover:text-primary active:scale-95" title="Filter Chatpata / Spicy Dishes">
             <span class="material-symbols-outlined text-[18px] text-primary">local_fire_department</span>
             <span class="hidden sm:inline">Spicy</span>
           </button>
         </div>
       </div>
 
-      <!-- Sticky Category Filter Pills (Docked below header) -->
-      <div class="sticky top-16 z-20 bg-surface/95 backdrop-blur-md py-2 overflow-x-auto no-scrollbar border-y border-surface-container/60 shadow-2xs">
-        <div class="flex items-center gap-2 px-margin min-w-max" id="category-pill-list">
-          <button onclick="selectCategory('all', this)" class="cat-pill active flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary font-semibold text-[13px] shadow-[0_3px_10px_rgba(172,45,0,0.2)] transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">restaurant_menu</span>
-            <span>All Menu</span>
-          </button>
-          <button onclick="selectCategory('karahi', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
-            <span>Karahi &amp; Handi</span>
-          </button>
-          <button onclick="selectCategory('bbq', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">outdoor_grill</span>
-            <span>Tandoor &amp; BBQ</span>
-          </button>
-          <button onclick="selectCategory('rice', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">rice_bowl</span>
-            <span>Dum Biryani</span>
-          </button>
-          <button onclick="selectCategory('naan', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">bakery_dining</span>
-            <span>Tandoori Naan</span>
-          </button>
-          <button onclick="selectCategory('drinks', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">local_cafe</span>
-            <span>Lassi &amp; Chai</span>
-          </button>
-          <button onclick="selectCategory('meetha', this)" class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-surface-container text-secondary font-semibold text-[13px] shadow-sm hover:text-on-surface transition-all" type="button">
-            <span class="material-symbols-outlined text-[16px]">icecream</span>
-            <span>Shahi Meetha</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Instant Table Essentials (1-Tap Quick Add Strip) -->
-      <div class="px-margin pt-2.5 pb-1">
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="text-[12px] font-bold text-on-surface uppercase tracking-wider flex items-center gap-1">
-            <span class="material-symbols-outlined text-[16px] text-amber-500">bolt</span>
-            <span>Instant Table Essentials</span>
-          </span>
-          <span class="text-[11px] text-secondary font-medium">1-Tap Fast Add</span>
-        </div>
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          <button onclick="quickAddCustom('Sesame Roghni Naan', 140, 7, 'Single Naan', 'rice_naan')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
-            <span>🫓 +1 Roghni Naan</span>
-            <span class="text-primary font-mono text-[11px]">Rs. 140</span>
-          </button>
-          <button onclick="quickAddCustom('Garlic Butter Naan', 160, 8, 'Single Naan', 'rice_naan')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
-            <span>🧄 +1 Garlic Naan</span>
-            <span class="text-primary font-mono text-[11px]">Rs. 160</span>
-          </button>
-          <button onclick="quickAddCustom('Kulhad Makhni Sweet Lassi', 290, 9, 'Standard Kulhad', 'drinks_meetha')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
-            <span>🥛 +1 Sweet Lassi</span>
-            <span class="text-primary font-mono text-[11px]">Rs. 290</span>
-          </button>
-          <button onclick="quickAddCustom('Peshawari Mint Margarita', 260, 10, 'Chilled Glass', 'drinks_meetha')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
-            <span>🍋 +1 Mint Cooler</span>
-            <span class="text-primary font-mono text-[11px]">Rs. 260</span>
-          </button>
-          <button onclick="quickAddCustom('Doodh Patti Karak Matka Chai', 180, 12, 'Single Matka Cup', 'drinks_meetha')" class="flex items-center gap-1.5 bg-surface-container-lowest border border-surface-container hover:border-primary px-3 py-1.5 rounded-xl shadow-2xs text-[12px] font-bold text-on-surface whitespace-nowrap active:scale-95 transition-all">
-            <span>☕ +1 Matka Chai</span>
-            <span class="text-primary font-mono text-[11px]">Rs. 180</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Dera Family Feasts & Curated Combos -->
-      <div class="px-margin my-2">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-headline font-bold text-[15px] text-on-surface flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
-            <span>Popular Table Feasts</span>
-          </h3>
-          <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">Save up to 15%</span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <!-- Combo 1: Dera Karahi Feast -->
-          <div class="bg-gradient-to-r from-amber-500/10 via-primary/5 to-surface-container-lowest p-3 rounded-2xl border border-amber-500/25 flex items-center justify-between gap-3 shadow-2xs">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5">
-                <span class="font-headline font-bold text-[14px] text-on-surface">Dera Karahi Feast</span>
-                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-primary/10 text-primary">Serves 3-4</span>
+      <!-- TOP FEATURED DISHES & DEALS LARGE THUMBNAIL SLIDER -->
+      <div class="px-margin py-2">
+        <div class="relative w-full">
+          <!-- Horizontal Swipeable Track -->
+          <div id="featured-deals-slider" class="w-full flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth pb-1">
+            
+            <!-- Slide 1: Dera Karahi Feast Deal -->
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+              <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80" alt="Dera Karahi Feast" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
+              
+              <div class="relative z-10 flex items-center justify-between mb-1">
+                <span class="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[13px]">local_fire_department</span>
+                  <span>15% OFF DEAL</span>
+                </span>
+                <span class="text-[11px] font-bold text-amber-300">Family Feast (3-4p)</span>
               </div>
-              <p class="text-[11px] text-secondary mt-0.5 leading-tight">1kg Karahi + 4 Roghni Naan + 3 Sweet Lassi</p>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="font-headline font-bold text-[15px] text-primary">Rs. 3,450</span>
-                <span class="text-[11px] text-secondary line-through font-mono">Rs. 3,900</span>
+              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">Dera Karahi Feast</h3>
+              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">1kg Chicken Karahi + 4 Roghni Naan + 3 Kulhad Sweet Lassi</p>
+              
+              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+                <div class="flex items-center gap-2">
+                  <span class="font-headline font-black text-[18px] text-amber-400">Rs. 3,450</span>
+                  <span class="text-[12px] text-white/60 line-through">Rs. 3,900</span>
+                </div>
+                <button onclick="addComboFeast('karahi_feast')" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[15px]">add</span>
+                  <span>Add Deal</span>
+                </button>
               </div>
             </div>
-            <button onclick="addComboFeast('karahi_feast')" class="flex-shrink-0 px-3 py-2 rounded-xl bg-primary hover:bg-primary-container text-white font-headline font-bold text-[11px] flex items-center gap-1 shadow-sm active:scale-95 transition-all">
-              <span class="material-symbols-outlined text-[15px]">add</span>
-              <span>Add Feast</span>
-            </button>
+
+            <!-- Slide 2: BBQ & Biryani Platter Deal -->
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+              <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80" alt="BBQ & Biryani Platter" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
+              
+              <div class="relative z-10 flex items-center justify-between mb-1">
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[13px]">outdoor_grill</span>
+                  <span>BBQ PLATTER DEAL</span>
+                </span>
+                <span class="text-[11px] font-bold text-emerald-300">Serves 2</span>
+              </div>
+              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">BBQ &amp; Biryani Combo</h3>
+              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">Malai Boti + Chapli Kabab + Dum Biryani + 2 Mint Coolers</p>
+              
+              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+                <div class="flex items-center gap-2">
+                  <span class="font-headline font-black text-[18px] text-emerald-300">Rs. 2,150</span>
+                  <span class="text-[12px] text-white/60 line-through">Rs. 2,380</span>
+                </div>
+                <button onclick="addComboFeast('bbq_platter')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[15px]">add</span>
+                  <span>Add Deal</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Slide 3: Chef's Chicken Makhni Karahi -->
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+              <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80" alt="Chicken Makhni Karahi" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
+              
+              <div class="relative z-10 flex items-center justify-between mb-1">
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[13px]">star</span>
+                  <span>CHEF'S SPECIAL</span>
+                </span>
+                <span class="text-[11px] font-bold text-amber-200">Clay Handi</span>
+              </div>
+              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">Chicken Makhni Karahi</h3>
+              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">Desi butter, ripe Sindh tomatoes, ginger juliennes &amp; green chilies</p>
+              
+              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+                <div class="flex items-center gap-2">
+                  <span class="font-headline font-black text-[18px] text-amber-400">Rs. 1,250</span>
+                  <span class="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-full">Half (0.5 kg)</span>
+                </div>
+                <button onclick="handleDishAddClick('dish-1')" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[15px]">add</span>
+                  <span>Add Dish</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Slide 4: Dum Biryani Special -->
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-3xl overflow-hidden relative h-48 bg-slate-900 shadow-md flex flex-col justify-end p-4 text-white">
+              <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80" alt="Special Dum Biryani" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
+              
+              <div class="relative z-10 flex items-center justify-between mb-1">
+                <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[13px]">military_tech</span>
+                  <span>ROYAL BIRYANI</span>
+                </span>
+                <span class="text-[11px] font-bold text-amber-200">Karachi Dum</span>
+              </div>
+              <h3 class="relative z-10 font-headline font-black text-[18px] leading-tight text-white">Special Chicken Dum Biryani</h3>
+              <p class="relative z-10 text-[11px] text-white/80 line-clamp-1 mt-0.5">Aged basmati rice, marinated spiced chicken, saffron milk &amp; brown onions</p>
+              
+              <div class="relative z-10 flex items-center justify-between mt-2 pt-1.5 border-t border-white/20">
+                <div class="flex items-center gap-2">
+                  <span class="font-headline font-black text-[18px] text-amber-400">Rs. 690</span>
+                  <span class="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-full">Single Plate</span>
+                </div>
+                <button onclick="handleDishAddClick('dish-3')" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[12px] shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[15px]">add</span>
+                  <span>Add Dish</span>
+                </button>
+              </div>
+            </div>
+
           </div>
 
-          <!-- Combo 2: BBQ & Biryani Platter -->
-          <div class="bg-gradient-to-r from-emerald-500/10 via-primary/5 to-surface-container-lowest p-3 rounded-2xl border border-emerald-500/25 flex items-center justify-between gap-3 shadow-2xs">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5">
-                <span class="font-headline font-bold text-[14px] text-on-surface">BBQ &amp; Biryani Platter</span>
-                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-emerald-800/10 text-emerald-800">Serves 2</span>
-              </div>
-              <p class="text-[11px] text-secondary mt-0.5 leading-tight">Malai Boti + Chapli Kabab + Dum Biryani + 2 Margarita</p>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="font-headline font-bold text-[15px] text-emerald-800">Rs. 2,150</span>
-                <span class="text-[11px] text-secondary line-through font-mono">Rs. 2,380</span>
-              </div>
-            </div>
-            <button onclick="addComboFeast('bbq_platter')" class="flex-shrink-0 px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-headline font-bold text-[11px] flex items-center gap-1 shadow-sm active:scale-95 transition-all">
-              <span class="material-symbols-outlined text-[15px]">add</span>
-              <span>Add Feast</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chef Recommendation Spotlight Card -->
-      <div class="px-margin my-2" id="chef-spotlight-card">
-        <div class="bg-surface-container-lowest rounded-2xl p-3 border border-surface-container shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative">
-          <div class="relative w-full h-44 rounded-xl overflow-hidden cursor-pointer" onclick="openSpotlightDetail()">
-            <img class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="Chicken Makhni Karahi" src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80"/>
-            <div class="absolute top-2.5 left-2.5 bg-primary text-on-primary font-bold text-[11px] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-              <span class="material-symbols-outlined text-[14px]">local_fire_department</span>
-              <span>Chef's Special</span>
-            </div>
-            <div class="absolute bottom-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white font-bold text-[12px] px-2.5 py-1 rounded-full flex items-center gap-1">
-              <span class="material-symbols-outlined text-[14px] text-amber-400">schedule</span>
-              <span>20-25 min prep</span>
-            </div>
-          </div>
-          <div class="pt-3 px-1 flex items-center justify-between">
-            <div class="cursor-pointer" onclick="openSpotlightDetail()">
-              <h3 class="font-headline font-bold text-[16px] text-on-surface leading-snug">Chicken Makhni Karahi</h3>
-              <p class="text-[12px] text-secondary mt-0.5">Simmered in desi butter, fresh tomatoes, ginger &amp; green chilies</p>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="font-headline font-bold text-primary text-[17px]">Rs. 1,250</span>
-                <span class="text-[11px] text-secondary bg-surface-container px-2 py-0.5 rounded-full">Half (0.5 kg)</span>
-              </div>
-            </div>
-            <div id="spotlight-action-slot">
-              <button onclick="handleSpotlightAddClick()" type="button" class="px-3.5 py-2 rounded-full bg-primary text-on-primary font-headline font-bold text-[13px] flex items-center gap-1 shadow-[0_4px_12px_rgba(172,45,0,0.3)] hover:brightness-105 active:scale-95 transition-all">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>ADD</span>
-              </button>
-            </div>
+          <!-- Pagination Indicator Dots -->
+          <div class="flex items-center justify-center gap-1.5 mt-2" id="slider-dots">
+            <span class="slider-dot w-5 h-1.5 rounded-full bg-primary transition-all"></span>
+            <span class="slider-dot w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></span>
+            <span class="slider-dot w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></span>
+            <span class="slider-dot w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></span>
           </div>
         </div>
       </div>
 
-      <!-- Dish Grid Section -->
-      <div class="px-margin mt-3">
-        <div class="flex items-center justify-between mb-2.5">
-          <h2 class="font-headline font-bold text-[18px] text-on-surface" id="menu-section-heading">Popular Food Items</h2>
-          <span class="text-[12px] text-secondary" id="items-count-indicator">8 items</span>
-        </div>
+      <!-- MAIN SPLIT VIEW: VERTICAL CATEGORY BAR (LEFT ~15%) + RESPECTIVE DISHES (RIGHT) -->
+      <div class="flex items-start w-full border-t border-surface-container/60 mt-1">
+        
+        <!-- Left Vertical Category Rail (around 15-18% of screen) -->
+        <aside class="w-[66px] sm:w-[76px] shrink-0 sticky top-16 bg-surface-container-low/70 border-r border-surface-container/70 py-2 flex flex-col items-center gap-1 z-10 select-none">
+          <button onclick="selectCategory('all', this)" class="cat-rail-btn active w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all bg-surface border-l-4 border-primary text-primary font-bold shadow-2xs">
+            <span class="material-symbols-outlined text-[20px]">restaurant_menu</span>
+            <span class="text-[10px] font-bold leading-tight">All</span>
+          </button>
+          <button onclick="selectCategory('karahi', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
+            <span class="material-symbols-outlined text-[20px]">soup_kitchen</span>
+            <span class="text-[10px] font-bold leading-tight">Karahi</span>
+          </button>
+          <button onclick="selectCategory('bbq', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
+            <span class="material-symbols-outlined text-[20px]">outdoor_grill</span>
+            <span class="text-[10px] font-bold leading-tight">BBQ</span>
+          </button>
+          <button onclick="selectCategory('rice', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
+            <span class="material-symbols-outlined text-[20px]">rice_bowl</span>
+            <span class="text-[10px] font-bold leading-tight">Biryani</span>
+          </button>
+          <button onclick="selectCategory('naan', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
+            <span class="material-symbols-outlined text-[20px]">bakery_dining</span>
+            <span class="text-[10px] font-bold leading-tight">Naan</span>
+          </button>
+          <button onclick="selectCategory('drinks', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
+            <span class="material-symbols-outlined text-[20px]">local_cafe</span>
+            <span class="text-[10px] font-bold leading-tight">Drinks</span>
+          </button>
+          <button onclick="selectCategory('meetha', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
+            <span class="material-symbols-outlined text-[20px]">icecream</span>
+            <span class="text-[10px] font-bold leading-tight">Meetha</span>
+          </button>
+        </aside>
 
-        <div class="grid grid-cols-2 gap-3" id="dish-grid-container">
-          <!-- Dynamic Dish Cards injected via JS with In-Card Steppers -->
-        </div>
+        <!-- Right Respective Dishes Column -->
+        <section class="flex-1 min-w-0 pl-2.5 pr-margin py-2">
+          <div class="flex items-center justify-between mb-2 pb-1 border-b border-surface-container/40">
+            <div>
+              <h2 class="font-headline font-black text-[15px] text-on-surface leading-tight" id="menu-section-heading">All Menu</h2>
+              <span class="text-[10px] text-secondary" id="items-count-indicator">8 dishes</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Dish Cards List -->
+          <div class="space-y-2.5" id="dish-grid-container">
+            <!-- Dynamic Dish Cards injected via JS -->
+          </div>
+        </section>
+
       </div>
 
     </section>
@@ -1699,9 +1692,28 @@
       loadCartFromStorage();
       await loadActiveTicketFromStorage();
       loadMenuFromBackend();
+      initFeaturedDealsSlider();
       renderDishGrid();
       updateCartUI();
     });
+
+    function initFeaturedDealsSlider() {
+      const slider = document.getElementById('featured-deals-slider');
+      const dots = document.querySelectorAll('.slider-dot');
+      if (!slider || !dots || dots.length === 0) return;
+
+      slider.addEventListener('scroll', () => {
+        const slideWidth = slider.firstElementChild ? slider.firstElementChild.offsetWidth + 12 : 280;
+        const activeIdx = Math.min(dots.length - 1, Math.max(0, Math.round(slider.scrollLeft / slideWidth)));
+        dots.forEach((dot, idx) => {
+          if (idx === activeIdx) {
+            dot.className = 'slider-dot w-5 h-1.5 rounded-full bg-primary transition-all';
+          } else {
+            dot.className = 'slider-dot w-1.5 h-1.5 rounded-full bg-slate-300 transition-all';
+          }
+        });
+      }, { passive: true });
+    }
 
     function initTableFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -1922,14 +1934,32 @@
 
     function selectCategory(cat, btn) {
       appState.activeCategory = cat;
-      document.querySelectorAll('.cat-pill').forEach(b => {
-        b.classList.remove('active', 'bg-primary', 'text-on-primary');
-        b.classList.add('bg-surface-container-lowest', 'text-secondary');
+
+      // Update vertical rail buttons
+      document.querySelectorAll('.cat-rail-btn').forEach(b => {
+        b.classList.remove('active', 'bg-surface', 'border-primary', 'text-primary', 'font-bold', 'shadow-2xs');
+        b.classList.add('text-secondary', 'border-transparent');
       });
       if (btn) {
-        btn.classList.add('active', 'bg-primary', 'text-on-primary');
-        btn.classList.remove('bg-surface-container-lowest', 'text-secondary');
+        btn.classList.add('active', 'bg-surface', 'border-primary', 'text-primary', 'font-bold', 'shadow-2xs');
+        btn.classList.remove('text-secondary', 'border-transparent');
       }
+
+      // Update section heading
+      const catLabels = {
+        all: 'All Menu',
+        karahi: 'Karahi & Handi',
+        bbq: 'Charcoal BBQ',
+        rice: 'Royal Biryani & Rice',
+        naan: 'Tandoori Naan & Roti',
+        drinks: 'Drinks & Beverages',
+        meetha: 'Desserts & Meetha'
+      };
+      const heading = document.getElementById('menu-section-heading');
+      if (heading) {
+        heading.textContent = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+      }
+
       renderDishGrid();
     }
 
@@ -1979,42 +2009,17 @@
         return matchesCategory && matchesSpicy && matchesQuery;
       });
 
-      document.getElementById('items-count-indicator').textContent = `${filtered.length} dishes`;
-
-      // Also update Chef Spotlight Card action slot if present
-      const spotSlot = document.getElementById('spotlight-action-slot');
-      if (spotSlot) {
-        const spotDish = DISH_CATALOG.find(d => d.isChef) || DISH_CATALOG[0];
-        const spotDishId = spotDish ? spotDish.id : 'dish-1';
-        const spotQty = getDishCartQty(spotDishId);
-        if (spotQty > 0) {
-          spotSlot.innerHTML = `
-            <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-full p-1 shadow-xs">
-              <button onclick="decrementDish('${spotDishId}')" class="w-8 h-8 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 shadow-xs hover:bg-primary/20 transition-all" title="Remove one">
-                <span class="material-symbols-outlined text-[16px] font-bold">remove</span>
-              </button>
-              <span class="font-headline font-bold text-primary text-[14px] px-2.5 min-w-[24px] text-center">${spotQty}</span>
-              <button onclick="incrementDish('${spotDishId}')" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs hover:brightness-110 transition-all" title="Add another">
-                <span class="material-symbols-outlined text-[16px] font-bold">add</span>
-              </button>
-            </div>
-          `;
-        } else {
-          spotSlot.innerHTML = `
-            <button onclick="handleDishAddClick('${spotDishId}')" type="button" class="px-3.5 py-2 rounded-full bg-primary text-on-primary font-headline font-bold text-[13px] flex items-center gap-1 shadow-[0_4px_12px_rgba(172,45,0,0.3)] hover:brightness-105 active:scale-95 transition-all">
-              <span class="material-symbols-outlined text-[18px]">add</span>
-              <span>ADD</span>
-            </button>
-          `;
-        }
+      const countInd = document.getElementById('items-count-indicator');
+      if (countInd) {
+        countInd.textContent = `${filtered.length} dishes`;
       }
 
       if (filtered.length === 0) {
         grid.innerHTML = `
-          <div class="col-span-2 py-10 text-center text-secondary">
+          <div class="py-10 text-center text-secondary">
             <span class="material-symbols-outlined text-[32px] text-secondary/60">search_off</span>
             <p class="mt-1 font-semibold text-[14px]">No dishes match your filter</p>
-            <button onclick="clearSearch(); selectCategory('all', document.querySelector('.cat-pill'))" class="mt-2 text-[12px] text-primary underline">Reset filters</button>
+            <button onclick="clearSearch(); selectCategory('all', document.querySelector('.cat-rail-btn'))" class="mt-2 text-[12px] text-primary underline">Reset filters</button>
           </div>
         `;
         return;
@@ -2025,65 +2030,49 @@
         const cartQty = getDishCartQty(dish.id);
         const escapedId = String(dish.id).replace(/'/g, "\\'");
         return `
-        <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-[0_4px_16px_rgba(15,23,42,0.04)] border border-surface-container flex flex-col justify-between group transition-all ${isSoldOut ? 'opacity-70' : ''}">
-          <div>
-            <!-- Image & Badges Viewport -->
-            <div class="relative w-full aspect-square rounded-lg overflow-hidden mb-2 ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer'}" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : `openDishDetail('${escapedId}')`}">
-              <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105'} transition-transform duration-300" src="${dish.image}" alt="${dish.title}"/>
-              
-              <!-- Floating Price Badge -->
-              <span class="absolute bottom-1.5 left-1.5 bg-primary text-on-primary font-bold text-[12px] px-2 py-0.5 rounded-full shadow-sm">
-                ${formatPrice(dish.price)}
-              </span>
-
-              ${isSoldOut ? `
-                <div class="absolute inset-0 bg-black/50 backdrop-blur-[1px] flex items-center justify-center">
-                  <span class="bg-red-600 text-white font-headline font-bold text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md">
-                    Sold Out
-                  </span>
-                </div>
-              ` : dish.isSpicy ? `
-                <span class="absolute top-1.5 left-1.5 bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
-                  <span class="material-symbols-outlined text-[12px]">local_fire_department</span> Desi Mirch
-                </span>
-              ` : ''}
-
-              <button onclick="event.stopPropagation(); toggleFav(this)" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center text-secondary hover:text-primary transition-colors shadow-sm" type="button">
-                <span class="material-symbols-outlined text-[14px]">favorite</span>
-              </button>
+        <div class="bg-surface-container-lowest rounded-2xl p-2.5 sm:p-3 border border-surface-container shadow-xs flex items-center justify-between gap-2.5 group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}">
+          <!-- Left info: title, desc/dietary, price, star rating -->
+          <div class="flex-1 min-w-0 pr-1 cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : `openDishDetail('${escapedId}')`}">
+            <div class="flex items-center gap-1.5 mb-1">
+              ${dish.isSpicy ? `<span class="material-symbols-outlined text-[13px] text-red-500 shrink-0" title="Spicy">local_fire_department</span>` : ''}
+              <h3 class="font-headline font-bold text-[13px] sm:text-[14px] text-on-surface leading-snug truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${dish.title}</h3>
             </div>
-
-            <!-- Title & Metadata -->
-            <h3 onclick="${isSoldOut ? "showToast('Dish is sold out!')" : `openDishDetail('${escapedId}')`}" class="font-headline font-bold text-[14px] text-on-surface leading-snug line-clamp-1 ${isSoldOut ? 'line-through text-secondary' : 'cursor-pointer hover:text-primary'} transition-colors">${dish.title}</h3>
-            <p class="text-[11px] text-secondary truncate mt-0.5">${dish.dietary}</p>
+            <p class="text-[11px] text-secondary line-clamp-1 mb-2 leading-snug">${dish.desc || dish.dietary}</p>
+            <div class="flex items-center gap-2">
+              <span class="font-headline font-black text-[13px] sm:text-[14px] text-primary">${formatPrice(dish.price)}</span>
+              <div class="flex items-center gap-0.5 text-secondary text-[10px]">
+                <span class="material-symbols-outlined text-tertiary text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span class="font-bold text-on-surface">${dish.rating || '4.8'}</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Bottom Action Row -->
-          <div class="flex items-center justify-between mt-2 pt-1 border-t border-surface-container/60">
-            <div class="flex items-center gap-1 text-secondary text-[11px]">
-              <span class="material-symbols-outlined text-tertiary text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
-              <span class="font-bold text-on-surface">${dish.rating}</span>
-              <span class="text-[10px] opacity-70">• ${dish.prepTime}</span>
-            </div>
-            
+          <!-- Right: Image thumbnail & Add button / stepper -->
+          <div class="relative w-20 h-20 sm:w-22 sm:h-22 shrink-0 rounded-xl overflow-hidden bg-surface-container">
+            <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${dish.image}" alt="${dish.title}" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : `openDishDetail('${escapedId}')`}" />
             ${isSoldOut ? `
-              <span class="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">86'd</span>
-            ` : cartQty > 0 ? `
-              <!-- In-Card Interactive Stepper -->
-              <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-full p-0.5 shadow-xs" onclick="event.stopPropagation()">
-                <button onclick="decrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 shadow-xs hover:bg-primary/20 transition-all" title="Remove one">
-                  <span class="material-symbols-outlined text-[14px] font-bold">remove</span>
-                </button>
-                <span class="font-headline font-bold text-primary text-[12px] px-1.5 min-w-[18px] text-center leading-none">${cartQty}</span>
-                <button onclick="incrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs hover:brightness-110 transition-all" title="Add another">
-                  <span class="material-symbols-outlined text-[14px] font-bold">add</span>
-                </button>
+              <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <span class="text-[9px] font-black uppercase text-white tracking-wider">Sold Out</span>
               </div>
             ` : `
-              <button onclick="handleDishAddClick('${escapedId}')" class="h-7 px-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[12px] flex items-center gap-1 shadow-sm hover:brightness-105 active:scale-95 transition-all" title="Add to table order" type="button">
-                <span class="material-symbols-outlined text-[15px]">add</span>
-                <span>ADD</span>
-              </button>
+              <div class="absolute bottom-1 right-1" onclick="event.stopPropagation()">
+                ${cartQty > 0 ? `
+                  <div class="inline-flex items-center bg-white/95 backdrop-blur-sm border border-primary/40 rounded-full p-0.5 shadow-md">
+                    <button onclick="decrementDish('${escapedId}')" class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center active:scale-90 transition-all">
+                      <span class="material-symbols-outlined text-[12px] font-bold">remove</span>
+                    </button>
+                    <span class="font-headline font-bold text-primary text-[11px] px-1 min-w-[14px] text-center">${cartQty}</span>
+                    <button onclick="incrementDish('${escapedId}')" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center active:scale-90 transition-all">
+                      <span class="material-symbols-outlined text-[12px] font-bold">add</span>
+                    </button>
+                  </div>
+                ` : `
+                  <button onclick="handleDishAddClick('${escapedId}')" class="px-2.5 py-1 rounded-lg bg-primary/95 backdrop-blur-sm hover:bg-primary text-white font-headline font-bold text-[11px] flex items-center gap-0.5 shadow-md active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[13px]">add</span>
+                    <span>ADD</span>
+                  </button>
+                `}
+              </div>
             `}
           </div>
         </div>

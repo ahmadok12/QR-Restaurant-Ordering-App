@@ -1,6 +1,63 @@
 {
   "tickets": [
     {
+      "ticketId": "#TKT-VOID-1419",
+      "table": "Table 05",
+      "restaurantId": "rest-dera-01",
+      "guest": "Walkout Customer",
+      "time": "01:00 PM",
+      "items": [
+        {
+          "dishId": "dish-02",
+          "title": "Mutton Seekh Kabab",
+          "price": 950,
+          "qty": 1,
+          "size": "Standard Portion",
+          "spice": "Normal 🍃",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 950,
+      "total": 998,
+      "tax": 48,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Voided",
+      "voidReason": "Customer cancelled before food entered tandoor",
+      "voidedBy": "Manager (PIN Verified)",
+      "voidedAt": "2026-09-17T11:22:21.442Z"
+    },
+    {
+      "ticketId": "#TKT-TAMPER-1359",
+      "table": "Table 08",
+      "restaurantId": "rest-dera-01",
+      "guest": "Price Tampering Attacker",
+      "time": "12:30 PM",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Settled",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01007",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T11:22:21.381Z"
+    },
+    {
       "ticketId": "#TKT-VOID-9604",
       "table": "Table 05",
       "restaurantId": "rest-dera-01",
@@ -328,9 +385,14 @@
       ],
       "subtotal": 650,
       "total": 683,
-      "status": "In Kitchen",
+      "status": "Settled",
       "assignedWaiterId": "waiter-01",
-      "assignedWaiterName": "Hamza Abbasi (Rank 1)"
+      "assignedWaiterName": "Hamza Abbasi (Rank 1)",
+      "paymentStatus": "paid",
+      "invoiceNumber": "INV-2026-01006",
+      "settledBy": "Rashid Minhas",
+      "settledAt": "2026-09-17T11:03:10.220Z",
+      "tax": 33
     },
     {
       "ticketId": "#TKT-9907",
@@ -605,29 +667,8 @@
       "shape": "round",
       "x": 12,
       "y": 15,
-      "status": "dining",
-      "order": {
-        "ticketId": "#TKT-5673",
-        "guest": "Table #01 Guest",
-        "time": "02:43 PM",
-        "total": 683,
-        "subtotal": 650,
-        "payment": "Pay Cash to Server at Table",
-        "assignedWaiter": "Hamza Abbasi (Rank 1)",
-        "items": [
-          {
-            "dishId": "dish-5",
-            "title": "Peshawari Beef Chapli Kabab",
-            "price": 650,
-            "qty": 1,
-            "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
-            "size": "Standard (2 Kababs)",
-            "spice": "Chatpata 🌶️",
-            "note": "",
-            "station": "bbq"
-          }
-        ]
-      }
+      "status": "vacant",
+      "order": null
     },
     {
       "id": "02",
@@ -784,6 +825,66 @@
   ],
   "serviceBells": [],
   "sales": [
+    {
+      "id": "SALE-41381",
+      "invoiceNumber": "INV-2026-01007",
+      "ticketId": "#TKT-TAMPER-1359",
+      "restaurantId": "rest-dera-01",
+      "table": "Table 08",
+      "items": [
+        {
+          "dishId": "dish-1",
+          "title": "Chicken Makhni Karahi",
+          "price": 1250,
+          "qty": 2,
+          "size": "Half (0.5 kg)",
+          "spice": "Chatpata 🌶️",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 2500,
+      "tax": 125,
+      "total": 2625,
+      "paymentMethod": "Cash",
+      "cashReceived": 3125,
+      "changeGiven": 500,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": "SHIFT-1789644141375",
+      "time": "04:22 PM",
+      "timestamp": 1789644141410
+    },
+    {
+      "id": "SALE-90220",
+      "invoiceNumber": "INV-2026-01006",
+      "ticketId": "#TKT-5673",
+      "restaurantId": "REST-001",
+      "table": "Table 01",
+      "items": [
+        {
+          "dishId": "dish-5",
+          "title": "Peshawari Beef Chapli Kabab",
+          "price": 650,
+          "qty": 1,
+          "size": "Standard (2 Kababs)",
+          "spice": "Chatpata 🌶️",
+          "station": "bbq",
+          "notes": ""
+        }
+      ],
+      "subtotal": 650,
+      "tax": 33,
+      "total": 683,
+      "paymentMethod": "Cash",
+      "cashReceived": 683,
+      "changeGiven": 0,
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "shiftId": null,
+      "time": "04:03 PM",
+      "timestamp": 1789642990220
+    },
     {
       "id": "SALE-19598",
       "invoiceNumber": "INV-2026-01005",
@@ -1473,6 +1574,248 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "AUDIT-1789644141442-636",
+      "action": "ORDER_VOIDED",
+      "details": {
+        "ticketId": "#TKT-VOID-1419",
+        "table": "Table 05",
+        "amount": 998,
+        "reason": "Customer cancelled before food entered tandoor",
+        "authorizedBy": "Manager (PIN Verified)"
+      },
+      "actor": "Manager (PIN Verified)",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789644141442,
+      "isoTime": "2026-09-17T11:22:21.442Z"
+    },
+    {
+      "id": "AUDIT-1789644141428-603",
+      "action": "VOID_REJECTED",
+      "details": {
+        "ticketId": "#TKT-VOID-1419",
+        "reason": "Customer walked out",
+        "enteredPin": "****"
+      },
+      "actor": "Unknown Staff",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789644141428,
+      "isoTime": "2026-09-17T11:22:21.428Z"
+    },
+    {
+      "id": "AUDIT-1789644141421-973",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-VOID-1419",
+        "table": "Table 05",
+        "total": 998,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Walkout Customer",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789644141421,
+      "isoTime": "2026-09-17T11:22:21.421Z"
+    },
+    {
+      "id": "AUDIT-1789644141416-585",
+      "action": "SHIFT_CLOSED",
+      "details": {
+        "shiftId": "SHIFT-1789644141375",
+        "openingFloat": 5000,
+        "expectedCash": 7625,
+        "countedCash": 7625,
+        "variance": 0,
+        "varianceLabel": "BALANCED",
+        "totalSales": 2625,
+        "transactionsCount": 1,
+        "notes": "End of lunch shift - balanced"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644141416,
+      "isoTime": "2026-09-17T11:22:21.416Z"
+    },
+    {
+      "id": "AUDIT-1789644141410-594",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01007",
+        "ticketId": "#TKT-TAMPER-1359",
+        "table": "Table 08",
+        "total": 2625,
+        "paymentMethod": "Cash",
+        "cashReceived": 3125,
+        "changeGiven": 500,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789644141410,
+      "isoTime": "2026-09-17T11:22:21.410Z"
+    },
+    {
+      "id": "AUDIT-1789644141375-591",
+      "action": "SHIFT_OPENED",
+      "details": {
+        "shiftId": "SHIFT-1789644141375",
+        "openingFloat": 5000
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644141375,
+      "isoTime": "2026-09-17T11:22:21.375Z"
+    },
+    {
+      "id": "AUDIT-1789644141362-784",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TAMPER-1359",
+        "table": "Table 08",
+        "total": 2625,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Price Tampering Attacker",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789644141362,
+      "isoTime": "2026-09-17T11:22:21.362Z"
+    },
+    {
+      "id": "AUDIT-1789644141357-751",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "super_admin",
+        "email": "superadmin@deragourmet.com"
+      },
+      "actor": "Platform Super Admin",
+      "restaurantId": "ALL",
+      "timestamp": 1789644141357,
+      "isoTime": "2026-09-17T11:22:21.357Z"
+    },
+    {
+      "id": "AUDIT-1789644141354-646",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644141354,
+      "isoTime": "2026-09-17T11:22:21.354Z"
+    },
+    {
+      "id": "AUDIT-1789644141349-877",
+      "action": "LOGIN_FAILED",
+      "details": {
+        "email": "hacker@evil.com",
+        "attemptedRole": "unknown"
+      },
+      "actor": "Anonymous",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1789644141349,
+      "isoTime": "2026-09-17T11:22:21.349Z"
+    },
+    {
+      "id": "AUDIT-1789644138202-251",
+      "action": "TABLE_DELETED",
+      "details": {
+        "id": "99",
+        "name": "VIP Cabin 99",
+        "zone": "Rooftop Skylight"
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644138202,
+      "isoTime": "2026-09-17T11:22:18.202Z"
+    },
+    {
+      "id": "AUDIT-1789644138189-732",
+      "action": "FLOOR_LAYOUT_REARRANGED",
+      "details": {
+        "updatedTables": 1
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644138189,
+      "isoTime": "2026-09-17T11:22:18.189Z"
+    },
+    {
+      "id": "AUDIT-1789644138183-272",
+      "action": "TABLE_CREATED",
+      "details": {
+        "id": "99",
+        "name": "VIP Cabin 99",
+        "zone": "Rooftop Skylight",
+        "capacity": 8,
+        "shape": "booth",
+        "x": 75,
+        "y": 75
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644138183,
+      "isoTime": "2026-09-17T11:22:18.183Z"
+    },
+    {
+      "id": "AUDIT-1789644138172-942",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "restaurant_admin",
+        "email": "owner@deragourmet.com",
+        "restaurantId": "REST-001"
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789644138172,
+      "isoTime": "2026-09-17T11:22:18.172Z"
+    },
+    {
+      "id": "AUDIT-1789642990220-884",
+      "action": "BILL_SETTLED",
+      "details": {
+        "invoiceNumber": "INV-2026-01006",
+        "ticketId": "#TKT-5673",
+        "table": "Table 01",
+        "total": 683,
+        "paymentMethod": "Cash",
+        "cashReceived": 683,
+        "changeGiven": 0,
+        "cashier": "Rashid Minhas"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642990220,
+      "isoTime": "2026-09-17T11:03:10.220Z"
+    },
+    {
+      "id": "AUDIT-1789642984376-175",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "cashier",
+        "email": "cashier@deragourmet.com",
+        "staffId": "cashier-01"
+      },
+      "actor": "Rashid Minhas",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642984376,
+      "isoTime": "2026-09-17T11:03:04.376Z"
+    },
+    {
+      "id": "AUDIT-1789642922780-658",
+      "action": "LOGIN_SUCCESS",
+      "details": {
+        "role": "restaurant_admin",
+        "email": "owner@deragourmet.com",
+        "restaurantId": "REST-001"
+      },
+      "actor": "Malik Tariq",
+      "restaurantId": "REST-001",
+      "timestamp": 1789642922780,
+      "isoTime": "2026-09-17T11:02:02.780Z"
+    },
     {
       "id": "AUDIT-1789642019613-301",
       "action": "ORDER_VOIDED",
@@ -2173,6 +2516,22 @@
   ],
   "shifts": [
     {
+      "id": "SHIFT-1789644141375",
+      "restaurantId": "REST-001",
+      "cashierId": "cashier-01",
+      "cashierName": "Rashid Minhas",
+      "openedAt": "2026-09-17T11:22:21.375Z",
+      "openingFloat": 5000,
+      "expectedCash": 7625,
+      "totalSales": 2625,
+      "transactionsCount": 1,
+      "status": "closed",
+      "closedAt": "2026-09-17T11:22:21.416Z",
+      "countedCash": 7625,
+      "variance": 0,
+      "notes": "End of lunch shift - balanced"
+    },
+    {
       "id": "SHIFT-1789642019593",
       "restaurantId": "REST-001",
       "cashierId": "cashier-01",
@@ -2242,5 +2601,5 @@
     "password": "SuperAdmin#2026",
     "name": "Master Super Admin"
   },
-  "nextInvoiceNumber": 1006
+  "nextInvoiceNumber": 1008
 }
