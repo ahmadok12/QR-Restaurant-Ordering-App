@@ -1,6 +1,48 @@
 {
   "tickets": [
     {
+      "ticketId": "#TKT-TEST-BILLING",
+      "table": "Table 04",
+      "guest": "Billing Tester",
+      "items": [
+        {
+          "dishId": "dish-1790061517332",
+          "title": "Mega Feast Duo Combo",
+          "price": 2499,
+          "qty": 2,
+          "size": "Standard Portion",
+          "spice": "Normal 🍃",
+          "station": "karahi",
+          "notes": ""
+        }
+      ],
+      "subtotal": 4998,
+      "tax": 800,
+      "serviceCharge": 150,
+      "charges": [
+        {
+          "id": "chg_pra_tax",
+          "name": "PRA Sales Tax",
+          "type": "percentage",
+          "rate": 16,
+          "amount": 800,
+          "category": "tax"
+        },
+        {
+          "id": "chg_ac_service",
+          "name": "AC & Ambience Surcharge",
+          "type": "fixed",
+          "rate": 150,
+          "amount": 150,
+          "category": "service"
+        }
+      ],
+      "total": 5948,
+      "assignedWaiterId": "unassigned",
+      "assignedWaiterName": "Unassigned (Self-Service)",
+      "status": "Settled"
+    },
+    {
       "ticketId": "#TKT-4699",
       "restaurantId": "REST-001",
       "table": "Table 02",
@@ -310,7 +352,7 @@
       "assignedWaiter": "Unassigned (Self-Service)",
       "items": [
         {
-          "dishId": "dish-1789816748354",
+          "dishId": "dish-1790062213166",
           "title": "Mega Feast Duo Combo",
           "price": 2499,
           "qty": 1,
@@ -320,7 +362,7 @@
           "notes": ""
         },
         {
-          "dishId": "dish-1789816748354",
+          "dishId": "dish-1790062213166",
           "title": "Mega Feast Duo Combo",
           "price": 2499,
           "qty": 1,
@@ -429,47 +471,6 @@
       "invoiceNumber": "INV-2026-01011",
       "settledBy": "Rashid Minhas",
       "settledAt": "2026-09-19T10:43:32.619Z"
-    },
-    {
-      "ticketId": "#TKT-TEST-BILLING",
-      "table": "Table 04",
-      "guest": "Billing Tester",
-      "items": [
-        {
-          "dishId": "dish-1789816748354",
-          "title": "Mega Feast Duo Combo",
-          "price": 2499,
-          "qty": 2,
-          "size": "Standard Portion",
-          "spice": "Normal 🍃",
-          "station": "karahi",
-          "notes": ""
-        }
-      ],
-      "subtotal": 4998,
-      "tax": 800,
-      "serviceCharge": 150,
-      "charges": [
-        {
-          "id": "chg_pra_tax",
-          "name": "PRA Sales Tax",
-          "type": "percentage",
-          "rate": 16,
-          "amount": 800,
-          "category": "tax"
-        },
-        {
-          "id": "chg_ac_service",
-          "name": "AC & Ambience Surcharge",
-          "type": "fixed",
-          "rate": 150,
-          "amount": 150,
-          "category": "service"
-        }
-      ],
-      "total": 5948,
-      "assignedWaiterId": "unassigned",
-      "assignedWaiterName": "Unassigned (Self-Service)"
     },
     {
       "ticketId": "#TKT-3661",
@@ -1926,55 +1927,9 @@
       "shape": "rect",
       "x": 64,
       "y": 27,
-      "status": "dining",
-      "order": {
-        "ticketId": "#TKT-TEST-BILLING",
-        "table": "Table 04",
-        "guest": "Billing Tester",
-        "total": 5948,
-        "subtotal": 4998,
-        "tax": 800,
-        "serviceCharge": 150,
-        "charges": [
-          {
-            "id": "chg_pra_tax",
-            "name": "PRA Sales Tax",
-            "type": "percentage",
-            "rate": 16,
-            "amount": 800,
-            "category": "tax"
-          },
-          {
-            "id": "chg_ac_service",
-            "name": "AC & Ambience Surcharge",
-            "type": "fixed",
-            "rate": 150,
-            "amount": 150,
-            "category": "service"
-          }
-        ],
-        "assignedWaiter": "Unassigned (Self-Service)",
-        "items": [
-          {
-            "dishId": "dish-1789816748354",
-            "title": "Mega Feast Duo Combo",
-            "price": 2499,
-            "qty": 2,
-            "size": "Standard Portion",
-            "spice": "Normal 🍃",
-            "station": "karahi",
-            "notes": ""
-          }
-        ],
-        "status": "New"
-      },
-      "session": {
-        "sessionId": "sess_1789808050053_19whd",
-        "hostDeviceId": "dev_mu85i1z3_jyw3p",
-        "hostName": "Table Lead",
-        "createdAt": 1789808050053,
-        "draftCart": []
-      }
+      "status": "available",
+      "order": null,
+      "session": null
     },
     {
       "id": "05",
@@ -2256,6 +2211,12 @@
     }
   ],
   "serviceBells": [
+    {
+      "id": "B-1790062218982",
+      "table": "Table 99",
+      "request": "Call Waiter Assistance",
+      "time": "12:30 PM"
+    },
     {
       "id": "B-1790061517565",
       "table": "Table 99",
@@ -3055,6 +3016,51 @@
     }
   ],
   "menu": [
+    {
+      "id": "dish-1790062213166",
+      "restaurantId": "REST-001",
+      "title": "Mega Feast Duo Combo",
+      "category": "deals",
+      "station": "karahi",
+      "price": 2499,
+      "regularPrice": 3200,
+      "hasCustomSizes": false,
+      "rating": 5,
+      "prepTime": "20-25 mins",
+      "calories": "550 kcal",
+      "dietary": "Chef Combo Special",
+      "isSpicy": false,
+      "isChef": false,
+      "isBestSeller": false,
+      "isVeg": false,
+      "tags": [],
+      "enableSpice": true,
+      "allowNotes": true,
+      "desc": "Combo includes: 1x Mega Feast Duo Combo. Special limited-time deal price!",
+      "image": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+      "status": "available",
+      "isAvailable": true,
+      "sizeOptions": [
+        {
+          "name": "Regular",
+          "price": 2499,
+          "extra": 0,
+          "desc": "Standard serving"
+        }
+      ],
+      "addons": [],
+      "dealItems": [
+        {
+          "dishId": "dish-1790061517332",
+          "title": "Mega Feast Duo Combo",
+          "qty": 1,
+          "unitPrice": 2499
+        }
+      ],
+      "dealBadge": "Save Rs. 701 (22% OFF)",
+      "discountPercent": 22,
+      "createdAt": "2026-09-22T07:30:13.166Z"
+    },
     {
       "id": "dish-1790061517332",
       "restaurantId": "REST-001",
@@ -5550,6 +5556,124 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "AUDIT-1790062219181-408",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-9801",
+        "table": "Table 98",
+        "total": 5948,
+        "itemsCount": 2,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Host",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1790062219181,
+      "isoTime": "2026-09-22T07:30:19.181Z"
+    },
+    {
+      "id": "AUDIT-1790062219168-598",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-9801",
+        "table": "Table 98",
+        "total": 3049,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Host",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1790062219168,
+      "isoTime": "2026-09-22T07:30:19.168Z"
+    },
+    {
+      "id": "AUDIT-1790062218972-649",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TEST-9901",
+        "table": "Table 99",
+        "total": 2110,
+        "itemsCount": 2,
+        "assignedWaiter": "Bilal Farooq (Rank 2)"
+      },
+      "actor": "Bob (Guest)",
+      "restaurantId": "REST-001",
+      "timestamp": 1790062218972,
+      "isoTime": "2026-09-22T07:30:18.972Z"
+    },
+    {
+      "id": "AUDIT-1790062218963-564",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TEST-9901",
+        "table": "Table 99",
+        "total": 1832,
+        "itemsCount": 1,
+        "assignedWaiter": "Hamza Abbasi (Rank 1)"
+      },
+      "actor": "Alice (Host)",
+      "restaurantId": "REST-001",
+      "timestamp": 1790062218963,
+      "isoTime": "2026-09-22T07:30:18.963Z"
+    },
+    {
+      "id": "AUDIT-1790062213166-385",
+      "action": "MENU_ITEM_CREATED",
+      "details": {
+        "dishId": "dish-1790062213166",
+        "title": "Mega Feast Duo Combo",
+        "price": 2499
+      },
+      "actor": "Admin",
+      "restaurantId": "REST-001",
+      "timestamp": 1790062213166,
+      "isoTime": "2026-09-22T07:30:13.166Z"
+    },
+    {
+      "id": "AUDIT-1790062213152-236",
+      "action": "ORDER_CREATED",
+      "details": {
+        "ticketId": "#TKT-TEST-BILLING",
+        "table": "Table 04",
+        "total": 5948,
+        "itemsCount": 1,
+        "assignedWaiter": "Unassigned (Self-Service)"
+      },
+      "actor": "Billing Tester",
+      "restaurantId": "rest-dera-01",
+      "timestamp": 1790062213152,
+      "isoTime": "2026-09-22T07:30:13.152Z"
+    },
+    {
+      "id": "AUDIT-1790062213107-426",
+      "action": "BILLING_SETTINGS_UPDATED",
+      "details": {
+        "restaurantId": "REST-001",
+        "chargesCount": 2,
+        "charges": [
+          {
+            "id": "chg_pra_tax",
+            "name": "PRA Sales Tax",
+            "type": "percentage",
+            "rate": 16,
+            "enabled": true,
+            "category": "tax"
+          },
+          {
+            "id": "chg_ac_service",
+            "name": "AC & Ambience Surcharge",
+            "type": "fixed",
+            "rate": 150,
+            "enabled": true,
+            "category": "service"
+          }
+        ]
+      },
+      "actor": "Restaurant Admin",
+      "restaurantId": "REST-001",
+      "timestamp": 1790062213107,
+      "isoTime": "2026-09-22T07:30:13.107Z"
+    },
     {
       "id": "AUDIT-1790061517557-939",
       "action": "ORDER_CREATED",

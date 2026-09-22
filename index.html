@@ -2323,8 +2323,8 @@
       modalQty: 1,
       modalExtraPrice: 0,
       modalSpice: "Medium 🌶️",
-      isHost: false,
-      hostName: "Table Lead",
+      isHost: true,
+      hostName: "Table Host",
       hostDeviceId: null,
       tableSessionId: null,
       billingCharges: []
@@ -2379,19 +2379,22 @@
     async function syncTableSession() {
       try {
         const devId = getDeviceId();
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuestMode = urlParams.get('guest') === '1' || urlParams.get('role') === 'guest';
         const res = await fetch(`${getApiBase()}/api/table-session/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             table: appState.tableNumber,
             deviceId: devId,
-            name: localStorage.getItem('gourmet_guest_name') || ''
+            name: localStorage.getItem('gourmet_guest_name') || 'Table Host',
+            claimHost: !isGuestMode
           })
         });
         if (res.ok) {
           const data = await res.json();
           appState.isHost = Boolean(data.isHost);
-          appState.hostName = data.hostName || 'Table Lead';
+          appState.hostName = data.hostName || 'Table Host';
           appState.hostDeviceId = data.hostDeviceId;
           appState.tableSessionId = data.sessionId;
 
@@ -2978,8 +2981,13 @@
     // Load persisted state or URL table param on startup
     window.addEventListener('DOMContentLoaded', async () => {
       initTableFromUrl();
-      loadCartFromStorage();
-      await loadActiveTicketFromStorage();
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('reset') === '1' || urlParams.get('resetOrder') === '1') {
+        await resetOrderForTesting();
+      } else {
+        loadCartFromStorage();
+        await loadActiveTicketFromStorage();
+      }
       await syncTableSession();
       startTableSessionPolling();
       loadMenuFromBackend();
@@ -2989,6 +2997,13 @@
       initFeaturedDealsSlider();
       renderDishGrid();
       updateCartUI();
+      updateRoleUI();
+
+      // Ensure user always starts on the default home screen (menu)
+      const viewParam = urlParams.get('view');
+      if (viewParam !== 'confirmation' && viewParam !== 'order') {
+        switchView('menu');
+      }
     });
 
     function initFeaturedDealsSlider() {
@@ -3240,13 +3255,22 @@
           }
         } catch (e) {}
 
-        // 5. If active ticket exists, restore and navigate to follow-up screen
+        // 5. If active ticket exists, restore ticket details while keeping user on default home screen (menu)
         if (savedTicket && savedTicket.status !== 'Settled') {
           appState.currentTicket = savedTicket;
           syncTicketToStorage(appState.currentTicket);
           renderTicketDetails();
           applyTicketStatusUI(appState.currentTicket.status || 'In Kitchen');
-          switchView('confirmation');
+          
+          const viewParam = new URLSearchParams(window.location.search).get('view');
+          if (viewParam === 'confirmation' || viewParam === 'order' || viewParam === 'status') {
+            switchView('confirmation');
+          } else {
+            switchView('menu');
+          }
+        } else {
+          appState.currentTicket = null;
+          switchView('menu');
         }
       } catch (e) {
         console.error("Failed to load active ticket from storage", e);

@@ -176,6 +176,11 @@ async function runTests() {
     assert(infoRes.status === 200, 'GET /api/public/info returns 200');
     assert(Array.isArray(infoRes.data.billingCharges), 'public info contains billingCharges array');
     assert(infoRes.data.billingCharges.length === 2, 'public info has both charges');
+    // Cleanup: Reset test table 04 after test run
+    await request('POST', '/api/test/reset-table', {
+      table: '04',
+      restaurantId: 'REST-001'
+    });
 
     console.log(`\n========================================`);
     console.log(`RESULTS: Passed: ${passed}, Failed: ${failed}`);

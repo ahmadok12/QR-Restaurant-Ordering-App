@@ -1658,15 +1658,18 @@ const server = http.createServer(async (req, res) => {
       // Check if table order is active or settled
       const hasActiveOrder = Boolean(tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
 
-      // If table is vacant or has no session, or order was settled, create fresh session
+      // Check if existing session is active and valid (less than 1 hour old)
+      const sessionValid = tbl.session && tbl.session.hostDeviceId && (Date.now() - (tbl.session.createdAt || 0) < 3600000);
+
+      // If table is vacant, has no session, has no active order, or client claims host:
       let isNewSession = false;
-      if (!tbl.session || !tbl.session.hostDeviceId) {
+      if (!sessionValid || (!hasActiveOrder && data.claimHost) || data.forceHost) {
         tbl.session = {
-          sessionId: 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          sessionId: (sessionValid && tbl.session.sessionId) || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
           hostDeviceId: deviceId,
-          hostName: clientName || `Table Lead`,
+          hostName: clientName || `Table Host`,
           createdAt: Date.now(),
-          draftCart: []
+          draftCart: (!hasActiveOrder && (data.claimHost || data.forceHost)) ? [] : (tbl.session ? (tbl.session.draftCart || []) : [])
         };
         isNewSession = true;
         writeDb(db);
