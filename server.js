@@ -3,14 +3,53 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const crypto = require('crypto');
+const os = require('os');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'pos_db.json');
 const AUTH_SECRET = process.env.AUTH_SECRET || 'pos_secure_secret_key_2026_dera';
 
+function getLocalIpAddress() {
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
+
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const DEFAULT_THEME = {
+  vibePreset: "heritage",
+  primaryColor: "#ac2d00",
+  primaryColorRgb: "172 45 0",
+  primaryContainer: "#d53e0b",
+  accentColor: "#f59e0b",
+  surfaceColor: "#ffffff",
+  backgroundColor: "#f8f9ff",
+  fontHeadline: "Outfit",
+  fontBody: "DM Sans",
+  coverBanner: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
+  logoUrl: "",
+  tagline: "Authentic Gourmet Dining • Handcrafted Daily",
+  welcomeMessage: "Welcome to Dera! Enjoy chef-curated live kitchen specialties & traditional tastes."
+};
+
+function hexToRgbString(hex) {
+  if (!hex) return '172 45 0';
+  let c = String(hex).replace('#', '').trim();
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  if (c.length !== 6) return '172 45 0';
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return '172 45 0';
+  return `${(num >> 16) & 255} ${(num >> 8) & 255} ${num & 255}`;
 }
 
 const DEFAULT_DB = {
@@ -45,7 +84,8 @@ const DEFAULT_DB = {
         password: "DeraAdmin#2026"
       },
       currency: "Rs.",
-      taxRate: 0.05
+      taxRate: 0.05,
+      theme: { ...DEFAULT_THEME }
     }
   ],
   staff: [
@@ -358,7 +398,70 @@ const DEFAULT_MENU = [
   }
 ];
 
+const DEFAULT_CATEGORIES = [
+  { id: "deals", name: "Deals & Combos", icon: "local_offer", description: "Value bundles, party combos & saver meals" },
+  { id: "pizzas", name: "Artisan Pizzas", icon: "local_pizza", description: "Hand-tossed crust, rich mozzarella & premium toppings" },
+  { id: "burgers", name: "Gourmet Burgers", icon: "lunch_dining", description: "Crispy fried chicken & juicy smash beef burgers" },
+  { id: "sandwiches", name: "Toasted Sandwiches", icon: "breakfast_dining", description: "Triple-decker clubs, Philly steaks & grilled paninis" },
+  { id: "wraps", name: "Signature Wraps", icon: "restaurant", description: "Tortilla rolls packed with crunchy chicken & sauces" },
+  { id: "drinks", name: "Drinks & Shakes", icon: "local_cafe", description: "Chilled sodas, mint margaritas & thick milkshakes" },
+  { id: "desserts", name: "Desserts & Sweets", icon: "icecream", description: "Molten lava cake, cheesecake, churros & waffles" }
+];
+
+const DEFAULT_SIDES = [
+  { id: "side-1", name: "Garlic Mayo Dip", price: 60, isAvailable: true, description: "Creamy garlic dipping sauce" },
+  { id: "side-2", name: "Extra Mozzarella Cheese", price: 200, isAvailable: true, description: "Rich melted 100% mozzarella" },
+  { id: "side-3", name: "Spicy Peri Peri Dip", price: 70, isAvailable: true, description: "Zesty Portuguese fiery mayo" },
+  { id: "side-4", name: "Cheddar Cheese Slice", price: 80, isAvailable: true, description: "Melted American cheddar slice" },
+  { id: "side-5", name: "Curly Fries Side", price: 220, isAvailable: true, description: "Seasoned crispy spiral fries" },
+  { id: "side-6", name: "Onion Rings (6 pcs)", price: 220, isAvailable: true, description: "Crispy battered golden onion rings" },
+  { id: "side-7", name: "Warm Nutella Dip", price: 90, isAvailable: true, description: "Warm hazelnut chocolate dip" }
+];
+
+const DEFAULT_TAGS = [
+  { id: "tag-chef", name: "Chef's Special", icon: "hotel_class", color: "amber" },
+  { id: "tag-spicy", name: "Spicy Flag", icon: "local_fire_department", color: "red" },
+  { id: "tag-bestseller", name: "Best Seller", icon: "trending_up", color: "orange" },
+  { id: "tag-veg", name: "Vegetarian", icon: "eco", color: "emerald" }
+];
+
+const DEFAULT_EXTRAS = [
+  { id: "extra-1", name: "Roghni Naan", fullName: "Sesame Roghni Naan", price: 140, icon: "🫓", station: "rice_naan", isAvailable: true, description: "Clay oven tandoor sesame naan" },
+  { id: "extra-2", name: "Garlic Naan", fullName: "Garlic Butter Naan", price: 160, icon: "🧄", station: "rice_naan", isAvailable: true, description: "Garlic & desi makhan naan" },
+  { id: "extra-3", name: "Mineral Water", fullName: "Chilled Mineral Water", price: 90, icon: "💧", station: "drinks_meetha", isAvailable: true, description: "Chilled 500ml mineral water" },
+  { id: "extra-4", name: "Raita & Salad", fullName: "Fresh Raita & Salad", price: 120, icon: "🥣", station: "rice_naan", isAvailable: true, description: "Whipped zeera raita & green salad" },
+  { id: "extra-5", name: "Sweet Lassi", fullName: "Kulhad Makhni Sweet Lassi", price: 290, icon: "🥛", station: "drinks_meetha", isAvailable: true, description: "Rich yogurt churned lassi" },
+  { id: "extra-6", name: "Mint Cooler", fullName: "Peshawari Mint Margarita", price: 260, icon: "🍋", station: "drinks_meetha", isAvailable: true, description: "Chilled mint cooler with lemon" },
+  { id: "extra-7", name: "Matka Chai", fullName: "Doodh Patti Karak Matka Chai", price: 180, icon: "☕", station: "drinks_meetha", isAvailable: true, description: "Strong cardamom clay pot tea" },
+  { id: "extra-8", name: "Gulab Jamun", fullName: "Shahi Gulab Jamun (2 pcs)", price: 220, icon: "🍨", station: "drinks_meetha", isAvailable: true, description: "Warm syrup-soaked desi meetha" }
+];
+
+const DEFAULT_WAITER_RANKS = [
+  { id: "rank-1", name: "Senior Waiter", ranking: 1, restaurantId: "REST-001" },
+  { id: "rank-2", name: "Junior Waiter", ranking: 2, restaurantId: "REST-001" },
+  { id: "rank-3", name: "Trainee", ranking: 3, restaurantId: "REST-001" }
+];
+
+const DEFAULT_WAITER_SERVICES = [
+  { id: "ws-1", name: "Call Server / Waiter", icon: "notifications_active", price: 0, category: "service", description: "Request waiter assistance at table", isAvailable: true },
+  { id: "ws-2", name: "Bring Water", icon: "water_drop", price: 0, category: "service", description: "Drinking water glasses / refill", isAvailable: true },
+  { id: "ws-3", name: "Tissue Paper / Napkins", icon: "dry_cleaning", price: 0, category: "service", description: "Extra napkins and wet wipes", isAvailable: true },
+  { id: "ws-4", name: "Extra Cutlery & Plates", icon: "flatware", price: 0, category: "service", description: "Extra spoons, forks, knives & plates", isAvailable: true },
+  { id: "ws-5", name: "Clear / Clean Table", icon: "cleaning_services", price: 0, category: "service", description: "Clear used plates and clean table", isAvailable: true },
+  { id: "ws-6", name: "Bring Bill (Cash / Card)", icon: "receipt_long", price: 0, category: "service", description: "Request invoice / bill payment", isAvailable: true },
+  { id: "ws-7", name: "Chilled Mineral Water", icon: "water_drop", price: 90, category: "item", station: "drinks_meetha", description: "500ml chilled mineral water", isAvailable: true },
+  { id: "ws-8", name: "Hot Roti / Naan", icon: "bakery_dining", price: 140, category: "item", station: "rice_naan", description: "Fresh clay oven tandoor naan", isAvailable: true },
+  { id: "ws-9", name: "Fresh Zeera Raita", icon: "soup_kitchen", price: 80, category: "item", station: "rice_naan", description: "Whipped spiced yogurt bowl", isAvailable: true },
+  { id: "ws-10", name: "Doodh Patti Karak Chai", icon: "coffee", price: 180, category: "item", station: "drinks_meetha", description: "Strong cardamom matka tea", isAvailable: true }
+];
+
 DEFAULT_DB.menu = DEFAULT_MENU;
+DEFAULT_DB.categories = DEFAULT_CATEGORIES;
+DEFAULT_DB.sides = DEFAULT_SIDES;
+DEFAULT_DB.tags = DEFAULT_TAGS;
+DEFAULT_DB.extras = DEFAULT_EXTRAS;
+DEFAULT_DB.waiterRanks = DEFAULT_WAITER_RANKS;
+DEFAULT_DB.waiterServices = DEFAULT_WAITER_SERVICES;
 
 function readDb() {
   try {
@@ -372,6 +475,24 @@ function readDb() {
       }
       if (!data.menu || data.menu.length === 0) {
         data.menu = DEFAULT_MENU;
+      }
+      if (!data.categories || data.categories.length === 0) {
+        data.categories = DEFAULT_CATEGORIES;
+      }
+      if (!data.sides || data.sides.length === 0) {
+        data.sides = DEFAULT_SIDES;
+      }
+      if (!data.tags || data.tags.length === 0) {
+        data.tags = DEFAULT_TAGS;
+      }
+      if (!data.extras || data.extras.length === 0) {
+        data.extras = DEFAULT_EXTRAS;
+      }
+      if (!data.waiterRanks || data.waiterRanks.length === 0) {
+        data.waiterRanks = DEFAULT_WAITER_RANKS;
+      }
+      if (!data.waiterServices || data.waiterServices.length === 0) {
+        data.waiterServices = DEFAULT_WAITER_SERVICES;
       }
       if (!data.auditLogs) data.auditLogs = [];
       if (!data.shifts) data.shifts = [];
@@ -404,12 +525,19 @@ if (!fs.existsSync(DB_FILE)) {
   if (!current.restaurants || current.restaurants.length === 0) { current.restaurants = DEFAULT_DB.restaurants; updated = true; }
   if (!current.staff || current.staff.length === 0) { current.staff = DEFAULT_DB.staff; updated = true; }
   if (!current.menu || current.menu.length === 0) { current.menu = DEFAULT_MENU; updated = true; }
+  if (!current.categories || current.categories.length === 0) { current.categories = DEFAULT_CATEGORIES; updated = true; }
+  if (!current.sides || current.sides.length === 0) { current.sides = DEFAULT_SIDES; updated = true; }
+  if (!current.tags || current.tags.length === 0) { current.tags = DEFAULT_TAGS; updated = true; }
+  if (!current.extras || current.extras.length === 0) { current.extras = DEFAULT_EXTRAS; updated = true; }
+  if (!current.waiterRanks || current.waiterRanks.length === 0) { current.waiterRanks = DEFAULT_WAITER_RANKS; updated = true; }
+  if (!current.waiterServices || current.waiterServices.length === 0) { current.waiterServices = DEFAULT_WAITER_SERVICES; updated = true; }
   if (!current.auditLogs) { current.auditLogs = []; updated = true; }
   if (!current.shifts) { current.shifts = []; updated = true; }
   if (!current.superAdmin) { current.superAdmin = DEFAULT_DB.superAdmin; updated = true; }
   (current.restaurants || []).forEach(r => {
     if (!r.managerPin) { r.managerPin = "7788"; updated = true; }
     if (!r.nextInvoiceNumber) { r.nextInvoiceNumber = 1001; updated = true; }
+    if (!r.theme) { r.theme = { ...DEFAULT_THEME }; updated = true; }
   });
   if (updated) writeDb(current);
 }
@@ -471,10 +599,13 @@ function logAuditEvent(db, action, details, actor = 'system', restaurantId = 're
 
 function calculateAuthoritativeOrder(order, db, targetRestId) {
   const restId = targetRestId || order.restaurantId || 'rest-dera-01';
-  const rest = (db.restaurants || []).find(r => r.id === restId) || (db.restaurants && db.restaurants[0]) || {};
+  const rest = (db.restaurants || []).find(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01') || (restId === 'rest-dera-01' && r.id === 'REST-001')) || (db.restaurants && db.restaurants[0]) || {};
   const taxRate = Number(rest.taxRate) || 0.05;
 
-  const catalog = db.menu || DEFAULT_MENU || [];
+  const catalog = [
+    ...(Array.isArray(db.menu) ? db.menu : []),
+    ...(Array.isArray(DEFAULT_MENU) ? DEFAULT_MENU : [])
+  ];
   let subtotal = 0;
 
   const authoritativeItems = (order.items || []).map(item => {
@@ -493,8 +624,9 @@ function calculateAuthoritativeOrder(order, db, targetRestId) {
     }
 
     let addonSum = 0;
-    if (item.selectedAddons && Array.isArray(item.selectedAddons) && canonical && canonical.addons) {
-      item.selectedAddons.forEach(addonName => {
+    const addonsList = item.selectedAddons || (Array.isArray(item.addons) ? item.addons.map(a => (typeof a === 'string' ? a : (a && a.name))) : null);
+    if (addonsList && Array.isArray(addonsList) && canonical && canonical.addons) {
+      addonsList.forEach(addonName => {
         const canonicalAddon = canonical.addons.find(a => a.name === addonName);
         if (canonicalAddon) addonSum += Number(canonicalAddon.price) || 0;
       });
@@ -516,13 +648,55 @@ function calculateAuthoritativeOrder(order, db, targetRestId) {
     };
   });
 
-  const tax = Math.round(subtotal * taxRate);
-  const total = subtotal + tax;
+  const billingCharges = (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
+    ? rest.billingCharges
+    : [
+        { id: 'chg-tax-default', name: 'Sales Tax (PRA)', type: 'percentage', rate: Math.round(taxRate * 100) || 5, enabled: true, category: 'tax' }
+      ];
+
+  let appliedCharges = [];
+  let totalChargesAmount = 0;
+  let taxSum = 0;
+  let serviceSum = 0;
+
+  billingCharges.forEach(charge => {
+    if (charge.enabled !== false) {
+      let amount = 0;
+      if (charge.type === 'percentage') {
+        const ratePct = Number(charge.rate !== undefined ? charge.rate : charge.amount) || 0;
+        amount = Math.round((subtotal * ratePct) / 100);
+      } else {
+        // fixed flat amount
+        amount = Math.round(Number(charge.rate !== undefined ? charge.rate : charge.amount) || 0);
+      }
+      
+      const chgCat = charge.category || (charge.name && charge.name.toLowerCase().includes('service') ? 'service' : 'tax');
+      if (chgCat === 'tax' || charge.name.toLowerCase().includes('tax') || charge.name.toLowerCase().includes('pra') || charge.name.toLowerCase().includes('gst')) {
+        taxSum += amount;
+      } else if (chgCat === 'service' || charge.name.toLowerCase().includes('service')) {
+        serviceSum += amount;
+      }
+
+      totalChargesAmount += amount;
+      appliedCharges.push({
+        id: charge.id,
+        name: charge.name,
+        type: charge.type,
+        rate: Number(charge.rate !== undefined ? charge.rate : charge.amount) || 0,
+        amount: amount,
+        category: chgCat
+      });
+    }
+  });
+
+  const total = subtotal + totalChargesAmount;
 
   return {
     items: authoritativeItems,
     subtotal: subtotal,
-    tax: tax,
+    tax: taxSum,
+    serviceCharge: serviceSum,
+    charges: appliedCharges,
     total: total
   };
 }
@@ -530,6 +704,9 @@ function calculateAuthoritativeOrder(order, db, targetRestId) {
 const sseClients = new Set();
 
 function broadcastEvent(eventData) {
+  if (!eventData.eventId) {
+    eventData.eventId = 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+  }
   const payload = 'data: ' + JSON.stringify(eventData) + '\n\n';
   sseClients.forEach(client => {
     try {
@@ -670,11 +847,29 @@ const server = http.createServer(async (req, res) => {
         taxRate: rest.taxRate || 0.05,
         status: rest.status || 'active',
         plan: rest.plan,
-        subscriptionCancelled: !!rest.subscriptionCancelled
+        subscriptionCancelled: !!rest.subscriptionCancelled,
+        theme: rest.theme || DEFAULT_THEME,
+        billingCharges: (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
+          ? rest.billingCharges
+          : [
+              { id: 'chg_tax_01', name: 'Sales Tax / PRA', type: 'percentage', rate: Math.round((rest.taxRate || 0.05) * 100), enabled: true, category: 'tax' },
+              { id: 'chg_svc_02', name: 'Service Charge', type: 'percentage', rate: 10, enabled: false, category: 'service' },
+              { id: 'chg_del_03', name: 'Packaging & Takeaway Fee', type: 'fixed', rate: 50, enabled: false, category: 'other' }
+            ]
       },
+      billingCharges: (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
+        ? rest.billingCharges
+        : [
+            { id: 'chg_tax_01', name: 'Sales Tax / PRA', type: 'percentage', rate: Math.round((rest.taxRate || 0.05) * 100), enabled: true, category: 'tax' },
+            { id: 'chg_svc_02', name: 'Service Charge', type: 'percentage', rate: 10, enabled: false, category: 'service' },
+            { id: 'chg_del_03', name: 'Packaging & Takeaway Fee', type: 'fixed', rate: 50, enabled: false, category: 'other' }
+          ],
       sections: db.sections || Array.from(new Set(safeTables.map(t => t.zone))),
       tables: safeTables,
-      soldOut: db.soldOut || []
+      soldOut: db.soldOut || [],
+      serverIp: getLocalIpAddress(),
+      port: PORT,
+      mobileUrl: `http://${getLocalIpAddress()}:${PORT}/?table=04`
     }));
     return;
   }
@@ -753,6 +948,7 @@ const server = http.createServer(async (req, res) => {
         },
         currency: 'Rs.',
         taxRate: 0.05,
+        theme: { ...DEFAULT_THEME },
         createdAt: new Date().toISOString()
       };
 
@@ -935,11 +1131,17 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Check Staff credentials (Waiters & Cashiers)
-      const staffMember = (db.staff || []).find(s => 
-        s.email.toLowerCase() === email && 
-        s.password === password
-      );
+      // Check Staff credentials (Waiters & Cashiers: supports email, mobile number or username)
+      const inputPhoneDigits = email.replace(/\D/g, '');
+      const staffMember = (db.staff || []).find(s => {
+        const staffEmail = (s.email || '').toLowerCase();
+        const staffUsername = (s.username || '').toLowerCase();
+        const staffPhone = (s.phone || '').replace(/\D/g, '');
+        const matchesIdentifier = (staffEmail && staffEmail === email) ||
+                                  (staffUsername && staffUsername === email) ||
+                                  (staffPhone && (staffPhone === email || (inputPhoneDigits && staffPhone === inputPhoneDigits)));
+        return matchesIdentifier && s.password === password;
+      });
 
       if (staffMember) {
         const staffRest = (db.restaurants || []).find(r => r.id === staffMember.restaurantId) || (db.restaurants && db.restaurants[0]);
@@ -1025,16 +1227,20 @@ const server = http.createServer(async (req, res) => {
         : 'Waiter#' + Math.floor(100 + Math.random() * 900);
 
       const targetRestId = data.restaurantId === 'rest-dera-01' ? 'REST-001' : (data.restaurantId || 'REST-001');
+      const phoneClean = (data.phone || '').replace(/\D/g, '');
+      const username = (data.username || phoneClean || data.phone || data.email || '').trim();
 
       const newStaff = {
         id: (role === 'cashier' ? 'cashier-' : 'staff-') + Date.now(),
         restaurantId: targetRestId,
         name: data.name || (role === 'cashier' ? 'New Cashier' : 'New Waiter'),
-        phone: data.phone || '',
-        email: (data.email || '').trim().toLowerCase(),
+        phone: phoneClean || data.phone || '',
+        username: username,
+        email: (data.email || username).trim().toLowerCase(),
         password: data.password || defaultPass,
         role: role,
         counter: data.counter || (role === 'cashier' ? 'Counter 01 (Front Register)' : ''),
+        rankName: data.rankName || '',
         hierarchyLevel: Number(data.hierarchyLevel) || 1,
         maxConcurrentOrders: Number(data.maxConcurrentOrders) || 4,
         status: data.status || 'active',
@@ -1097,6 +1303,264 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ==========================================
+  // Waiter Ranks Management Endpoints
+  // ==========================================
+
+  // GET /api/waiter-ranks
+  if (pathname === '/api/waiter-ranks' && req.method === 'GET') {
+    const db = readDb();
+    if (!db.waiterRanks || db.waiterRanks.length === 0) {
+      db.waiterRanks = DEFAULT_WAITER_RANKS;
+      writeDb(db);
+    }
+    const restId = parsedUrl.query.restaurantId || 'REST-001';
+    const ranks = (db.waiterRanks || []).filter(r => !r.restaurantId || r.restaurantId === restId || restId === 'ALL');
+    ranks.sort((a, b) => (Number(a.ranking) || 99) - (Number(b.ranking) || 99));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(ranks));
+    return;
+  }
+
+  // POST /api/waiter-ranks (Create or Update Waiter Rank)
+  if (pathname === '/api/waiter-ranks' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.waiterRanks) db.waiterRanks = [];
+
+      const rankName = (data.name || '').trim();
+      const ranking = parseInt(data.ranking, 10) || 1;
+      const targetRestId = data.restaurantId || (auth ? auth.restaurantId : 'REST-001') || 'REST-001';
+
+      if (!rankName) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Rank name is required' }));
+        return;
+      }
+
+      let rankItem = null;
+      if (data.id) {
+        const idx = db.waiterRanks.findIndex(r => r.id === data.id);
+        if (idx >= 0) {
+          db.waiterRanks[idx] = {
+            ...db.waiterRanks[idx],
+            name: rankName,
+            ranking: ranking,
+            restaurantId: targetRestId
+          };
+          rankItem = db.waiterRanks[idx];
+        }
+      }
+
+      if (!rankItem) {
+        rankItem = {
+          id: 'rank-' + Date.now(),
+          name: rankName,
+          ranking: ranking,
+          restaurantId: targetRestId
+        };
+        db.waiterRanks.push(rankItem);
+      }
+
+      writeDb(db);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, rank: rankItem, ranks: db.waiterRanks }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // DELETE /api/waiter-ranks/:id (Delete Waiter Rank)
+  if (pathname.startsWith('/api/waiter-ranks/') && req.method === 'DELETE') {
+    try {
+      const rankId = pathname.replace('/api/waiter-ranks/', '').trim();
+      const db = readDb();
+      if (!db.waiterRanks) db.waiterRanks = [];
+      db.waiterRanks = db.waiterRanks.filter(r => r.id !== rankId);
+      writeDb(db);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, deletedId: rankId }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // Restaurant Brand & Vibe Theme Endpoints
+  // ==========================================
+
+  // GET /api/restaurant/theme
+  if (pathname === '/api/restaurant/theme' && req.method === 'GET') {
+    const db = readDb();
+    const auth = getRequestAuth(req);
+    const restId = parsedUrl.query.restaurantId || (auth ? auth.restaurantId : 'REST-001');
+    const rest = (db.restaurants || []).find(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01')) || (db.restaurants && db.restaurants[0]) || {};
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      ok: true, 
+      restaurantId: rest.id,
+      restaurantName: rest.name,
+      theme: rest.theme || DEFAULT_THEME 
+    }));
+    return;
+  }
+
+  // POST /api/restaurant/theme
+  if (pathname === '/api/restaurant/theme' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      const data = await parseBody(req);
+      const db = readDb();
+      const restId = data.restaurantId || (auth ? auth.restaurantId : null) || parsedUrl.query.restaurantId || 'REST-001';
+      const idx = (db.restaurants || []).findIndex(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01'));
+      if (idx === -1) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Restaurant not found' }));
+        return;
+      }
+
+      const rest = db.restaurants[idx];
+      const existingTheme = rest.theme || DEFAULT_THEME;
+      
+      const primaryColor = data.primaryColor || existingTheme.primaryColor || '#ac2d00';
+      const primaryRgb = hexToRgbString(primaryColor);
+
+      rest.theme = {
+        vibePreset: data.vibePreset || existingTheme.vibePreset || 'custom',
+        primaryColor: primaryColor,
+        primaryColorRgb: primaryRgb,
+        primaryContainer: data.primaryContainer || existingTheme.primaryContainer || '#d53e0b',
+        accentColor: data.accentColor || existingTheme.accentColor || '#f59e0b',
+        surfaceColor: data.surfaceColor || existingTheme.surfaceColor || '#ffffff',
+        backgroundColor: data.backgroundColor || existingTheme.backgroundColor || '#f8f9ff',
+        fontHeadline: data.fontHeadline || existingTheme.fontHeadline || 'Outfit',
+        fontBody: data.fontBody || existingTheme.fontBody || 'DM Sans',
+        coverBanner: data.coverBanner !== undefined ? data.coverBanner : existingTheme.coverBanner,
+        logoUrl: data.logoUrl !== undefined ? data.logoUrl : (existingTheme.logoUrl || ''),
+        tagline: data.tagline !== undefined ? data.tagline : existingTheme.tagline,
+        welcomeMessage: data.welcomeMessage !== undefined ? data.welcomeMessage : existingTheme.welcomeMessage
+      };
+
+      db.restaurants[idx] = rest;
+      logAuditEvent(db, 'THEME_UPDATED', { restaurantId: rest.id, vibe: rest.theme.vibePreset, primaryColor }, auth ? auth.name : 'Restaurant Admin', rest.id);
+      writeDb(db);
+      broadcastEvent({ type: 'THEME_UPDATED', restaurantId: rest.id, theme: rest.theme });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, theme: rest.theme }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // Restaurant Billing & Tax Charges Endpoints
+  // ==========================================
+
+  // GET /api/restaurant/billing-settings
+  if (pathname === '/api/restaurant/billing-settings' && req.method === 'GET') {
+    const db = readDb();
+    const auth = getRequestAuth(req);
+    const restId = parsedUrl.query.restaurantId || (auth ? auth.restaurantId : 'REST-001');
+    const rest = (db.restaurants || []).find(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01')) || (db.restaurants && db.restaurants[0]) || {};
+    
+    const billingCharges = (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
+      ? rest.billingCharges
+      : [
+          { id: 'chg_tax_01', name: 'Sales Tax / PRA', type: 'percentage', rate: Math.round((rest.taxRate || 0.05) * 100), enabled: true, category: 'tax' },
+          { id: 'chg_svc_02', name: 'Service Charge', type: 'percentage', rate: 10, enabled: false, category: 'service' },
+          { id: 'chg_del_03', name: 'Packaging & Takeaway Fee', type: 'fixed', rate: 50, enabled: false, category: 'other' }
+        ];
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      restaurantId: rest.id,
+      restaurantName: rest.name,
+      currency: rest.currency || 'Rs.',
+      taxRate: rest.taxRate || 0.05,
+      billingCharges: billingCharges
+    }));
+    return;
+  }
+
+  // POST /api/restaurant/billing-settings
+  if (pathname === '/api/restaurant/billing-settings' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      const data = await parseBody(req);
+      const db = readDb();
+      const restId = data.restaurantId || (auth ? auth.restaurantId : null) || parsedUrl.query.restaurantId || 'REST-001';
+      const idx = (db.restaurants || []).findIndex(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01'));
+      if (idx === -1) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Restaurant not found' }));
+        return;
+      }
+
+      if (!Array.isArray(data.billingCharges)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'billingCharges must be an array' }));
+        return;
+      }
+
+      // Sanitize and validate charges
+      const sanitizedCharges = data.billingCharges.map((chg, i) => {
+        const rate = Math.max(0, Number(chg.rate !== undefined ? chg.rate : chg.amount) || 0);
+        return {
+          id: chg.id || `chg_${Date.now()}_${i}`,
+          name: (chg.name || 'Additional Charge').trim(),
+          type: (chg.type === 'fixed') ? 'fixed' : 'percentage',
+          rate: rate,
+          enabled: chg.enabled !== false,
+          category: chg.category || (chg.name && chg.name.toLowerCase().includes('service') ? 'service' : (chg.name && (chg.name.toLowerCase().includes('tax') || chg.name.toLowerCase().includes('pra')) ? 'tax' : 'other'))
+        };
+      });
+
+      db.restaurants[idx].billingCharges = sanitizedCharges;
+      
+      // Update primary taxRate for legacy callers if a tax charge is present
+      const primaryTax = sanitizedCharges.find(c => c.category === 'tax' && c.enabled);
+      if (primaryTax && primaryTax.type === 'percentage') {
+        db.restaurants[idx].taxRate = primaryTax.rate / 100;
+      }
+
+      logAuditEvent(db, 'BILLING_SETTINGS_UPDATED', {
+        restaurantId: db.restaurants[idx].id,
+        chargesCount: sanitizedCharges.length,
+        charges: sanitizedCharges
+      }, auth ? auth.name : 'Restaurant Admin', db.restaurants[idx].id);
+
+      writeDb(db);
+
+      broadcastEvent({
+        type: 'BILLING_SETTINGS_UPDATED',
+        restaurantId: db.restaurants[idx].id,
+        billingCharges: sanitizedCharges
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ok: true,
+        message: 'Billing charges and taxes updated successfully',
+        billingCharges: sanitizedCharges,
+        taxRate: primaryTax ? primaryTax.rate : Math.round((db.restaurants[idx].taxRate || 0.05) * 100)
+      }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ==========================================
   // Table & Section Management Endpoints
   // ==========================================
 
@@ -1145,6 +1609,308 @@ const server = http.createServer(async (req, res) => {
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, sections: db.sections }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // Multi-Person Table Session Endpoints
+  // ==========================================
+
+  // POST /api/table-session/join (1st person to scan becomes Host)
+  if (pathname === '/api/table-session/join' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const rawTable = (data.table || '04').toString().replace('Table ', '').trim();
+      const tNum = rawTable.padStart(2, '0');
+      const tableStr = `Table ${tNum}`;
+      const deviceId = (data.deviceId || '').trim();
+      const clientName = (data.name || '').trim();
+
+      if (!deviceId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'deviceId is required to bind table session' }));
+        return;
+      }
+
+      const db = readDb();
+      if (!db.tables) db.tables = [];
+
+      let tbl = db.tables.find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
+      if (!tbl) {
+        tbl = {
+          id: tNum,
+          name: tableStr,
+          zone: 'Main Dining',
+          capacity: 4,
+          shape: 'square',
+          x: 50,
+          y: 50,
+          status: 'available',
+          order: null
+        };
+        db.tables.push(tbl);
+      }
+
+      // Check if table order is active or settled
+      const hasActiveOrder = Boolean(tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
+
+      // If table is vacant or has no session, or order was settled, create fresh session
+      let isNewSession = false;
+      if (!tbl.session || !tbl.session.hostDeviceId) {
+        tbl.session = {
+          sessionId: 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          hostDeviceId: deviceId,
+          hostName: clientName || `Table Lead`,
+          createdAt: Date.now(),
+          draftCart: []
+        };
+        isNewSession = true;
+        writeDb(db);
+        broadcastEvent({
+          type: 'TABLE_SESSION_UPDATED',
+          table: tableStr,
+          hostDeviceId: tbl.session.hostDeviceId,
+          hostName: tbl.session.hostName,
+          sessionId: tbl.session.sessionId
+        });
+      }
+
+      const isHost = (tbl.session.hostDeviceId === deviceId);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ok: true,
+        table: tNum,
+        tableStr: tableStr,
+        isHost: isHost,
+        hostDeviceId: tbl.session.hostDeviceId,
+        hostName: tbl.session.hostName,
+        sessionId: tbl.session.sessionId,
+        draftCart: tbl.session.draftCart || [],
+        hasActiveOrder: hasActiveOrder,
+        activeTicket: hasActiveOrder ? tbl.order : null
+      }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // POST /api/table-session/cart (Authoritative table cart operations)
+  if (pathname === '/api/table-session/cart' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const rawTable = (data.table || '04').toString().replace('Table ', '').trim();
+      const tNum = rawTable.padStart(2, '0');
+      const tableStr = `Table ${tNum}`;
+      const deviceId = (data.deviceId || '').trim();
+      const action = data.action || 'sync'; // 'sync' | 'add' | 'adjust' | 'remove' | 'clear'
+
+      const db = readDb();
+      let tbl = (db.tables || []).find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
+      if (!tbl) {
+        tbl = {
+          id: tNum,
+          name: tableStr,
+          zone: 'Main Dining',
+          capacity: 4,
+          shape: 'square',
+          x: 50,
+          y: 50,
+          status: 'available',
+          order: null
+        };
+        if (!db.tables) db.tables = [];
+        db.tables.push(tbl);
+      }
+
+      if (!tbl.session) {
+        tbl.session = {
+          sessionId: 'sess_' + Date.now(),
+          hostDeviceId: deviceId || 'host',
+          hostName: 'Table Lead',
+          createdAt: Date.now(),
+          draftCart: []
+        };
+      }
+      if (!Array.isArray(tbl.session.draftCart)) {
+        tbl.session.draftCart = [];
+      }
+
+      if (action === 'add' && data.item) {
+        const item = data.item;
+        const existing = tbl.session.draftCart.find(ci => 
+          ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
+        );
+        if (existing) {
+          existing.qty += (Number(item.qty) || 1);
+        } else {
+          tbl.session.draftCart.push(item);
+        }
+      } else if (action === 'adjust') {
+        const delta = Number(data.delta) || 0;
+        let targetIdx = -1;
+        if (data.item) {
+          targetIdx = tbl.session.draftCart.findIndex(ci =>
+            (ci.dishId === data.item.dishId || ci.title === data.item.title) &&
+            ci.size === data.item.size &&
+            ci.spice === data.item.spice &&
+            ci.note === data.item.note
+          );
+        }
+        if (targetIdx === -1 && typeof data.index === 'number') {
+          targetIdx = data.index;
+        }
+        if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
+          tbl.session.draftCart[targetIdx].qty += delta;
+          if (tbl.session.draftCart[targetIdx].qty <= 0) {
+            tbl.session.draftCart.splice(targetIdx, 1);
+          }
+        }
+      } else if (action === 'remove') {
+        let targetIdx = -1;
+        if (data.item) {
+          targetIdx = tbl.session.draftCart.findIndex(ci =>
+            (ci.dishId === data.item.dishId || ci.title === data.item.title) &&
+            ci.size === data.item.size &&
+            ci.spice === data.item.spice &&
+            ci.note === data.item.note
+          );
+        }
+        if (targetIdx === -1 && typeof data.index === 'number') {
+          targetIdx = data.index;
+        }
+        if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
+          tbl.session.draftCart.splice(targetIdx, 1);
+        }
+      } else if (action === 'clear') {
+        tbl.session.draftCart = [];
+      } else {
+        // Full sync
+        if (Array.isArray(data.cart)) {
+          tbl.session.draftCart = data.cart;
+        }
+      }
+
+      writeDb(db);
+
+      broadcastEvent({
+        type: 'TABLE_CART_UPDATED',
+        table: tableStr,
+        cart: tbl.session.draftCart,
+        senderDeviceId: deviceId,
+        action: action
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, cart: tbl.session.draftCart }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // GET /api/table-session/poll (Lightweight polling fallback for mobile devices)
+  if (pathname === '/api/table-session/poll' && req.method === 'GET') {
+    const rawTable = (parsedUrl.query.table || '04').toString().replace('Table ', '').trim();
+    const tNum = rawTable.padStart(2, '0');
+    const tableStr = `Table ${tNum}`;
+    const deviceId = (parsedUrl.query.deviceId || '').trim();
+
+    const db = readDb();
+    let tbl = (db.tables || []).find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
+
+    const hasActiveOrder = Boolean(tbl && tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
+    const isHost = Boolean(tbl && tbl.session && tbl.session.hostDeviceId === deviceId);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      table: tNum,
+      isHost: isHost,
+      hostDeviceId: tbl && tbl.session ? tbl.session.hostDeviceId : null,
+      hostName: tbl && tbl.session ? tbl.session.hostName : 'Table Lead',
+      draftCart: tbl && tbl.session ? (tbl.session.draftCart || []) : [],
+      hasActiveOrder: hasActiveOrder,
+      activeTicket: hasActiveOrder ? tbl.order : null
+    }));
+    return;
+  }
+
+  // POST /api/table-session/switch-role (Testing tool to toggle between Host & Guest)
+  if (pathname === '/api/table-session/switch-role' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const rawTable = (data.table || '04').toString().replace('Table ', '').trim();
+      const tNum = rawTable.padStart(2, '0');
+      const tableStr = `Table ${tNum}`;
+      const deviceId = (data.deviceId || '').trim();
+      const targetRole = data.targetRole || 'toggle'; // 'host' | 'guest' | 'toggle'
+
+      const db = readDb();
+      let tbl = (db.tables || []).find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
+      if (!tbl) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Table not found' }));
+        return;
+      }
+
+      if (!tbl.session) {
+        tbl.session = {
+          sessionId: 'sess_' + Date.now(),
+          hostDeviceId: deviceId,
+          hostName: 'Table Lead',
+          createdAt: Date.now(),
+          draftCart: []
+        };
+      }
+
+      const currentIsHost = (tbl.session.hostDeviceId === deviceId);
+      let willBeHost = false;
+
+      if (targetRole === 'host') {
+        tbl.session.hostDeviceId = deviceId;
+        tbl.session.hostName = data.name || 'Table Lead';
+        willBeHost = true;
+      } else if (targetRole === 'guest') {
+        tbl.session.hostDeviceId = 'host_peer_' + Math.random().toString(36).substring(2, 6);
+        tbl.session.hostName = 'Other Host';
+        willBeHost = false;
+      } else {
+        // Toggle
+        if (currentIsHost) {
+          tbl.session.hostDeviceId = 'host_peer_' + Math.random().toString(36).substring(2, 6);
+          tbl.session.hostName = 'Other Host';
+          willBeHost = false;
+        } else {
+          tbl.session.hostDeviceId = deviceId;
+          tbl.session.hostName = data.name || 'Table Lead';
+          willBeHost = true;
+        }
+      }
+
+      writeDb(db);
+      broadcastEvent({
+        type: 'TABLE_SESSION_UPDATED',
+        table: tableStr,
+        hostDeviceId: tbl.session.hostDeviceId,
+        hostName: tbl.session.hostName,
+        sessionId: tbl.session.sessionId
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ok: true,
+        isHost: willBeHost,
+        hostDeviceId: tbl.session.hostDeviceId,
+        hostName: tbl.session.hostName
+      }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -1331,31 +2097,38 @@ const server = http.createServer(async (req, res) => {
 
       const targetRestId = data.restaurantId === 'rest-dera-01' ? 'REST-001' : (data.restaurantId || 'REST-001');
 
+      const basePrice = Number(data.price) || Number(data.regularPrice) || (data.sizeOptions && data.sizeOptions[0] ? Number(data.sizeOptions[0].price || data.sizeOptions[0].extra || 0) : 0);
       const newDish = {
         id: data.id || ('dish-' + Date.now()),
         restaurantId: targetRestId,
         title: data.title || 'New Dish',
         category: data.category || 'karahi',
         station: data.station || 'karahi',
-        price: Number(data.price) || 0,
+        price: basePrice,
+        regularPrice: Number(data.regularPrice) || basePrice,
+        hasCustomSizes: !!data.hasCustomSizes,
         rating: 5.0,
         prepTime: data.prepTime || '15-20 min',
         calories: data.calories || '550 kcal',
-        dietary: data.dietary || 'Chef Special',
+        dietary: data.dietary || '',
         isSpicy: !!data.isSpicy,
         isChef: !!data.isChef,
         isBestSeller: !!data.isBestSeller,
         isVeg: !!data.isVeg,
+        tags: Array.isArray(data.tags) ? data.tags : [],
         enableSpice: data.enableSpice !== false,
         allowNotes: data.allowNotes !== false,
         desc: data.desc || '',
-        image: data.image || 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80',
+        image: data.image || '',
         status: data.status || 'available',
         isAvailable: data.isAvailable !== false,
         sizeOptions: data.sizeOptions || [
-          { name: "Standard Portion", extra: 0, desc: "Serves 1-2" }
+          { name: "Regular", price: basePrice, extra: 0, desc: "Standard serving" }
         ],
         addons: data.addons || [],
+        dealItems: Array.isArray(data.dealItems) ? data.dealItems : [],
+        dealBadge: data.dealBadge || data.badge || (data.category === 'deals' ? 'Special Deal' : ''),
+        discountPercent: Number(data.discountPercent) || 0,
         createdAt: new Date().toISOString()
       };
 
@@ -1420,6 +2193,350 @@ const server = http.createServer(async (req, res) => {
     }
     writeDb(db);
     broadcastEvent({ type: 'MENU_UPDATE', dishes: db.menu });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // --- CATEGORIES API ---
+  if (pathname === '/api/categories' && req.method === 'GET') {
+    const db = readDb();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(db.categories || DEFAULT_CATEGORIES));
+    return;
+  }
+
+  if (pathname === '/api/categories' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.categories) db.categories = [...DEFAULT_CATEGORIES];
+      const newCat = {
+        id: (data.name || 'cat').toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now(),
+        name: (data.name || 'New Category').trim(),
+        icon: data.icon || 'restaurant',
+        description: data.description || ''
+      };
+      db.categories.push(newCat);
+      writeDb(db);
+      broadcastEvent({ type: 'CATEGORIES_UPDATE', categories: db.categories });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, category: newCat }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/categories/') && req.method === 'PUT') {
+    try {
+      const catId = pathname.replace('/api/categories/', '');
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.categories) db.categories = [...DEFAULT_CATEGORIES];
+      const idx = db.categories.findIndex(c => c.id === catId);
+      if (idx >= 0) {
+        db.categories[idx] = { ...db.categories[idx], ...data };
+        writeDb(db);
+        broadcastEvent({ type: 'CATEGORIES_UPDATE', categories: db.categories });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, category: db.categories[idx] }));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Category not found' }));
+      }
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/categories/') && req.method === 'DELETE') {
+    const catId = pathname.replace('/api/categories/', '');
+    const db = readDb();
+    if (!db.categories) db.categories = [...DEFAULT_CATEGORIES];
+    db.categories = db.categories.filter(c => c.id !== catId);
+    writeDb(db);
+    broadcastEvent({ type: 'CATEGORIES_UPDATE', categories: db.categories });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // --- SIDES API ---
+  if (pathname === '/api/sides' && req.method === 'GET') {
+    const db = readDb();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(db.sides || DEFAULT_SIDES));
+    return;
+  }
+
+  if (pathname === '/api/sides' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.sides) db.sides = [...DEFAULT_SIDES];
+      const newSide = {
+        id: 'side-' + Date.now(),
+        name: (data.name || 'New Side').trim(),
+        price: Math.max(0, Number(data.price) || 0),
+        isAvailable: data.isAvailable !== false,
+        description: data.description || ''
+      };
+      db.sides.push(newSide);
+      writeDb(db);
+      broadcastEvent({ type: 'SIDES_UPDATE', sides: db.sides });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, side: newSide }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/sides/') && req.method === 'PUT') {
+    try {
+      const sideId = pathname.replace('/api/sides/', '');
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.sides) db.sides = [...DEFAULT_SIDES];
+      const idx = db.sides.findIndex(s => s.id === sideId);
+      if (idx >= 0) {
+        db.sides[idx] = { ...db.sides[idx], ...data };
+        writeDb(db);
+        broadcastEvent({ type: 'SIDES_UPDATE', sides: db.sides });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, side: db.sides[idx] }));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Side not found' }));
+      }
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/sides/') && req.method === 'DELETE') {
+    const sideId = pathname.replace('/api/sides/', '');
+    const db = readDb();
+    if (!db.sides) db.sides = [...DEFAULT_SIDES];
+    db.sides = db.sides.filter(s => s.id !== sideId);
+    writeDb(db);
+    broadcastEvent({ type: 'SIDES_UPDATE', sides: db.sides });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // --- TAGS API ---
+  if (pathname === '/api/tags' && req.method === 'GET') {
+    const db = readDb();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(db.tags || DEFAULT_TAGS));
+    return;
+  }
+
+  if (pathname === '/api/tags' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.tags) db.tags = [...DEFAULT_TAGS];
+      const newTag = {
+        id: 'tag-' + Date.now(),
+        name: (data.name || 'Custom Tag').trim(),
+        icon: data.icon || 'sell',
+        color: data.color || 'slate'
+      };
+      db.tags.push(newTag);
+      writeDb(db);
+      broadcastEvent({ type: 'TAGS_UPDATE', tags: db.tags });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, tag: newTag }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/tags/') && req.method === 'PUT') {
+    try {
+      const tagId = pathname.replace('/api/tags/', '');
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.tags) db.tags = [...DEFAULT_TAGS];
+      const idx = db.tags.findIndex(t => t.id === tagId);
+      if (idx >= 0) {
+        db.tags[idx] = { ...db.tags[idx], ...data };
+        writeDb(db);
+        broadcastEvent({ type: 'TAGS_UPDATE', tags: db.tags });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, tag: db.tags[idx] }));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Tag not found' }));
+      }
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/tags/') && req.method === 'DELETE') {
+    const tagId = pathname.replace('/api/tags/', '');
+    const db = readDb();
+    if (!db.tags) db.tags = [...DEFAULT_TAGS];
+    db.tags = db.tags.filter(t => t.id !== tagId);
+    writeDb(db);
+    broadcastEvent({ type: 'TAGS_UPDATE', tags: db.tags });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // --- EXTRAS (POST-ORDER DINING ADD-ONS) API ---
+  if (pathname === '/api/extras' && req.method === 'GET') {
+    const db = readDb();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(db.extras || DEFAULT_EXTRAS));
+    return;
+  }
+
+  if (pathname === '/api/extras' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.extras) db.extras = [...DEFAULT_EXTRAS];
+      const newExtra = {
+        id: 'extra-' + Date.now(),
+        name: (data.name || 'New Extra').trim(),
+        fullName: (data.fullName || data.name || 'New Extra').trim(),
+        price: Math.max(0, Number(data.price) || 0),
+        icon: data.icon || '⚡',
+        station: data.station || 'rice_naan',
+        isAvailable: data.isAvailable !== false,
+        description: data.description || ''
+      };
+      db.extras.push(newExtra);
+      writeDb(db);
+      broadcastEvent({ type: 'EXTRAS_UPDATE', extras: db.extras });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, extra: newExtra }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/extras/') && req.method === 'PUT') {
+    try {
+      const extraId = pathname.replace('/api/extras/', '');
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.extras) db.extras = [...DEFAULT_EXTRAS];
+      const idx = db.extras.findIndex(e => e.id === extraId);
+      if (idx >= 0) {
+        db.extras[idx] = { ...db.extras[idx], ...data };
+        writeDb(db);
+        broadcastEvent({ type: 'EXTRAS_UPDATE', extras: db.extras });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, extra: db.extras[idx] }));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Extra item not found' }));
+      }
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/extras/') && req.method === 'DELETE') {
+    const extraId = pathname.replace('/api/extras/', '');
+    const db = readDb();
+    if (!db.extras) db.extras = [...DEFAULT_EXTRAS];
+    db.extras = db.extras.filter(e => e.id !== extraId);
+    writeDb(db);
+    broadcastEvent({ type: 'EXTRAS_UPDATE', extras: db.extras });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // --- WAITER SERVICES API (CUSTOMIZABLE CALL WAITER OPTIONS) ---
+  if (pathname === '/api/waiter-services' && req.method === 'GET') {
+    const db = readDb();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(db.waiterServices || DEFAULT_WAITER_SERVICES));
+    return;
+  }
+
+  if (pathname === '/api/waiter-services' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.waiterServices) db.waiterServices = [...DEFAULT_WAITER_SERVICES];
+      const newService = {
+        id: 'ws-' + Date.now(),
+        name: (data.name || 'New Service').trim(),
+        icon: (data.icon || 'notifications_active').trim(),
+        price: Math.max(0, Number(data.price) || 0),
+        category: data.category || (Number(data.price) > 0 ? 'item' : 'service'),
+        station: data.station || (Number(data.price) > 0 ? 'rice_naan' : 'service'),
+        isAvailable: data.isAvailable !== false,
+        description: (data.description || '').trim()
+      };
+      db.waiterServices.push(newService);
+      writeDb(db);
+      broadcastEvent({ type: 'WAITER_SERVICES_UPDATE', waiterServices: db.waiterServices });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, service: newService }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/waiter-services/') && req.method === 'PUT') {
+    try {
+      const serviceId = pathname.replace('/api/waiter-services/', '');
+      const data = await parseBody(req);
+      const db = readDb();
+      if (!db.waiterServices) db.waiterServices = [...DEFAULT_WAITER_SERVICES];
+      const idx = db.waiterServices.findIndex(s => s.id === serviceId);
+      if (idx >= 0) {
+        db.waiterServices[idx] = { ...db.waiterServices[idx], ...data };
+        writeDb(db);
+        broadcastEvent({ type: 'WAITER_SERVICES_UPDATE', waiterServices: db.waiterServices });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, service: db.waiterServices[idx] }));
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Waiter service not found' }));
+      }
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith('/api/waiter-services/') && req.method === 'DELETE') {
+    const serviceId = pathname.replace('/api/waiter-services/', '');
+    const db = readDb();
+    if (!db.waiterServices) db.waiterServices = [...DEFAULT_WAITER_SERVICES];
+    db.waiterServices = db.waiterServices.filter(s => s.id !== serviceId);
+    writeDb(db);
+    broadcastEvent({ type: 'WAITER_SERVICES_UPDATE', waiterServices: db.waiterServices });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
     return;
@@ -1644,6 +2761,7 @@ const server = http.createServer(async (req, res) => {
       if (tbl) {
         tbl.status = 'vacant';
         tbl.order = null;
+        tbl.session = null;
       }
 
       // Clear table service requests
@@ -1773,6 +2891,7 @@ const server = http.createServer(async (req, res) => {
       if (tbl && tbl.order && tbl.order.ticketId === ticketId) {
         tbl.status = 'vacant';
         tbl.order = null;
+        tbl.session = null;
       }
 
       logAuditEvent(db, 'ORDER_VOIDED', {
@@ -1823,6 +2942,53 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Test/Demo Reset Table Endpoint
+  if (pathname === '/api/test/reset-table' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        const tNum = (data.table || '04').toString().padStart(2, '0');
+        const tableStr = `Table ${tNum}`;
+        const db = readDb();
+
+        if (db.tickets) {
+          db.tickets = db.tickets.map(t => {
+            if ((t.table === tableStr || t.table === `Table ${parseInt(tNum, 10)}` || t.table === tNum) && t.status !== 'Settled') {
+              return { ...t, status: 'Settled' };
+            }
+            return t;
+          });
+        }
+
+        if (db.tables) {
+          const tbl = db.tables.find(t => t.id === tNum || t.name === tableStr);
+          if (tbl) {
+            tbl.status = 'available';
+            tbl.order = null;
+            tbl.session = null;
+          }
+        }
+
+        writeDb(db);
+
+        broadcastEvent({
+          type: 'BILL_SETTLED',
+          table: tableStr,
+          timestamp: Date.now()
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: `Table ${tNum} reset successfully` }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // Unified broadcast endpoint (hardened against price tampering and phantom settles)
   if (pathname === '/api/broadcast' && req.method === 'POST') {
     let body = '';
@@ -1834,13 +3000,40 @@ const server = http.createServer(async (req, res) => {
 
         if (eventData.type === 'NEW_ORDER' && eventData.order) {
           const restId = eventData.order.restaurantId || 'rest-dera-01';
+          let tableStr = (eventData.order.table || eventData.table || '').trim();
+          if (!tableStr && eventData.order.ticketId) {
+            const existingTkt = (db.tickets || []).find(t => t.ticketId === eventData.order.ticketId);
+            if (existingTkt && existingTkt.table) {
+              tableStr = existingTkt.table.trim();
+            }
+          }
+          eventData.order.table = tableStr;
+          eventData.table = tableStr;
+          const tNum = tableStr.replace('Table ', '').padStart(2, '0');
+          let tbl = (db.tables || []).find(t => t.id === tNum || (tableStr && t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === tableStr);
+          const hasActiveOrder = Boolean(tbl && tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
+          const senderDeviceId = (eventData.senderDeviceId || eventData.order.senderDeviceId || '').trim();
+
+          // Enforce Host-only submission for INITIAL order
+          if (!hasActiveOrder && tbl && tbl.session && tbl.session.hostDeviceId && senderDeviceId && senderDeviceId !== tbl.session.hostDeviceId) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: `Only the Table Host (${tbl.session.hostName || 'Table Lead'}) can submit the initial order. Dishes remain in the shared cart for the Host to fire.`,
+              isHost: false,
+              hostName: tbl.session.hostName
+            }));
+            return;
+          }
 
           // SERVER-AUTHORITATIVE RECALCULATION
           const authoritative = calculateAuthoritativeOrder(eventData.order, db, restId);
           eventData.order.items = authoritative.items;
           eventData.order.subtotal = authoritative.subtotal;
           eventData.order.tax = authoritative.tax;
+          eventData.order.serviceCharge = authoritative.serviceCharge;
+          eventData.order.charges = authoritative.charges;
           eventData.order.total = authoritative.total;
+          eventData.table = eventData.order.table || tableStr;
 
           // Hierarchy Auto-assignment: assign waiter if not already assigned
           if (!eventData.order.assignedWaiterId) {
@@ -1856,9 +3049,6 @@ const server = http.createServer(async (req, res) => {
             db.tickets.unshift(eventData.order);
           }
 
-          const tableStr = (eventData.order.table || '').trim();
-          const tNum = tableStr.replace('Table ', '').padStart(2, '0');
-          let tbl = db.tables.find(t => t.id === tNum || (tableStr && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === tableStr);
           if (!tbl && tNum && tNum !== '00') {
             tbl = {
               id: tNum,
@@ -1877,15 +3067,22 @@ const server = http.createServer(async (req, res) => {
             tbl.status = 'dining';
             tbl.order = {
               ticketId: eventData.order.ticketId,
+              table: tableStr || eventData.order.table || tbl.name,
               guest: eventData.order.guest,
               time: eventData.order.time,
               total: eventData.order.total,
               subtotal: eventData.order.subtotal,
+              tax: eventData.order.tax,
+              serviceCharge: eventData.order.serviceCharge,
+              charges: eventData.order.charges,
               payment: eventData.order.payment,
               assignedWaiter: eventData.order.assignedWaiterName,
               items: eventData.order.items,
               status: eventData.order.status || 'New'
             };
+            if (tbl.session) {
+              tbl.session.draftCart = [];
+            }
           }
 
           logAuditEvent(db, 'ORDER_CREATED', {
@@ -1997,6 +3194,7 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log('RESTAURANT ECOSYSTEM SERVER RUNNING ON http://localhost:' + PORT);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log('RESTAURANT ECOSYSTEM SERVER RUNNING ON http://0.0.0.0:' + PORT);
+  console.log('LOCAL NETWORK ACCESS (MOBILE): http://192.168.1.13:' + PORT);
 });

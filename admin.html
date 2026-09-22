@@ -97,6 +97,23 @@
       </div>
     </div>
 
+    <!-- Mobile Wi-Fi Access Banner -->
+    <div id="mobile-lan-banner" class="mb-5 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <span class="material-symbols-outlined text-[22px]">smartphone</span>
+        </div>
+        <div>
+          <span class="font-bold text-[14px] text-indigo-950 block">Open on Mobile Devices (Connected to same Wi-Fi)</span>
+          <span class="text-[12px] text-indigo-800/80 block mt-0.5">Your phone must open the computer's network IP, not localhost:</span>
+          <code id="mobile-lan-url" class="inline-block mt-1 font-mono font-bold text-[13px] bg-white px-2.5 py-1 rounded-lg border border-indigo-200 text-indigo-700 shadow-2xs select-all">http://192.168.1.13:3000/?table=04</code>
+        </div>
+      </div>
+      <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('mobile-lan-url').textContent); alert('Copied mobile URL to clipboard!');" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-bold shadow-xs active:scale-95 transition-all">
+        Copy Mobile URL
+      </button>
+    </div>
+
     <!-- Printable Grid of QR Standee Cards -->
     <div id="qr-print-section" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       <!-- Generated via JS for Tables 1 to 12 -->
@@ -347,13 +364,38 @@
     }
 
     // --- BATCH QR CODE GENERATION ---
-    function generateAllTableQRs() {
+    let cachedServerIp = '';
+
+    async function initNetworkQrDetails() {
+      try {
+        const res = await fetch('/api/public/info');
+        const data = await res.json();
+        if (data && data.serverIp && data.serverIp !== '127.0.0.1') {
+          cachedServerIp = data.serverIp;
+          const port = data.port || window.location.port || '3000';
+          const mobileUrlEl = document.getElementById('mobile-lan-url');
+          if (mobileUrlEl) {
+            mobileUrlEl.textContent = `http://${cachedServerIp}:${port}/?table=04`;
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function generateAllTableQRs() {
+      await initNetworkQrDetails();
+
       const container = document.getElementById('qr-print-section');
       container.innerHTML = '';
 
       // Determine base URL of customer menu
       const currentUrl = window.location.href;
-      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/')) + '/index.html';
+      let baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/')) + '/index.html';
+
+      // If running on localhost/127.0.0.1, automatically replace host with actual LAN IP for scannable mobile access!
+      if (cachedServerIp && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        const port = window.location.port ? `:${window.location.port}` : ':3000';
+        baseUrl = `${window.location.protocol}//${cachedServerIp}${port}/index.html`;
+      }
 
       TABLE_LIST.forEach(tbl => {
         const targetUrl = `${baseUrl}?table=${tbl.id}`;

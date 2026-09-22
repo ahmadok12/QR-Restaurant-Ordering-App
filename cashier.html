@@ -211,9 +211,11 @@
                 <span>Subtotal:</span>
                 <span id="settle-subtotal" class="font-mono text-slate-900 font-semibold">Rs. 0</span>
               </div>
-              <div class="flex justify-between text-slate-600">
-                <span>GST Tax (5%):</span>
-                <span id="settle-tax" class="font-mono text-slate-900 font-semibold">Rs. 0</span>
+              <div id="settle-charges-breakdown" class="space-y-1">
+                <div class="flex justify-between text-slate-600">
+                  <span id="settle-tax-label">GST Tax (5%):</span>
+                  <span id="settle-tax" class="font-mono text-slate-900 font-semibold">Rs. 0</span>
+                </div>
               </div>
               <div class="flex justify-between text-[14px] font-extrabold text-slate-900 pt-1 border-t border-slate-200">
                 <span>Total Amount Due:</span>
@@ -816,11 +818,29 @@
       });
 
       const sub = Number(ord.subtotal) || Number(ord.total) || 0;
-      const tax = Number(ord.tax) || Math.round(sub * 0.05);
-      const tot = Number(ord.total) || (sub + tax);
+      const chargesContainer = document.getElementById('settle-charges-breakdown');
+      let tot = Number(ord.total) || sub;
+
+      if (chargesContainer) {
+        if (Array.isArray(ord.charges) && ord.charges.length > 0) {
+          chargesContainer.innerHTML = ord.charges.map(c => `
+            <div class="flex justify-between text-slate-600">
+              <span>${c.name} (${c.type === 'percentage' ? c.rate + '%' : 'Fixed'}):</span>
+              <span class="font-mono text-slate-900 font-semibold">Rs. ${(Number(c.amount) || 0).toLocaleString()}</span>
+            </div>
+          `).join('');
+        } else {
+          const tax = Number(ord.tax) || Math.round(sub * 0.05);
+          chargesContainer.innerHTML = `
+            <div class="flex justify-between text-slate-600">
+              <span>GST Tax (5%):</span>
+              <span class="font-mono text-slate-900 font-semibold">Rs. ${tax.toLocaleString()}</span>
+            </div>
+          `;
+        }
+      }
 
       document.getElementById('settle-subtotal').textContent = `Rs. ${sub.toLocaleString()}`;
-      document.getElementById('settle-tax').textContent = `Rs. ${tax.toLocaleString()}`;
       document.getElementById('settle-total').textContent = `Rs. ${tot.toLocaleString()}`;
 
       // Reset cash calc
@@ -954,10 +974,17 @@
             <span>Subtotal:</span>
             <span>Rs. ${(Number(ord.subtotal)||0).toLocaleString()}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin: 2px 0;">
-            <span>GST (5%):</span>
-            <span>Rs. ${(Number(ord.tax)||0).toLocaleString()}</span>
-          </div>
+          ${(Array.isArray(ord.charges) && ord.charges.length > 0) ? ord.charges.map(c => `
+            <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+              <span>${c.name} (${c.type === 'percentage' ? c.rate + '%' : 'Fixed'}):</span>
+              <span>Rs. ${(Number(c.amount)||0).toLocaleString()}</span>
+            </div>
+          `).join('') : `
+            <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+              <span>GST (5%):</span>
+              <span>Rs. ${(Number(ord.tax)||0).toLocaleString()}</span>
+            </div>
+          `}
           <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-top: 4px;">
             <span>TOTAL AMOUNT:</span>
             <span>Rs. ${(Number(ord.total)||0).toLocaleString()}</span>
