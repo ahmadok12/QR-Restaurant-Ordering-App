@@ -140,9 +140,6 @@
           </div>
         </div>
         <div class="flex items-center gap-1.5">
-          <a href="hub.html" title="Apps Hub" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
-            <span class="material-symbols-outlined text-[18px]">grid_view</span>
-          </a>
           <button onclick="handleWaiterLogout()" title="Logout" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700">
             <span class="material-symbols-outlined text-[18px]">logout</span>
           </button>
@@ -469,7 +466,7 @@
             </div>
             <p class="text-[12px] text-rose-700 font-semibold mt-1">${b.request}</p>
           </div>
-          <button onclick="dismissBell('${b.table}')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-all">
+          <button onclick="dismissBell('${b.table}', '${b.id || ''}')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-all">
             <span class="material-symbols-outlined text-[14px]">done</span>
             <span>Dismiss</span>
           </button>
@@ -478,10 +475,18 @@
       });
     }
 
-    async function dismissBell(tableName) {
+    async function dismissBell(tableName, bellId) {
       if (!dbCache) return;
-      dbCache.serviceBells = (dbCache.serviceBells || []).filter(b => b.table !== tableName);
+      dbCache.serviceBells = (dbCache.serviceBells || []).filter(b => bellId ? b.id !== bellId : b.table !== tableName);
       renderServiceBells();
+      // Clear it on the server too, so the admin panel and other waiters see it handled
+      try {
+        await fetch(`${getApiBase()}/api/broadcast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'SERVICE_BELL_RESOLVED', table: tableName, bellId: bellId || undefined, by: currentWaiter ? currentWaiter.name : 'Waiter' })
+        });
+      } catch (e) {}
     }
 
     let waiterFloorSection = 'ALL';
@@ -591,22 +596,52 @@
       evtSource.onmessage = (e) => {
         try {
           const d = JSON.parse(e.data);
-          if (['NEW_ORDER', 'STATUS_UPDATE', 'SERVICE_BELL', 'BILL_SETTLED', 'TABLES_UPDATED', 'SECTIONS_UPDATED'].includes(d.type)) {
+          if (d.type === 'MODULES_UPDATED' && currentWaiter && (!d.restaurantId || d.restaurantId === currentWaiter.restaurantId)) {
+            if (d.waiterApp && d.waiterApp.active === false) lockWaiterApp(d.waiterApp);
+            return;
+          }
+          if (['NEW_ORDER', 'STATUS_UPDATE', 'SERVICE_BELL', 'SERVICE_BELL_RESOLVED', 'BILL_SETTLED', 'TABLES_UPDATED', 'SECTIONS_UPDATED'].includes(d.type)) {
             if (currentWaiter) {
               refreshWaiterData();
             }
           }
         } catch (err) {}
       };
-      evtSource.onerror = () => { evtSource.close(); };
+      // Let the browser reconnect automatically if the connection drops
+      evtSource.onerror = () => {};
     } catch(err) {}
+
+    // Waiter app is optional: the restaurant admin can switch it off (or it may not be in the plan)
+    function lockWaiterApp(flags) {
+      sessionStorage.removeItem('waiter_auth');
+      currentWaiter = null;
+      document.getElementById('waiter-main').classList.add('hidden');
+      document.getElementById('waiter-login-screen').classList.remove('hidden');
+      const errBox = document.getElementById('w-login-err');
+      if (errBox) {
+        errBox.textContent = (flags && flags.allowed === false)
+          ? 'The waiter app is not included in this restaurant\'s subscription.'
+          : 'The waiter app has been turned off by your manager.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function checkWaiterAppStillOn() {
+      if (!currentWaiter) return true;
+      try {
+        const res = await fetch(`${getApiBase()}/api/restaurant/modules?restaurantId=${encodeURIComponent(currentWaiter.restaurantId || 'REST-001')}`);
+        const d = await res.json();
+        if (d && d.waiterApp && d.waiterApp.active === false) { lockWaiterApp(d.waiterApp); return false; }
+      } catch (e) {}
+      return true;
+    }
 
     // Auto-login from session
     const saved = sessionStorage.getItem('waiter_auth');
     if (saved) {
       try {
         currentWaiter = JSON.parse(saved);
-        initWaiterDashboard();
+        checkWaiterAppStillOn().then(ok => { if (ok) initWaiterDashboard(); });
       } catch (e) {}
     }
   </script>

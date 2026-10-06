@@ -139,20 +139,13 @@
               <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
               <span id="table-role-text">Table Host</span>
             </span>
-            <button type="button" onclick="toggleHostRoleForTesting()" class="text-[10px] font-semibold text-primary hover:underline cursor-pointer" title="Toggle role to test Host / Guest permissions">(Switch)</button>
+            <button type="button" id="table-people-chip" onclick="showTablePeople()" class="hidden items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-on-surface border border-surface-container-high" title="People at this table" aria-label="People at this table">
+              <span class="material-symbols-outlined text-[12px]">group</span>
+              <span id="table-people-count">1</span>
+            </button>
+            <button type="button" onclick="toggleHostRoleForTesting()" class="debug-only hidden text-[10px] font-semibold text-primary hover:underline cursor-pointer" title="Toggle role to test Host / Guest permissions">(Switch)</button>
           </div>
         </div>
-      </div>
-
-      <!-- Portal Switcher for Multi-Role Testing -->
-      <div class="hidden sm:flex items-center gap-1 bg-surface-container-low px-2.5 py-1 rounded-full text-[11px] font-semibold border border-surface-container">
-        <span class="text-primary font-bold">Customer</span>
-        <span class="text-secondary/40">&bull;</span>
-        <a href="kds.html" target="_blank" class="text-secondary hover:text-primary transition-colors">KDS</a>
-        <span class="text-secondary/40">&bull;</span>
-        <a href="waiter.html" target="_blank" class="text-secondary hover:text-primary transition-colors">Waiter</a>
-        <span class="text-secondary/40">&bull;</span>
-        <a href="admin.html" target="_blank" class="text-secondary hover:text-primary transition-colors">Admin</a>
       </div>
 
       <!-- Quick Action Buttons -->
@@ -192,7 +185,7 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="resetOrderForTesting()" class="text-[11px] font-bold text-red-600 bg-red-100 hover:bg-red-200 border border-red-300 px-2.5 py-1 rounded-xl transition-all active:scale-95 flex items-center gap-0.5" title="Reset order for testing">
+            <button onclick="resetOrderForTesting()" class="debug-only hidden text-[11px] font-bold text-red-600 bg-red-100 hover:bg-red-200 border border-red-300 px-2.5 py-1 rounded-xl transition-all active:scale-95 flex items-center gap-0.5" title="Reset order for testing">
               <span class="material-symbols-outlined text-[13px]">restart_alt</span>
               <span>Reset</span>
             </button>
@@ -462,6 +455,15 @@
         </button>
       </div>
 
+      <!-- People at this table (shared cart) -->
+      <div id="cart-people-strip" class="hidden px-margin mt-3">
+        <div class="flex items-center gap-2 rounded-2xl bg-surface-container-lowest border border-surface-container px-3 py-2">
+          <span class="relative flex h-2 w-2 shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
+          <span class="text-[12px] text-secondary shrink-0">Shared live with</span>
+          <div id="cart-people-list" class="flex items-center gap-1 flex-wrap min-w-0"></div>
+        </div>
+      </div>
+
       <!-- Cart Items List Container -->
       <div class="px-margin mt-4 flex flex-col gap-2.5" id="cart-items-list">
         <!-- Rendered dynamically -->
@@ -488,7 +490,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-1">
               <span id="cart-host-status-title" class="font-bold block text-[13px] text-amber-950">👑 You are Table Host</span>
-              <button type="button" onclick="toggleHostRoleForTesting()" class="text-[10px] font-bold text-primary hover:underline shrink-0">Switch Role</button>
+              <button type="button" onclick="toggleHostRoleForTesting()" class="debug-only hidden text-[10px] font-bold text-primary hover:underline shrink-0">Switch Role</button>
             </div>
             <span id="cart-host-status-desc" class="text-amber-900/80 text-[11.5px] block mt-0.5 leading-snug">As the 1st person who scanned, only you can fire the initial order to the kitchen.</span>
           </div>
@@ -544,7 +546,7 @@
           <span class="material-symbols-outlined text-[17px]">restaurant_menu</span>
           <span>Full Menu</span>
         </button>
-        <button onclick="resetOrderForTesting()" class="flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
+        <button onclick="resetOrderForTesting()" class="debug-only hidden flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
           <span class="material-symbols-outlined text-[16px]">restart_alt</span>
           <span>Reset Order (Test)</span>
         </button>
@@ -620,13 +622,13 @@
 
           <!-- Time info & demo status advance + Reset button -->
           <div class="mt-3 pt-2.5 border-t border-surface-container/60 flex items-center justify-between gap-2 text-[11px] text-secondary">
-            <button onclick="resetOrderForTesting()" class="text-red-600 font-bold hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg active:scale-95 transition-all" type="button" title="Reset order to start from scratch">
+            <button onclick="resetOrderForTesting()" class="debug-only hidden text-red-600 font-bold hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg active:scale-95 transition-all" type="button" title="Reset order to start from scratch">
               <span class="material-symbols-outlined text-[14px]">restart_alt</span>
               <span>Reset Order</span>
             </button>
             <div class="flex items-center gap-3">
               <span id="prep-time-estimate-text" class="hidden sm:inline">Estimated prep: ~18-22 mins</span>
-              <button onclick="advanceDemoStatus()" class="text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
+              <button onclick="advanceDemoStatus()" class="debug-only hidden text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
                 <span>Advance Status (Demo)</span>
                 <span class="material-symbols-outlined text-[12px]">fast_forward</span>
               </button>
@@ -991,6 +993,51 @@
   </div>
 
   <!-- ================= TOAST NOTIFICATION ================= -->
+  <!-- ================= TABLE ACTIVITY NOTIFICATIONS (co-diner joined / added items) ================= -->
+  <div id="activity-feed" class="fixed top-[72px] inset-x-0 z-[55] flex flex-col items-center gap-2 px-3 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ================= JOIN TABLE: ASK GUEST NAME ================= -->
+  <div id="join-name-screen" class="hidden fixed inset-0 z-[70] bg-surface flex-col overflow-y-auto">
+    <div class="w-full max-w-md mx-auto flex-1 flex flex-col px-6 pt-10 pb-8 gap-6">
+      <div class="flex items-center gap-3">
+        <div id="join-logo-wrap" class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[26px]">restaurant</span>
+        </div>
+        <div class="min-w-0">
+          <p id="join-restaurant-name" class="font-headline font-bold text-[17px] text-on-surface leading-tight truncate">Welcome</p>
+          <p id="join-table-label" class="text-[13px] text-secondary">Table 04 · Dine-in</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <h1 id="join-title" class="font-headline font-bold text-[28px] leading-tight text-on-surface tracking-tight">Order together from your phones</h1>
+        <p id="join-subtitle" class="text-[14px] text-secondary leading-relaxed">Everyone at the table can scan the same QR and add to one shared order.</p>
+      </div>
+
+      <div id="join-existing-box" class="hidden rounded-2xl border border-surface-container bg-surface-container-lowest p-4 flex-col gap-2">
+        <span class="text-[12px] font-bold uppercase tracking-wider text-secondary">Already at this table</span>
+        <div id="join-existing-list" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <form id="join-name-form" class="flex flex-col gap-2" onsubmit="submitJoinName(event)">
+        <label for="join-name-input" class="text-[13px] font-bold text-on-surface">Your name</label>
+        <input id="join-name-input" type="text" maxlength="24" autocomplete="given-name" enterkeyhint="go" placeholder="e.g. Ahmad"
+          class="h-12 rounded-xl border border-surface-container-high bg-surface-container-lowest px-4 text-[16px] text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"/>
+        <span class="text-[12px] text-secondary">Shown to others at your table next to the dishes you add.</span>
+
+        <div id="join-role-note" class="mt-3 rounded-2xl bg-amber-50 border border-amber-200 p-3.5 flex items-start gap-2.5">
+          <span class="material-symbols-outlined text-[20px] text-amber-600 shrink-0" style="font-variation-settings: 'FILL' 1;">star</span>
+          <span id="join-role-text" class="text-[13px] leading-snug text-amber-950">You're the first one here, so you'll be the <b>table host</b>. Only the host can send the first order to the kitchen.</span>
+        </div>
+
+        <button type="submit" id="join-submit-btn" class="mt-4 h-[52px] rounded-2xl bg-primary text-on-primary font-headline font-bold text-[16px] shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+          <span id="join-submit-label">Start ordering</span>
+          <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <div id="toast" class="fixed top-5 inset-x-0 z-50 flex justify-center pointer-events-none transition-all duration-300 opacity-0 -translate-y-4">
     <div class="bg-on-surface text-surface px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-[13px] font-semibold max-w-sm pointer-events-auto">
       <span class="material-symbols-outlined text-[18px] text-emerald-400" id="toast-icon">check_circle</span>
@@ -2145,6 +2192,13 @@
       init(handler) {
         if (handler) this.listeners.push(handler);
 
+        // Ignore whatever event was left in localStorage by an earlier page/tab,
+        // so an old "bill settled" or "order" event is not replayed when the page opens
+        try {
+          const stale = JSON.parse(localStorage.getItem('gourmet_sync_event') || 'null');
+          if (stale && stale.eventId) this.lastEventId = stale.eventId;
+        } catch (err) {}
+
         // 1. Connect to Server-Sent Events (SSE) for instant cross-tab / cross-device sync
         try {
           this.eventSource = new EventSource(`${getApiBase()}/api/events`);
@@ -2327,11 +2381,173 @@
       hostName: "Table Host",
       hostDeviceId: null,
       tableSessionId: null,
-      billingCharges: []
+      billingCharges: [],
+      myName: "",
+      participants: [],
+      lastEventSeq: 0
     };
+
+    // --- GUEST NAME (asked once per phone/tab before joining a table) ---
+    function getMyName() {
+      try { return sessionStorage.getItem('gourmet_my_name_' + getDeviceId()) || ''; } catch (e) { return ''; }
+    }
+    function saveMyName(name) {
+      appState.myName = name;
+      try {
+        sessionStorage.setItem('gourmet_my_name_' + getDeviceId(), name);
+        localStorage.setItem('gourmet_guest_name', name); // suggestion for next visit
+      } catch (e) {}
+    }
+
+    let joinNameResolver = null;
+    async function askGuestNameIfNeeded() {
+      const existing = getMyName();
+      if (existing) { appState.myName = existing; return existing; }
+
+      const screen = document.getElementById('join-name-screen');
+      if (!screen) return '';
+
+      // Fill restaurant + table details
+      document.getElementById('join-table-label').textContent = `Table ${appState.tableNumber} · Dine-in`;
+      const titleEl = document.getElementById('restaurant-title-display');
+      if (titleEl) document.getElementById('join-restaurant-name').textContent = titleEl.textContent;
+      fetch(`${getApiBase()}/api/public/info?restaurantId=${encodeURIComponent(appState.restaurantId || 'REST-001')}`)
+        .then(r => r.json())
+        .then(info => {
+          if (info && info.restaurant && info.restaurant.name) {
+            document.getElementById('join-restaurant-name').textContent = info.restaurant.name;
+          }
+        }).catch(() => {});
+      const input = document.getElementById('join-name-input');
+      try { input.value = localStorage.getItem('gourmet_guest_name') || ''; } catch (e) {}
+
+      // Who is already here? Decides the host / co-diner message.
+      try {
+        const res = await fetch(`${getApiBase()}/api/table-session/peek?table=${encodeURIComponent(appState.tableNumber)}`);
+        const peek = await res.json();
+        const box = document.getElementById('join-existing-box');
+        const list = document.getElementById('join-existing-list');
+        const roleText = document.getElementById('join-role-text');
+        const note = document.getElementById('join-role-note');
+        if (peek && peek.active && peek.participants && peek.participants.length) {
+          list.innerHTML = peek.participants.map(p => personChipHtml(p)).join('');
+          box.classList.remove('hidden'); box.classList.add('flex');
+          note.className = 'mt-3 rounded-2xl bg-sky-50 border border-sky-200 p-3.5 flex items-start gap-2.5';
+          note.querySelector('.material-symbols-outlined').textContent = 'group_add';
+          note.querySelector('.material-symbols-outlined').className = 'material-symbols-outlined text-[20px] text-sky-600 shrink-0';
+          roleText.className = 'text-[13px] leading-snug text-sky-950';
+          roleText.innerHTML = `<b>${escapeHtml(peek.hostName || 'The host')}</b> is hosting this table. You'll add to the same order, and ${escapeHtml(peek.hostName || 'the host')} sends it to the kitchen.`;
+          document.getElementById('join-title').textContent = 'Join your table';
+          document.getElementById('join-submit-label').textContent = 'Join table';
+        }
+      } catch (e) {}
+
+      screen.classList.remove('hidden');
+      screen.classList.add('flex');
+      setTimeout(() => { try { input.focus(); } catch (e) {} }, 150);
+      return new Promise(resolve => { joinNameResolver = resolve; });
+    }
+
+    function submitJoinName(ev) {
+      if (ev) ev.preventDefault();
+      const input = document.getElementById('join-name-input');
+      const name = (input.value || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+      if (!name) {
+        input.classList.add('border-error');
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+        return;
+      }
+      saveMyName(name);
+      const screen = document.getElementById('join-name-screen');
+      screen.classList.add('hidden');
+      screen.classList.remove('flex');
+      if (joinNameResolver) { joinNameResolver(name); joinNameResolver = null; }
+    }
+
+    // --- PEOPLE AT THE TABLE + LIVE ACTIVITY NOTIFICATIONS ---
+    const PERSON_COLORS = ['#c2410c', '#0f766e', '#6d28d9', '#1d4ed8', '#be185d', '#4d7c0f', '#b45309', '#0e7490'];
+    function personColor(deviceId) {
+      let h = 0; const s = String(deviceId || '');
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return PERSON_COLORS[h % PERSON_COLORS.length];
+    }
+    function personChipHtml(p) {
+      const me = p.deviceId === getDeviceId();
+      const label = me ? `${p.name} (you)` : p.name;
+      return `<span class="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full bg-surface-container text-[12px] font-semibold text-on-surface">
+        <span class="w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center" style="background:${personColor(p.deviceId)}">${escapeHtml((p.name || '?').charAt(0).toUpperCase())}</span>
+        ${escapeHtml(label)}${p.isHost ? ' <span class="material-symbols-outlined text-[13px] text-amber-500" style="font-variation-settings: \'FILL\' 1;" title="Table host">star</span>' : ''}
+      </span>`;
+    }
+
+    function setParticipants(list) {
+      if (!Array.isArray(list)) return;
+      appState.participants = list;
+      renderTablePeople();
+    }
+
+    function renderTablePeople() {
+      const people = appState.participants || [];
+      const chip = document.getElementById('table-people-chip');
+      const count = document.getElementById('table-people-count');
+      if (chip && count) {
+        count.textContent = people.length;
+        chip.classList.toggle('hidden', people.length < 2);
+        chip.classList.toggle('inline-flex', people.length >= 2);
+      }
+      const strip = document.getElementById('cart-people-strip');
+      const listEl = document.getElementById('cart-people-list');
+      if (strip && listEl) {
+        const others = people.filter(p => p.deviceId !== getDeviceId());
+        strip.classList.toggle('hidden', others.length === 0);
+        listEl.innerHTML = others.map(p => personChipHtml(p)).join('');
+      }
+    }
+
+    function showTablePeople() {
+      const people = appState.participants || [];
+      const names = people.map(p => (p.deviceId === getDeviceId() ? `${p.name} (you)` : p.name) + (p.isHost ? ' ★' : '')).join(', ');
+      showActivity({ name: 'Table', text: `At this table: ${names}`, kind: 'info' });
+    }
+
+    function showActivity(ev) {
+      const feed = document.getElementById('activity-feed');
+      if (!feed || !ev || !ev.text) return;
+      const icon = ev.kind === 'joined' ? 'waving_hand' : ev.kind === 'item_removed' || ev.kind === 'cart_cleared' ? 'remove_shopping_cart' : ev.kind === 'info' ? 'group' : 'add_shopping_cart';
+      const el = document.createElement('div');
+      el.className = 'pointer-events-auto w-full max-w-sm flex items-center gap-2.5 rounded-2xl bg-on-surface text-surface px-3 py-2.5 shadow-xl transition-all duration-300 opacity-0 -translate-y-2';
+      el.setAttribute('role', 'status');
+      el.innerHTML = `
+        <span class="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-[13px] font-bold" style="background:${ev.deviceId ? personColor(ev.deviceId) : '#475569'}">${ev.deviceId ? escapeHtml((ev.name || '?').charAt(0).toUpperCase()) : '<span class="material-symbols-outlined text-[18px]">group</span>'}</span>
+        <span class="flex-1 min-w-0 text-[13px] font-semibold leading-snug">${escapeHtml(ev.text)}</span>
+        <span class="material-symbols-outlined text-[18px] text-emerald-300 shrink-0">${icon}</span>`;
+      feed.prepend(el);
+      requestAnimationFrame(() => { el.classList.remove('opacity-0', '-translate-y-2'); });
+      while (feed.children.length > 3) feed.lastElementChild.remove();
+      try { if (navigator.vibrate && ev.kind !== 'info') navigator.vibrate(40); } catch (e) {}
+      setTimeout(() => {
+        el.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => el.remove(), 320);
+      }, 4200);
+    }
+
+    // Shows each table activity exactly once, whichever channel (SSE or poll) delivers it first.
+    function handleTableActivities(events) {
+      if (!Array.isArray(events)) return;
+      events.sort((a, b) => a.seq - b.seq).forEach(ev => {
+        if (!ev || typeof ev.seq !== 'number' || ev.seq <= appState.lastEventSeq) return;
+        appState.lastEventSeq = ev.seq;
+        if (ev.deviceId === getDeviceId()) return; // don't notify people about their own actions
+        showActivity(ev);
+      });
+    }
 
     // --- MULTI-PERSON TABLE SESSION & HOST MANAGEMENT ---
     function getDeviceId() {
+      // ?devId= lets the testing hub run several "phones" side by side in one browser
+      const forcedDevId = new URLSearchParams(window.location.search).get('devId');
+      if (forcedDevId) return forcedDevId;
       let devId = sessionStorage.getItem('gourmet_device_id');
       if (!devId) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -2377,18 +2593,18 @@
     }
 
     async function syncTableSession() {
+      // Don't join the table until the guest has entered their name
+      if (!appState.readyToJoin) return;
       try {
         const devId = getDeviceId();
-        const urlParams = new URLSearchParams(window.location.search);
-        const isGuestMode = urlParams.get('guest') === '1' || urlParams.get('role') === 'guest';
+        // First person to scan an idle table becomes host; everyone after joins the same session.
         const res = await fetch(`${getApiBase()}/api/table-session/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             table: appState.tableNumber,
             deviceId: devId,
-            name: localStorage.getItem('gourmet_guest_name') || 'Table Host',
-            claimHost: !isGuestMode
+            name: appState.myName || getMyName() || ''
           })
         });
         if (res.ok) {
@@ -2397,6 +2613,14 @@
           appState.hostName = data.hostName || 'Table Host';
           appState.hostDeviceId = data.hostDeviceId;
           appState.tableSessionId = data.sessionId;
+          if (data.myName) {
+            appState.myName = data.myName;
+            const gi = document.getElementById('guest-name-input');
+            if (gi && !gi.value) gi.value = data.myName;
+          }
+          // Only notify about activity that happens after we joined
+          appState.lastEventSeq = Number(data.eventSeq) || 0;
+          setParticipants(data.participants);
 
           if (data.hasActiveOrder && data.activeTicket) {
             appState.currentTicket = data.activeTicket;
@@ -2493,10 +2717,19 @@
       try {
         if (!appState.tableNumber) return;
         const devId = getDeviceId();
-        const res = await fetch(`${getApiBase()}/api/table-session/poll?table=${appState.tableNumber}&deviceId=${devId}`);
+        const res = await fetch(`${getApiBase()}/api/table-session/poll?table=${appState.tableNumber}&deviceId=${devId}&since=${appState.lastEventSeq || 0}`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;
+
+        // People + activity the SSE stream may have missed (e.g. phone screen was off)
+        if (Array.isArray(data.participants)) {
+          const changed = JSON.stringify(data.participants) !== JSON.stringify(appState.participants);
+          if (changed) setParticipants(data.participants);
+        }
+        if (Array.isArray(data.events) && data.events.length) {
+          handleTableActivities(data.events);
+        }
 
         // Reconcile role
         if (typeof data.isHost === 'boolean' && appState.isHost !== data.isHost) {
@@ -2770,7 +3003,7 @@
           (appState.currentTicket && data.ticketId === appState.currentTicket.ticketId)
         );
 
-        if (isMatch) {
+        if (isMatch && appState.readyToJoin) {
           syncTableSession();
           const tableNameEl = document.getElementById('settled-table-name');
           if (tableNameEl) tableNameEl.textContent = ourTable;
@@ -2859,10 +3092,17 @@
             updateCartUI();
             renderCartItems();
             renderDishGrid();
-            if (data.senderDeviceId && data.senderDeviceId !== getDeviceId()) {
-              showToast("🛒 Table order updated by co-diner!");
-            }
           }
+          if (data.activity) {
+            handleTableActivities([data.activity]);
+          }
+        }
+      } else if (data.type === 'TABLE_ACTIVITY') {
+        const ourNum = appState.tableNumber.toString().padStart(2, '0');
+        const eventTable = (data.table || '').trim();
+        if (eventTable === `Table ${appState.tableNumber}` || eventTable === `Table ${ourNum}` || eventTable === ourNum) {
+          if (Array.isArray(data.participants)) setParticipants(data.participants);
+          if (data.activity) handleTableActivities([data.activity]);
         }
       } else if (data.type === 'ITEM_86_UPDATE') {
         soldOutSet = new Set(data.soldOutList || []);
@@ -2988,6 +3228,14 @@
         loadCartFromStorage();
         await loadActiveTicketFromStorage();
       }
+      if (urlParams.get('debug') === '1') {
+        document.querySelectorAll('.debug-only').forEach(el => el.classList.remove('hidden'));
+      }
+      // Ask for the guest's name before joining the shared table order
+      if (!appState.isOnlineOrder) {
+        await askGuestNameIfNeeded();
+      }
+      appState.readyToJoin = true;
       await syncTableSession();
       startTableSessionPolling();
       loadMenuFromBackend();
@@ -4044,13 +4292,18 @@
       const targetId = targetDish ? String(targetDish.id) : String(dishId);
       const targetTitle = targetDish ? targetDish.title.toLowerCase() : '';
 
-      for (let i = appState.cart.length - 1; i >= 0; i--) {
-        const item = appState.cart[i];
-        const matches = (String(item.dishId) === targetId) || 
-                        (targetTitle && item.title && item.title.toLowerCase() === targetTitle);
-        if (matches) {
-          adjustCartItemQty(i, -1);
-          break;
+      const matches = (item) => (String(item.dishId) === targetId) ||
+                      (targetTitle && item.title && item.title.toLowerCase() === targetTitle);
+      // Remove from my own line first, so I don't take away a co-diner's dish
+      const myId = getDeviceId();
+      for (const ownFirst of [true, false]) {
+        for (let i = appState.cart.length - 1; i >= 0; i--) {
+          const item = appState.cart[i];
+          if (ownFirst && item.addedByDeviceId && item.addedByDeviceId !== myId) continue;
+          if (matches(item)) {
+            adjustCartItemQty(i, -1);
+            return;
+          }
         }
       }
     }
@@ -4166,9 +4419,12 @@
 
     // --- 6. CART MANAGEMENT ---
     function addItemToCart(item) {
-      // Find matching item with identical modifiers
-      const existing = appState.cart.find(ci => 
-        ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
+      // Each person's dishes are their own cart lines, so everyone can see who added what
+      item.addedByDeviceId = getDeviceId();
+      item.addedByName = appState.myName || getMyName() || '';
+      const existing = appState.cart.find(ci =>
+        ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note &&
+        (!ci.addedByDeviceId || ci.addedByDeviceId === item.addedByDeviceId)
       );
 
       if (existing) {
@@ -4356,6 +4612,10 @@
             <p class="text-[11px] text-secondary mt-0.5">
               ${item.size} • ${item.spice} ${item.note ? `• <span class="italic">"${item.note}"</span>` : ''}
             </p>
+            ${item.addedByName ? `<p class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-on-surface">
+              <span class="w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center" style="background:${personColor(item.addedByDeviceId)}">${escapeHtml(item.addedByName.charAt(0).toUpperCase())}</span>
+              ${item.addedByDeviceId === getDeviceId() ? 'Added by you' : 'Added by ' + escapeHtml(item.addedByName)}
+            </p>` : ''}
 
             <div class="flex items-center justify-between mt-2">
               <span class="font-headline font-bold text-primary text-[15px]">${formatPrice(item.price * item.qty)}</span>
@@ -4416,7 +4676,7 @@
         return;
       }
 
-      const guestName = document.getElementById('guest-name-input')?.value.trim() || (`Table #${appState.tableNumber} Guest`);
+      const guestName = document.getElementById('guest-name-input')?.value.trim() || appState.myName || (`Table #${appState.tableNumber} Guest`);
       const kitchenNotes = document.getElementById('general-order-notes')?.value.trim() || "";
       const randomTicketNum = Math.floor(1000 + Math.random() * 9000);
       const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

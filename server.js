@@ -717,8 +717,106 @@ function broadcastEvent(eventData) {
   });
 }
 
+// ==========================================
+// Table session helpers (multi-person ordering)
+// ==========================================
+const SESSION_IDLE_TIMEOUT_MS = 3 * 60 * 60 * 1000; // 3 hours without activity ends a table session
+const SESSION_EVENT_LIMIT = 60;
+
+function isSessionActive(session) {
+  if (!session || !session.hostDeviceId) return false;
+  const last = session.lastActivityAt || session.createdAt || 0;
+  return (Date.now() - last) < SESSION_IDLE_TIMEOUT_MS;
+}
+
+function ensureSessionShape(session) {
+  if (!session) return session;
+  if (!Array.isArray(session.draftCart)) session.draftCart = [];
+  if (!Array.isArray(session.participants)) session.participants = [];
+  if (!Array.isArray(session.events)) session.events = [];
+  if (typeof session.eventSeq !== 'number') session.eventSeq = 0;
+  // Make sure the host is always listed as a participant
+  if (session.hostDeviceId && !session.participants.find(p => p.deviceId === session.hostDeviceId) && !String(session.hostDeviceId).startsWith('host_peer_')) {
+    session.participants.unshift({ deviceId: session.hostDeviceId, name: session.hostName || 'Table Host', joinedAt: session.createdAt || Date.now() });
+  }
+  return session;
+}
+
+function cleanGuestName(raw) {
+  return String(raw || '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 24);
+}
+
+function nextGuestName(session) {
+  const n = (session && Array.isArray(session.participants) ? session.participants.length : 0) + 1;
+  return `Guest ${n}`;
+}
+
+function publicParticipants(session) {
+  ensureSessionShape(session);
+  return session.participants.map(p => ({
+    deviceId: p.deviceId,
+    name: p.name,
+    isHost: p.deviceId === session.hostDeviceId,
+    joinedAt: p.joinedAt
+  }));
+}
+
+// Records a table activity (joined / added / removed) so every phone at the table can show it.
+// Phones receive it instantly over SSE, and the 2s poll returns anything they missed (by seq number).
+function pushSessionEvent(tbl, tableStr, ev, broadcast = true) {
+  const session = ensureSessionShape(tbl.session);
+  session.eventSeq += 1;
+  const event = { seq: session.eventSeq, at: Date.now(), ...ev };
+  session.events.push(event);
+  if (session.events.length > SESSION_EVENT_LIMIT) {
+    session.events = session.events.slice(-SESSION_EVENT_LIMIT);
+  }
+  if (broadcast) {
+    broadcastEvent({
+      type: 'TABLE_ACTIVITY',
+      table: tableStr,
+      activity: event,
+      participants: publicParticipants(session),
+      hostDeviceId: session.hostDeviceId,
+      hostName: session.hostName
+    });
+  }
+  return event;
+}
+
+// ==========================================
+// Optional modules controlled by subscription
+// ==========================================
+// features.waiterApp   -> set by the platform Super Admin (is it included in the plan?)
+// settings.waiterAppEnabled -> set by the Restaurant Admin (do they want to use it right now?)
+// The waiter app works only when BOTH are true.
+function getWaiterAppFlags(rest) {
+  const r = rest || {};
+  const allowed = r.features && typeof r.features.waiterApp === 'boolean' ? r.features.waiterApp : true; // existing restaurants keep access
+  const enabled = r.settings && typeof r.settings.waiterAppEnabled === 'boolean' ? r.settings.waiterAppEnabled : true;
+  return { allowed, enabled, active: allowed && enabled };
+}
+
+function isWaiterAppActive(rest) {
+  return getWaiterAppFlags(rest).active;
+}
+
+function findRestaurant(db, restId) {
+  const list = db.restaurants || [];
+  return list.find(r => r.id === restId || (restId === 'rest-dera-01' && r.id === 'REST-001') || (restId === 'REST-001' && r.id === 'rest-dera-01'));
+}
+
 function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
-  const waiters = (db.staff || []).filter(s => 
+  // Waiter app switched off (or not in plan): orders and calls go to the admin panel instead
+  const restForAssign = findRestaurant(db, restaurantId);
+  if (restForAssign && !isWaiterAppActive(restForAssign)) {
+    return { id: 'unassigned', name: 'Restaurant Admin (Waiter app off)' };
+  }
+  const waiters = (db.staff || []).filter(s =>
     s.restaurantId === restaurantId && 
     s.role === 'waiter' && 
     s.status === 'active'
@@ -848,6 +946,7 @@ const server = http.createServer(async (req, res) => {
         status: rest.status || 'active',
         plan: rest.plan,
         subscriptionCancelled: !!rest.subscriptionCancelled,
+        modules: { waiterApp: getWaiterAppFlags(rest) },
         theme: rest.theme || DEFAULT_THEME,
         billingCharges: (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
           ? rest.billingCharges
@@ -949,6 +1048,9 @@ const server = http.createServer(async (req, res) => {
         currency: 'Rs.',
         taxRate: 0.05,
         theme: { ...DEFAULT_THEME },
+        // Optional modules: waiter app only when the plan includes it (Super Admin decides)
+        features: { waiterApp: !!(data.features && data.features.waiterApp) },
+        settings: { waiterAppEnabled: !!(data.features && data.features.waiterApp) },
         createdAt: new Date().toISOString()
       };
 
@@ -1030,6 +1132,20 @@ const server = http.createServer(async (req, res) => {
         rest.subscriptionCancelled = false;
         rest.status = 'active';
         logAuditEvent(db, 'SUBSCRIPTION_CHANGED', { restaurantId: restId, newPlan: data.plan }, auth ? auth.name : 'Super Admin', restId);
+      }
+
+      // Optional modules included in this restaurant's subscription (Super Admin only)
+      if (data.features && typeof data.features === 'object') {
+        if (!auth || auth.role !== 'super_admin') {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Only the platform super admin can change subscription features.' }));
+          return;
+        }
+        if (typeof data.features.waiterApp === 'boolean') {
+          rest.features = { ...(rest.features || {}), waiterApp: data.features.waiterApp };
+          logAuditEvent(db, 'SUBSCRIPTION_FEATURES_CHANGED', { restaurantId: restId, waiterApp: data.features.waiterApp }, auth.name || 'Super Admin', restId);
+          broadcastEvent({ type: 'MODULES_UPDATED', restaurantId: restId, waiterApp: getWaiterAppFlags(rest) });
+        }
       }
 
       if (data.credentials) {
@@ -1152,6 +1268,21 @@ const server = http.createServer(async (req, res) => {
           res.end(JSON.stringify({ 
             error: 'Restaurant subscription is inactive. Access locked.',
             isCancelled: true 
+          }));
+          return;
+        }
+
+        // Waiter app is an optional, subscription-controlled module
+        if (staffMember.role === 'waiter' && !isWaiterAppActive(staffRest)) {
+          const wf = getWaiterAppFlags(staffRest);
+          logAuditEvent(db, 'LOGIN_BLOCKED_WAITER_APP_OFF', { role: 'waiter', email: email, staffId: staffMember.id }, staffMember.name, staffMember.restaurantId);
+          writeDb(db);
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: wf.allowed
+              ? 'The waiter app is turned off for this restaurant. Ask your manager to switch it on in the admin panel.'
+              : 'The waiter app is not included in this restaurant\'s subscription.',
+            waiterAppDisabled: true
           }));
           return;
         }
@@ -1461,6 +1592,66 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ==========================================
+  // Optional modules (Waiter App on/off)
+  // ==========================================
+
+  // GET /api/restaurant/modules?restaurantId=REST-001
+  if (pathname === '/api/restaurant/modules' && req.method === 'GET') {
+    const db = readDb();
+    const auth = getRequestAuth(req);
+    const restId = parsedUrl.query.restaurantId || (auth ? auth.restaurantId : null) || 'REST-001';
+    const rest = findRestaurant(db, restId);
+    if (!rest) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Restaurant not found' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, restaurantId: rest.id, waiterApp: getWaiterAppFlags(rest) }));
+    return;
+  }
+
+  // POST /api/restaurant/modules  { waiterAppEnabled: true|false }  (Restaurant Admin only)
+  if (pathname === '/api/restaurant/modules' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      if (!auth || (auth.role !== 'restaurant_admin' && auth.role !== 'super_admin')) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Only the restaurant admin can change app modules.' }));
+        return;
+      }
+      const data = await parseBody(req);
+      const db = readDb();
+      const restId = auth.role === 'restaurant_admin' ? auth.restaurantId : (data.restaurantId || 'REST-001');
+      const rest = findRestaurant(db, restId);
+      if (!rest) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Restaurant not found' }));
+        return;
+      }
+      if (typeof data.waiterAppEnabled === 'boolean') {
+        const flags = getWaiterAppFlags(rest);
+        if (data.waiterAppEnabled && !flags.allowed) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'The waiter app is not included in your subscription. Contact us to upgrade.', notInPlan: true, waiterApp: flags }));
+          return;
+        }
+        rest.settings = { ...(rest.settings || {}), waiterAppEnabled: data.waiterAppEnabled };
+        logAuditEvent(db, 'WAITER_APP_TOGGLED', { restaurantId: rest.id, enabled: data.waiterAppEnabled }, auth.name || 'Restaurant Admin', rest.id);
+      }
+      writeDb(db);
+      const waiterApp = getWaiterAppFlags(rest);
+      broadcastEvent({ type: 'MODULES_UPDATED', restaurantId: rest.id, waiterApp });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, waiterApp }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ==========================================
   // Restaurant Billing & Tax Charges Endpoints
   // ==========================================
 
@@ -1620,6 +1811,25 @@ const server = http.createServer(async (req, res) => {
   // Multi-Person Table Session Endpoints
   // ==========================================
 
+  // GET /api/table-session/peek (Who is already at this table? Used by the name screen before joining)
+  if (pathname === '/api/table-session/peek' && req.method === 'GET') {
+    const rawTable = (parsedUrl.query.table || '04').toString().replace('Table ', '').trim();
+    const tNum = rawTable.padStart(2, '0');
+    const tableStr = `Table ${tNum}`;
+    const db = readDb();
+    const tbl = (db.tables || []).find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
+    const active = Boolean(tbl && isSessionActive(tbl.session));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      table: tNum,
+      active,
+      hostName: active ? tbl.session.hostName : null,
+      participants: active ? publicParticipants(tbl.session) : []
+    }));
+    return;
+  }
+
   // POST /api/table-session/join (1st person to scan becomes Host)
   if (pathname === '/api/table-session/join' && req.method === 'POST') {
     try {
@@ -1628,7 +1838,7 @@ const server = http.createServer(async (req, res) => {
       const tNum = rawTable.padStart(2, '0');
       const tableStr = `Table ${tNum}`;
       const deviceId = (data.deviceId || '').trim();
-      const clientName = (data.name || '').trim();
+      const clientName = cleanGuestName(data.name);
 
       if (!deviceId) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1658,21 +1868,23 @@ const server = http.createServer(async (req, res) => {
       // Check if table order is active or settled
       const hasActiveOrder = Boolean(tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
 
-      // Check if existing session is active and valid (less than 1 hour old)
-      const sessionValid = tbl.session && tbl.session.hostDeviceId && (Date.now() - (tbl.session.createdAt || 0) < 3600000);
+      // A session stays valid while the table is active (idle timeout, not a fixed age),
+      // so long dinners keep the same host. The FIRST person to scan an idle table becomes host;
+      // later scanners join as co-diners and never reset the shared cart.
+      const sessionValid = isSessionActive(tbl.session);
 
-      // If table is vacant, has no session, has no active order, or client claims host:
-      let isNewSession = false;
-      if (!sessionValid || (!hasActiveOrder && data.claimHost) || data.forceHost) {
+      if (!sessionValid || data.forceHost) {
         tbl.session = {
           sessionId: (sessionValid && tbl.session.sessionId) || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
           hostDeviceId: deviceId,
-          hostName: clientName || `Table Host`,
+          hostName: clientName || 'Table Host',
           createdAt: Date.now(),
-          draftCart: (!hasActiveOrder && (data.claimHost || data.forceHost)) ? [] : (tbl.session ? (tbl.session.draftCart || []) : [])
+          lastActivityAt: Date.now(),
+          draftCart: (sessionValid && !data.forceHost && tbl.session.draftCart) ? tbl.session.draftCart : [],
+          participants: (sessionValid && tbl.session.participants) ? tbl.session.participants : [],
+          events: (sessionValid && tbl.session.events) ? tbl.session.events : [],
+          eventSeq: (sessionValid && tbl.session.eventSeq) ? tbl.session.eventSeq : 0
         };
-        isNewSession = true;
-        writeDb(db);
         broadcastEvent({
           type: 'TABLE_SESSION_UPDATED',
           table: tableStr,
@@ -1681,6 +1893,31 @@ const server = http.createServer(async (req, res) => {
           sessionId: tbl.session.sessionId
         });
       }
+      ensureSessionShape(tbl.session);
+
+      // Register (or rename) this person at the table
+      let person = tbl.session.participants.find(p => p.deviceId === deviceId);
+      const isFirstJoin = !person;
+      if (!person) {
+        person = { deviceId, name: clientName || nextGuestName(tbl.session), joinedAt: Date.now() };
+        tbl.session.participants.push(person);
+      } else if (clientName && clientName !== person.name) {
+        person.name = clientName;
+      }
+      person.lastSeenAt = Date.now();
+      if (tbl.session.hostDeviceId === deviceId && clientName) {
+        tbl.session.hostName = clientName;
+      }
+      tbl.session.lastActivityAt = Date.now();
+      if (isFirstJoin) {
+        pushSessionEvent(tbl, tableStr, {
+          kind: 'joined',
+          deviceId,
+          name: person.name,
+          text: `${person.name} joined the table`
+        });
+      }
+      writeDb(db);
 
       const isHost = (tbl.session.hostDeviceId === deviceId);
 
@@ -1690,9 +1927,12 @@ const server = http.createServer(async (req, res) => {
         table: tNum,
         tableStr: tableStr,
         isHost: isHost,
+        myName: person.name,
         hostDeviceId: tbl.session.hostDeviceId,
         hostName: tbl.session.hostName,
         sessionId: tbl.session.sessionId,
+        participants: publicParticipants(tbl.session),
+        eventSeq: tbl.session.eventSeq,
         draftCart: tbl.session.draftCart || [],
         hasActiveOrder: hasActiveOrder,
         activeTicket: hasActiveOrder ? tbl.order : null
@@ -1741,57 +1981,74 @@ const server = http.createServer(async (req, res) => {
           draftCart: []
         };
       }
-      if (!Array.isArray(tbl.session.draftCart)) {
-        tbl.session.draftCart = [];
+      ensureSessionShape(tbl.session);
+      tbl.session.lastActivityAt = Date.now();
+
+      // Who is making this change? (for "Sara added 2x Karahi" notifications)
+      let actor = tbl.session.participants.find(p => p.deviceId === deviceId);
+      if (!actor && deviceId) {
+        actor = { deviceId, name: cleanGuestName(data.name) || nextGuestName(tbl.session), joinedAt: Date.now() };
+        tbl.session.participants.push(actor);
       }
+      if (actor) actor.lastSeenAt = Date.now();
+      const actorName = actor ? actor.name : 'Someone';
+      const sameLine = (ci, item) =>
+        (ci.dishId === item.dishId || (!item.dishId && ci.title === item.title)) &&
+        ci.size === item.size && ci.spice === item.spice && ci.note === item.note &&
+        (!item.addedByDeviceId || !ci.addedByDeviceId || ci.addedByDeviceId === item.addedByDeviceId);
+      let activity = null;
 
       if (action === 'add' && data.item) {
-        const item = data.item;
-        const existing = tbl.session.draftCart.find(ci => 
-          ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
-        );
+        const item = { ...data.item };
+        const addQty = Number(item.qty) || 1;
+        item.addedByDeviceId = deviceId || item.addedByDeviceId || null;
+        item.addedByName = actorName;
+        const existing = tbl.session.draftCart.find(ci => sameLine(ci, item));
         if (existing) {
-          existing.qty += (Number(item.qty) || 1);
+          existing.qty += addQty;
+          if (!existing.addedByName) { existing.addedByDeviceId = item.addedByDeviceId; existing.addedByName = actorName; }
         } else {
+          item.qty = addQty;
           tbl.session.draftCart.push(item);
         }
+        activity = { kind: 'item_added', text: `${actorName} added ${addQty}× ${item.title || 'an item'}` };
       } else if (action === 'adjust') {
         const delta = Number(data.delta) || 0;
         let targetIdx = -1;
         if (data.item) {
-          targetIdx = tbl.session.draftCart.findIndex(ci =>
-            (ci.dishId === data.item.dishId || ci.title === data.item.title) &&
-            ci.size === data.item.size &&
-            ci.spice === data.item.spice &&
-            ci.note === data.item.note
-          );
+          targetIdx = tbl.session.draftCart.findIndex(ci => sameLine(ci, data.item));
         }
         if (targetIdx === -1 && typeof data.index === 'number') {
           targetIdx = data.index;
         }
         if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
-          tbl.session.draftCart[targetIdx].qty += delta;
-          if (tbl.session.draftCart[targetIdx].qty <= 0) {
+          const line = tbl.session.draftCart[targetIdx];
+          line.qty += delta;
+          if (delta > 0) {
+            activity = { kind: 'item_added', text: `${actorName} added ${delta}× ${line.title || 'an item'}` };
+          } else if (delta < 0) {
+            activity = { kind: 'item_removed', text: `${actorName} removed ${Math.abs(delta)}× ${line.title || 'an item'}` };
+          }
+          if (line.qty <= 0) {
             tbl.session.draftCart.splice(targetIdx, 1);
           }
         }
       } else if (action === 'remove') {
         let targetIdx = -1;
         if (data.item) {
-          targetIdx = tbl.session.draftCart.findIndex(ci =>
-            (ci.dishId === data.item.dishId || ci.title === data.item.title) &&
-            ci.size === data.item.size &&
-            ci.spice === data.item.spice &&
-            ci.note === data.item.note
-          );
+          targetIdx = tbl.session.draftCart.findIndex(ci => sameLine(ci, data.item));
         }
         if (targetIdx === -1 && typeof data.index === 'number') {
           targetIdx = data.index;
         }
         if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
-          tbl.session.draftCart.splice(targetIdx, 1);
+          const removed = tbl.session.draftCart.splice(targetIdx, 1)[0];
+          activity = { kind: 'item_removed', text: `${actorName} removed ${removed.title || 'an item'}` };
         }
       } else if (action === 'clear') {
+        if (tbl.session.draftCart.length) {
+          activity = { kind: 'cart_cleared', text: `${actorName} cleared the table cart` };
+        }
         tbl.session.draftCart = [];
       } else {
         // Full sync
@@ -1800,6 +2057,10 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
+      let activityEvent = null;
+      if (activity) {
+        activityEvent = pushSessionEvent(tbl, tableStr, { ...activity, deviceId, name: actorName }, false);
+      }
       writeDb(db);
 
       broadcastEvent({
@@ -1807,11 +2068,12 @@ const server = http.createServer(async (req, res) => {
         table: tableStr,
         cart: tbl.session.draftCart,
         senderDeviceId: deviceId,
-        action: action
+        action: action,
+        activity: activityEvent
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, cart: tbl.session.draftCart }));
+      res.end(JSON.stringify({ ok: true, cart: tbl.session.draftCart, eventSeq: tbl.session.eventSeq }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -1831,15 +2093,21 @@ const server = http.createServer(async (req, res) => {
 
     const hasActiveOrder = Boolean(tbl && tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
     const isHost = Boolean(tbl && tbl.session && tbl.session.hostDeviceId === deviceId);
+    const sinceSeq = Number(parsedUrl.query.since) || 0;
+    const sess = tbl && tbl.session ? tbl.session : null;
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       ok: true,
       table: tNum,
       isHost: isHost,
-      hostDeviceId: tbl && tbl.session ? tbl.session.hostDeviceId : null,
-      hostName: tbl && tbl.session ? tbl.session.hostName : 'Table Lead',
-      draftCart: tbl && tbl.session ? (tbl.session.draftCart || []) : [],
+      hostDeviceId: sess ? sess.hostDeviceId : null,
+      hostName: sess ? sess.hostName : 'Table Lead',
+      sessionId: sess ? sess.sessionId : null,
+      participants: sess ? publicParticipants(sess) : [],
+      eventSeq: sess ? (sess.eventSeq || 0) : 0,
+      events: sess && Array.isArray(sess.events) ? sess.events.filter(e => e.seq > sinceSeq) : [],
+      draftCart: sess ? (sess.draftCart || []) : [],
       hasActiveOrder: hasActiveOrder,
       activeTicket: hasActiveOrder ? tbl.order : null
     }));
@@ -3039,7 +3307,8 @@ const server = http.createServer(async (req, res) => {
           eventData.table = eventData.order.table || tableStr;
 
           // Hierarchy Auto-assignment: assign waiter if not already assigned
-          if (!eventData.order.assignedWaiterId) {
+          const orderRest = findRestaurant(db, restId);
+          if (!eventData.order.assignedWaiterId || (orderRest && !isWaiterAppActive(orderRest))) {
             const assigned = autoAssignWaiter(db, restId);
             eventData.order.assignedWaiterId = assigned.id;
             eventData.order.assignedWaiterName = assigned.name;
@@ -3116,6 +3385,11 @@ const server = http.createServer(async (req, res) => {
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           });
           writeDb(db);
+        } else if (eventData.type === 'SERVICE_BELL_RESOLVED') {
+          // Waiter (or admin, when the waiter app is off) has handled the table's request
+          const before = (db.serviceBells || []).length;
+          db.serviceBells = (db.serviceBells || []).filter(b => eventData.bellId ? b.id !== eventData.bellId : b.table !== eventData.table);
+          if (db.serviceBells.length !== before) writeDb(db);
         } else if (eventData.type === 'BILL_SETTLED') {
           // Reject direct phantom unauthenticated BILL_SETTLED events on /api/broadcast
           const auth = getRequestAuth(req);
@@ -3176,7 +3450,9 @@ const server = http.createServer(async (req, res) => {
   let filePath = pathname === '/' ? '/hub.html' : pathname;
   let safePath = path.normalize(path.join(__dirname, filePath));
 
-  if (!safePath.startsWith(__dirname)) {
+  // Never serve the database file, server code or tests as static files
+  const relPath = path.relative(__dirname, safePath).replace(/\\/g, '/');
+  if (!safePath.startsWith(__dirname) || relPath.startsWith('data/') || relPath.startsWith('.') || /\.(js|json|bat|md)$/i.test(relPath) && !relPath.startsWith('assets/')) {
     res.writeHead(403);
     res.end('Forbidden');
     return;
