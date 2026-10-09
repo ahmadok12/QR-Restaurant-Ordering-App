@@ -2841,11 +2841,9 @@
         const ourNum = appState.tableNumber.toString().padStart(2, '0');
         const eventTable = (data.table || '').trim();
         if (eventTable === ourTable || eventTable === `Table ${ourNum}` || eventTable === ourNum) {
-          appState.hostDeviceId = data.hostDeviceId;
+          // Device ids are not broadcast; ask the server whether this phone is the host
           appState.hostName = data.hostName || 'Table Lead';
-          appState.isHost = (data.hostDeviceId === getDeviceId());
-          updateRoleUI();
-          updateCartUI();
+          pollTableSession();
         }
       } else if (data.type === 'TABLE_CART_UPDATED') {
         const ourTable = `Table ${appState.tableNumber}`;

@@ -35,6 +35,8 @@ async function resetTable(table) {
   return request('POST', '/api/test/reset-table', { table }, { 'Authorization': `Bearer ${login.data.token}` });
 }
 
+const { tableToken, adminToken, bearer } = require('./test_utils');
+
 async function runTest() {
   console.log('=== MULTI-PERSON COHOST & HOST REALTIME SYNC TEST ===');
   let passed = 0;
@@ -53,9 +55,14 @@ async function runTest() {
   // 1. Reset test table 98
   await resetTable('98');
 
+  const tok = await tableToken('98');
+  const staff = bearer(await adminToken());
+  const json = { 'Content-Type': 'application/json' };
+
   // 2. Host (Device A) and Cohost (Device B) join Table 98
   const hostJoin = await request('POST', '/api/table-session/join', {
     table: '98',
+    tableToken: tok,
     deviceId: 'dev_host_98',
     name: 'Table Host'
   });
@@ -63,66 +70,71 @@ async function runTest() {
 
   const cohostJoin = await request('POST', '/api/table-session/join', {
     table: '98',
+    tableToken: tok,
     deviceId: 'dev_cohost_98',
     name: 'Co-Diner'
   });
   assert(cohostJoin.data.isHost === false, 'Device B is registered as Cohost');
   assert(cohostJoin.data.hasActiveOrder === false, 'Initially table has no active order');
 
-  // 3. Host fires initial order to kitchen
-  console.log('\n[Scenario 1] Host fires initial order to kitchen...');
+  // 3. Host fires initial order; it waits for the waiter
+  console.log('\n[Scenario 1] Host fires initial order...');
   const menuRes = await request('GET', '/api/menu');
   const dish1 = menuRes.data[0];
-
-  const initialOrder = {
-    ticketId: '#TKT-9801',
-    table: 'Table 98',
-    guest: 'Host',
-    items: [{ dishId: dish1.id, title: dish1.title, price: dish1.price, qty: 1 }],
-    senderDeviceId: 'dev_host_98'
-  };
+  const dish2 = menuRes.data[1] || dish1;
 
   const fireOrderRes = await request('POST', '/api/broadcast', {
     type: 'NEW_ORDER',
-    order: initialOrder,
-    senderDeviceId: 'dev_host_98'
+    senderDeviceId: 'dev_host_98',
+    tableToken: tok,
+    order: {
+      ticketId: '#TKT-9801',
+      table: 'Table 98',
+      guest: 'Host',
+      newItemsOnly: true,
+      items: [{ dishId: dish1.id, title: dish1.title, price: dish1.price, qty: 1 }]
+    }
   });
   assert(fireOrderRes.status === 200, 'Host fired order successfully');
-  assert(fireOrderRes.data.order.ticketId === '#TKT-9801', 'Authoritative ticket generated');
+  const ticketId = fireOrderRes.data.order.ticketId;
+  assert(ticketId && ticketId !== '#TKT-9801', 'Server assigned its own ticket id');
+  assert(fireOrderRes.data.order.status === 'Pending', 'New order waits for waiter confirmation');
 
-  // 4. Verify Cohost polling receives active order immediately
-  console.log('\n[Scenario 1 Check] Cohost background poll receives active ticket for auto screen switch...');
-  const cohostPoll1 = await request('GET', '/api/table-session/poll?table=98&deviceId=dev_cohost_98');
+  // 4. Cohost sees the pending order straight away
+  console.log('\n[Scenario 1 Check] Cohost poll sees the order waiting for the waiter...');
+  const cohostPoll1 = await request('GET', `/api/table-session/poll?table=98&deviceId=dev_cohost_98&t=${tok}`);
   assert(cohostPoll1.data.hasActiveOrder === true, 'Cohost detects hasActiveOrder === true');
-  assert(cohostPoll1.data.activeTicket != null, 'Cohost receives activeTicket');
-  assert(cohostPoll1.data.activeTicket.items.length === 1, 'activeTicket has 1 dish');
+  assert(cohostPoll1.data.activeTicket.pendingItems.length === 1, 'activeTicket shows 1 dish waiting for confirmation');
+  assert(cohostPoll1.data.activeTicket.total === 0, 'Nothing is on the bill until the waiter confirms');
 
-  // 5. Cohost adds extra dish post-order
+  const confirm1 = await request('POST', '/api/orders/confirm', { ticketId }, { ...json, ...staff });
+  assert(confirm1.status === 200 && confirm1.data.ticket.items.length === 1, 'Waiter confirms round 1');
+  const firstTotal = confirm1.data.ticket.total;
+
+  // 5. Cohost adds an extra dish as a new round
   console.log('\n[Scenario 2] Cohost adds extra dish post-order...');
-  const dish2 = menuRes.data[1] || dish1;
-  const postOrderTicket = {
-    ...cohostPoll1.data.activeTicket,
-    items: [
-      ...cohostPoll1.data.activeTicket.items,
-      { dishId: dish2.id, title: dish2.title, price: dish2.price, qty: 1 }
-    ],
-    senderDeviceId: 'dev_cohost_98'
-  };
-
   const cohostAddRes = await request('POST', '/api/broadcast', {
     type: 'NEW_ORDER',
-    order: postOrderTicket,
-    senderDeviceId: 'dev_cohost_98'
+    senderDeviceId: 'dev_cohost_98',
+    tableToken: tok,
+    order: { table: 'Table 98', guest: 'Co-Diner', newItemsOnly: true, items: [{ dishId: dish2.id, title: dish2.title, price: dish2.price, qty: 1 }] }
   });
   assert(cohostAddRes.status === 200, 'Cohost post-order addition accepted');
-  assert(cohostAddRes.data.order.items.length === 2, 'Authoritative order now has 2 items');
+  assert(cohostAddRes.data.order.ticketId === ticketId, 'Addition joins the same table ticket');
+  assert(cohostAddRes.data.order.items.length === 1 && cohostAddRes.data.order.pendingItems.length === 1, 'Addition waits as round 2');
+
+  await request('POST', '/api/orders/confirm', { ticketId }, { ...json, ...staff });
 
   // 6. Host polling check: Host receives updated items & recalculated total without refresh!
   console.log('\n[Scenario 2 Check] Host background poll detects updated items and total in realtime...');
-  const hostPollAfter = await request('GET', '/api/table-session/poll?table=98&deviceId=dev_host_98');
+  const hostPollAfter = await request('GET', `/api/table-session/poll?table=98&deviceId=dev_host_98&t=${tok}`);
   assert(hostPollAfter.data.activeTicket != null, 'Host receives activeTicket');
   assert(hostPollAfter.data.activeTicket.items.length === 2, 'Host receives 2 items in real-time');
-  assert(hostPollAfter.data.activeTicket.total > fireOrderRes.data.order.total, 'Host receives updated grand total');
+  assert(hostPollAfter.data.activeTicket.total > firstTotal, 'Host receives updated grand total');
+
+  // 6.5 Without the QR secret the poll is refused
+  const noTokenPoll = await request('GET', '/api/table-session/poll?table=98&deviceId=dev_host_98');
+  assert(noTokenPoll.status === 403, 'Poll without the QR code secret is rejected');
 
   // 7. Cleanup
   await resetTable('98');

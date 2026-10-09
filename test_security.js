@@ -33,6 +33,7 @@ function request(method, path, body = null, headers = {}) {
 }
 
 const bearer = token => ({ 'Authorization': `Bearer ${token}` });
+const { tableToken } = require('./test_utils');
 
 async function runTests() {
   console.log('=== SECURITY HARDENING TESTS ===\n');
@@ -139,20 +140,25 @@ async function runTests() {
 
     // 6. Guest orders cannot set prices
     console.log('\n--- 6. Guest orders ---');
+    const tok07 = await tableToken('07');
+    const tok06 = await tableToken('06');
     const fakeDish = await request('POST', '/api/broadcast', {
-      type: 'NEW_ORDER',
+      type: 'NEW_ORDER', senderDeviceId: 'sec-dev-1', tableToken: tok07,
       order: { ticketId: '#TKT-SEC-1', restaurantId: 'REST-001', table: 'Table 07', items: [{ dishId: 'nope', title: 'Free Feast', price: 1, qty: 1 }] }
     });
     assert('Order with an item not on the menu is rejected (400)', fakeDish.status === 400, `got ${fakeDish.status}`);
 
+    // A waiter taking the order on the floor skips the confirmation step
     const comboOrder = await request('POST', '/api/broadcast', {
       type: 'NEW_ORDER',
       order: { ticketId: '#TKT-SEC-2', restaurantId: 'REST-001', table: 'Table 07', items: [{ dishId: 'deal-1', title: 'Deal 1: Solo Crunch Fiesta', price: 1, qty: 1 }] }
-    });
+    }, bearer(waiterToken));
     assert('Built-in combo deal is accepted at its real price', comboOrder.status === 200 && comboOrder.data.order.subtotal === 799, JSON.stringify(comboOrder.data).slice(0, 200));
+    const comboTicketId = (comboOrder.data.order || {}).ticketId;
+    assert('Server assigns its own ticket id', comboTicketId && comboTicketId !== '#TKT-SEC-2');
 
     const xssOrder = await request('POST', '/api/broadcast', {
-      type: 'NEW_ORDER',
+      type: 'NEW_ORDER', senderDeviceId: 'sec-dev-3', tableToken: tok06,
       order: {
         ticketId: '#TKT-SEC-3', restaurantId: 'REST-001', table: 'Table 06',
         guest: '<img src=x onerror=alert(1)>', notes: '<script>alert(1)</script>',
@@ -161,39 +167,43 @@ async function runTests() {
     });
     const stored = xssOrder.data.order || {};
     assert('Guest name and notes are stripped of HTML', xssOrder.status === 200 && !/[<>]/.test(stored.guest + stored.notes));
-    assert('Item options are stripped of HTML', !/[<>"]/.test((stored.items || [])[0].spice));
+    assert('Item options are stripped of HTML', !/[<>"]/.test(((stored.pendingItems || [])[0] || {}).spice));
 
     const badTicketId = await request('POST', '/api/broadcast', {
-      type: 'NEW_ORDER',
-      order: { ticketId: "x');alert(1);//", restaurantId: 'REST-001', table: 'Table 06', items: [{ dishId: 'dish-1', qty: 1 }] }
+      type: 'NEW_ORDER', senderDeviceId: 'sec-dev-4', tableToken: tok06,
+      order: { ticketId: "x');alert(1);//", restaurantId: 'REST-001', table: 'Table 06', newItemsOnly: true, items: [{ dishId: 'dish-5', qty: 1 }] }
     });
-    assert('Ticket ids with script characters are rejected', badTicketId.status === 400);
+    assert('Client-chosen ticket ids are ignored', badTicketId.status === 200 && badTicketId.data.order.ticketId === stored.ticketId);
 
     // 7. Status changes need staff
     console.log('\n--- 7. Status and sold-out updates ---');
     assert('Anonymous STATUS_UPDATE is rejected (403)',
-      (await request('POST', '/api/broadcast', { type: 'STATUS_UPDATE', ticketId: '#TKT-SEC-2', status: 'Served' })).status === 403);
+      (await request('POST', '/api/broadcast', { type: 'STATUS_UPDATE', ticketId: comboTicketId, status: 'Served' })).status === 403);
     assert('Anonymous sold-out update is rejected (403)',
       (await request('POST', '/api/broadcast', { type: 'ITEM_86_UPDATE', soldOutList: ['dish-1'] })).status === 403);
     assert('Anonymous custom events are rejected (403)',
       (await request('POST', '/api/broadcast', { type: 'TABLE_SESSION_UPDATED', table: 'Table 04' })).status === 403);
     assert('Waiter can update order status',
-      (await request('POST', '/api/broadcast', { type: 'STATUS_UPDATE', ticketId: '#TKT-SEC-2', status: 'Served' }, bearer(waiterToken))).status === 200);
-    assert('Guests can still ring the service bell',
-      (await request('POST', '/api/broadcast', { type: 'SERVICE_BELL', table: 'Table 07', request: 'Water' })).status === 200);
+      (await request('POST', '/api/broadcast', { type: 'STATUS_UPDATE', ticketId: comboTicketId, status: 'Served' }, bearer(waiterToken))).status === 200);
+    assert('Guests can ring the service bell with the table QR',
+      (await request('POST', '/api/broadcast', { type: 'SERVICE_BELL', table: 'Table 07', tableToken: tok07, request: 'Water' })).status === 200);
+    assert('Service bell without the table QR is rejected',
+      (await request('POST', '/api/broadcast', { type: 'SERVICE_BELL', table: 'Table 07', request: 'Water' })).status === 403);
 
-    const tableTicket = await request('GET', '/api/public/table-ticket?table=06');
+    const tableTicket = await request('GET', `/api/public/table-ticket?table=06&t=${tok06}`);
     assert('Guest can look up only their own table ticket', tableTicket.status === 200 &&
       tableTicket.data.tickets.length > 0 && tableTicket.data.tickets.every(t => t.table === 'Table 06'));
+    assert('Table ticket lookup without the QR secret is rejected',
+      (await request('GET', '/api/public/table-ticket?table=06')).status === 403);
 
     // 8. Manager PIN lockout
     console.log('\n--- 8. Manager PIN lockout ---');
     let lastStatus = 0;
     for (let i = 0; i < 5; i++) {
-      lastStatus = (await request('POST', '/api/orders/void', { ticketId: '#TKT-SEC-2', reason: 'test', managerPin: '000000' })).status;
+      lastStatus = (await request('POST', '/api/orders/void', { ticketId: comboTicketId, reason: 'test', managerPin: '000000' })).status;
     }
     assert('Wrong PINs are rejected (403)', lastStatus === 403);
-    const locked = await request('POST', '/api/orders/void', { ticketId: '#TKT-SEC-2', reason: 'test', managerPin: '7788' });
+    const locked = await request('POST', '/api/orders/void', { ticketId: comboTicketId, reason: 'test', managerPin: '7788' });
     assert('After 5 wrong PINs, even the right PIN is locked out (429)', locked.status === 429);
 
     // 9. Secrets at rest
