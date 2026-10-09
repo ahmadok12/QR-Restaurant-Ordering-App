@@ -308,6 +308,15 @@
             </div>
           </div>
 
+          <!-- Optional modules included in the subscription -->
+          <label for="add-feature-waiter" class="flex items-start gap-3 p-3.5 bg-sky-50/70 border border-sky-200 rounded-2xl cursor-pointer">
+            <input id="add-feature-waiter" type="checkbox" class="mt-0.5 w-4 h-4 rounded text-brand focus:ring-brand border-slate-300 bg-white"/>
+            <span class="leading-tight">
+              <span class="font-bold text-slate-900 block">Include waiter app</span>
+              <span class="text-[11px] text-slate-600">Waiters get order and service-call alerts on their phones. The restaurant admin can switch it on or off.</span>
+            </span>
+          </label>
+
           <!-- Generate Credentials Section -->
           <div class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-2.5">
             <div class="flex items-center justify-between">
@@ -384,6 +393,18 @@
                 <span id="view-serial-id" class="font-mono text-[10px] font-black bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md border border-indigo-200">REST-001</span>
               </div>
               <span id="view-status-pill" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Active</span>
+            </div>
+
+            <!-- Waiter app included in plan -->
+            <div class="pt-1.5 flex items-start gap-3 border-t border-slate-200">
+              <input id="view-feature-waiter" onchange="toggleWaiterAppFeature(this.checked)" type="checkbox"
+                class="mt-0.5 w-4 h-4 rounded text-brand focus:ring-brand border-slate-300 bg-white cursor-pointer"/>
+              <label for="view-feature-waiter" class="cursor-pointer text-slate-900 font-bold leading-tight select-none">
+                Waiter app included in plan
+                <span id="view-feature-waiter-note" class="block text-[11px] font-normal text-slate-500 mt-0.5">
+                  When unchecked, waiters can't log in and orders go to the restaurant admin's Live screen.
+                </span>
+              </label>
             </div>
 
             <!-- Restaurant subscription cancelled checkbox which makes it inactive -->
@@ -948,6 +969,7 @@
         managerName: ownerManages ? '' : document.getElementById('add-manager-name').value.trim(),
         managerPhone: ownerManages ? '' : document.getElementById('add-manager-mob').value.trim(),
         plan: plan,
+        features: { waiterApp: document.getElementById('add-feature-waiter').checked },
         email: document.getElementById('add-email').value.trim(),
         password: document.getElementById('add-password').value.trim()
       };
@@ -1021,6 +1043,18 @@
 
     function applyViewFields(rest) {
       document.getElementById('view-title').textContent = rest.name;
+      const wf = document.getElementById('view-feature-waiter');
+      if (wf) {
+        const allowed = !(rest.features && rest.features.waiterApp === false);
+        wf.checked = allowed;
+        const note = document.getElementById('view-feature-waiter-note');
+        if (note) {
+          const adminOff = rest.settings && rest.settings.waiterAppEnabled === false;
+          note.textContent = !allowed
+            ? 'Not in plan: waiters can\'t log in; orders go to the admin Live screen.'
+            : adminOff ? 'In plan, but the restaurant admin has switched it off.' : 'In plan and switched on by the restaurant.';
+        }
+      }
       const isCancelled = rest.subscriptionCancelled || rest.status === 'cancelled';
       
       const serialBadge = document.getElementById('view-serial-id');
@@ -1094,6 +1128,29 @@
         nameInp.disabled = !isEditMode;
         phoneInp.disabled = !isEditMode;
       }
+    }
+
+    async function toggleWaiterAppFeature(checked) {
+      if (!currentViewingRest) return;
+      try {
+        const res = await fetch(`${getApiBase()}/api/super/restaurants/${currentViewingRest.id}`, {
+          method: 'PUT',
+          headers: getSuperAuthHeaders(),
+          body: JSON.stringify({ features: { waiterApp: checked } })
+        });
+        const result = await res.json();
+        if (result.ok) {
+          currentViewingRest = result.restaurant;
+          applyViewFields(result.restaurant);
+          showToast(checked ? 'Waiter app added to plan' : 'Waiter app removed from plan');
+          refreshData();
+          return;
+        }
+        showToast(result.error || 'Could not update plan features', 'error', true);
+      } catch (err) {
+        showToast('Server connection error', 'error', true);
+      }
+      applyViewFields(currentViewingRest);
     }
 
     async function toggleSubscriptionCancellation(checked) {

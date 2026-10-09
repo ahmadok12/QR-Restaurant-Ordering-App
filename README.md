@@ -1,31 +1,49 @@
-﻿# Dera Gourmet - Full-Stack QR Restaurant Ordering & Floor Management App
+# QR Restaurant Ordering - MVP
 
-A modern, institutional restaurant operating suite built for friction-free guest ordering, kitchen workflow automation, anti-fraud cashier controls, and interactive visual floor plan customization.
+QR table ordering for restaurants, sold as a multi-restaurant SaaS. Guests scan the table QR, add to one shared table order from their own phones, and the restaurant receives it on the admin panel (PC or phone) or, if their plan includes it, on the waiter app.
 
 ---
 
-## 🍽️ Portals & Architecture
+## MVP apps
 
-| Portal | File | Description |
+| App | File | What it does |
 | :--- | :--- | :--- |
-| **Customer Portal** | `index.html` | Scannable QR Table Ordering for guests. Dynamic table switching, menu exploration, custom spice/size options, real-time order tracking, and service bells. |
-| **Restaurant Admin** | `restaurant_admin.html` | Interactive 2D Visual Floor Plan Designer (drag-and-drop), full menu creator with dish images & sizes, staff management, and printable QR tent cards. |
-| **Cashier Terminal** | `cashier.html` | Anti-fraud cash drawer: float opening, blind closing cash count, variance reconciliation, authoritative settlement, and sequential invoicing (`INV-YYYY-XXXXX`). |
-| **Waiter Console** | `waiter.html` | Section-based table occupancy, service call alerts, order punching, and food pickup notifications. |
-| **Kitchen Display (KDS)** | `kds.html` | Real-time chef ticket production screen with station routing. |
-| **Super Admin** | `super_admin.html` | Multi-tenant restaurant subscription management and live immutable audit trail inspector. |
-| **Testing Hub** | `hub.html` | 1-click launcher to open all portals in synchronized testing tabs. |
+| **Customer portal** | `index.html` | Guest enters their name, browses the menu, and orders together with everyone at the table. Live cart, "Sara joined" / "Sara added 2× Karahi" alerts, only the host sends the first order, service bell (water, tissues, bill...). |
+| **Restaurant admin** | `restaurant_admin.html` | Works on PC (sidebar) and phone (bottom bar). **Live** screen for new orders and service calls with sound, menu, tables, staff, QR codes, and the **Waiter app** on/off switch. |
+| **Waiter app** (optional) | `waiter.html` | Only available when the restaurant's plan includes it **and** the restaurant admin has it switched on. |
+| **Testing hub** | `hub.html` | Two guest phones, the admin panel and the waiter app side by side for testing. |
+
+Not part of the MVP (kept in the repo, not linked): `cashier.html`, `kds.html`, `admin.html`. The platform owner's panel `super_admin.html` is still reachable by URL to create restaurants and choose whether the waiter app is in their plan.
 
 ---
 
-## 🚀 How to Run & Test
+## How it works
 
-### 1. Launch the Backend Server
+**Guest names and table host**
+- The first time a phone opens the table QR, it asks the guest's name.
+- The first person at an idle table becomes the **table host**. Later guests join the same table session and never reset the cart.
+- A table session ends after 3 hours without activity, or when the bill is settled.
+
+**Live table activity**
+- Each dish in the cart shows who added it.
+- Everyone else at the table gets an alert when someone joins, adds or removes a dish.
+- Alerts arrive instantly over the live connection (SSE); the 2-second background check catches anything missed (for example when a phone screen was off). Each alert has a number, so nothing is shown twice.
+
+**Optional waiter app**
+- `features.waiterApp` on a restaurant: set by the super admin (is it in the plan?).
+- `settings.waiterAppEnabled`: set by the restaurant admin in **Staff → Waiter app**.
+- When it's off (or not in the plan): waiters can't log in, logged-in waiters are signed out, and new orders and service calls go to the admin **Live** screen.
+
+---
+
+## How to run and test
+
+### 1. Start the server
 Requires [Node.js](https://nodejs.org/):
 ```bash
 node server.js
 ```
-The server will start on `http://localhost:3000`.
+Opens on `http://localhost:3000`.
 
 On first start it creates `data/pos_db.json` with the demo restaurant (owner `owner@deragourmet.com` / `DeraAdmin#2026`, manager PIN `7788`). **Change these before real use.** The `data/` folder holds passwords and orders and is git-ignored; never commit it.
 
@@ -34,17 +52,24 @@ Optional environment variables:
 - `DB_FILE`: path to the database file (default `data/pos_db.json`).
 - `PORT`: port to listen on (default `3000`).
 
-### 2. Test the Customer Portal
-Each table's QR code carries a secret (`&t=...`), so a plain `?table=04` link no longer lets anyone order. Print table QR codes from the restaurant admin portal (Tables / QR section), or open the Testing Hub, which fetches the demo table's code for you to launch customer, kitchen, waiter, and cashier side-by-side:
+### 2. Open the testing hub
+Each table's QR code carries a secret (`&t=...`), so a plain `?table=07` link no longer lets anyone order. The hub fetches the demo table's code for you; print real table QR codes from the restaurant admin portal (QR codes section).
 ```text
 http://localhost:3000/hub.html
 ```
+Click **Reset table 07**, then follow the steps on the left.
 
-### 3. Run Automated Tests
+Single customer phone: open the hub's customer link (it includes the table's `&t=` code).
+
+Demo logins:
+- Restaurant admin: `owner@deragourmet.com` / `DeraAdmin#2026`
+- Waiter: `hamza@deragourmet.com` / `Waiter#101`
+
+### 3. Run the automated tests
 ```bash
 node run_tests.js
 ```
-This starts the server against a throwaway database on port 3000 and runs every suite (fraud controls, table layouts, billing and deals, multi-person ordering, co-host sync, order controls, reports and feedback, security). Your real `data/pos_db.json` is never touched.
+This starts the server against a throwaway database on port 3000 and runs every suite (fraud controls, table layouts, billing and deals, multi-person ordering, co-host sync, guest names and table alerts, optional waiter app, order controls, reports and feedback, security). Your real `data/pos_db.json` is never touched.
 
 ---
 
@@ -73,3 +98,7 @@ This starts the server against a throwaway database on port 3000 and runs every 
 - **Customer menu**: review step with a 5-second undo, live "waiting for waiter / confirmed" status, estimated ready time, request the bill (cash, card or bank transfer) and an itemised bill, star rating with comments saved for the owner, server-synced sold-out dishes, dietary filter chips, Urdu / English toggle.
 - **Waiter app**: sound and vibration alerts for new orders and service calls (with mute), bill-requested badges, reconnect banner, larger text and touch targets, installable from the home screen.
 - **Restaurant admin**: Reports tab with sales by day, dish, payment method and waiter (CSV export) plus guest feedback; "Sold out today" toggle per dish; dish photos are resized and compressed in the browser before upload.
+
+## Known limits before going live (next phases)
+- Data is stored in one JSON file; tables are not yet separated per restaurant. Planned move to Supabase (Postgres) with per-restaurant data.
+- Web push notifications for phones with the screen locked are not added yet; alerts work while the page is open.

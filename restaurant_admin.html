@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Restaurant Admin - Mobile Portal</title>
+  <title>Restaurant Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
@@ -93,20 +93,12 @@
     }
   </style>
 </head>
-<body class="h-full flex justify-center items-center bg-slate-200/70 p-0 sm:p-4 text-slate-800">
+<body class="h-full bg-slate-100 text-slate-800">
 
-  <!-- Mobile App Frame Shell -->
-  <div class="w-full max-w-md h-full sm:h-[92vh] sm:max-h-[860px] bg-slate-50 sm:rounded-[36px] sm:shadow-2xl sm:border-[6px] sm:border-slate-300 flex flex-col overflow-hidden relative">
+  <!-- App Shell: full screen on phones, tablets and PCs -->
+  <div class="w-full h-full bg-slate-50 flex flex-col overflow-hidden relative">
 
-    <!-- Mobile Top Notch / Status Bar -->
-    <div class="px-6 pt-3 pb-1 flex justify-between items-center text-[12px] font-semibold text-slate-500 select-none flex-shrink-0 bg-white border-b border-slate-100">
-      <span id="current-time">09:41</span>
-      <div class="flex items-center gap-1.5 text-slate-600">
-        <span class="material-symbols-outlined text-[16px]">signal_cellular_4_bar</span>
-        <span class="material-symbols-outlined text-[16px]">wifi</span>
-        <span class="material-symbols-outlined text-[16px]">battery_charging_full</span>
-      </div>
-    </div>
+<span id="current-time" class="hidden"></span>
 
     <!-- ================= LOGIN SCREEN (Only owner/manager can login) ================= -->
     <div id="login-screen" class="flex-1 flex flex-col justify-between p-6 overflow-y-auto bg-white">
@@ -161,7 +153,7 @@
 
       <!-- Footer Help -->
       <div class="text-center text-[11px] text-slate-400 pb-4">
-        Need credentials? Contact Super Admin via <a href="super_admin.html" class="text-indigo-600 hover:underline font-semibold">Super Admin Portal</a>.
+        Need login details? Contact your platform support team.
       </div>
     </div>
 
@@ -175,9 +167,7 @@
         Your restaurant subscription has been marked as cancelled or has expired by the platform owner.
       </p>
       <div class="mt-6 flex flex-col gap-2 w-full max-w-xs">
-        <a href="super_admin.html" class="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[12px]">
-          Open Super Admin to Reactivate
-        </a>
+        <p class="py-2.5 text-slate-600 font-semibold text-[12px]">Contact platform support to reactivate your subscription.</p>
         <button onclick="handleLogout()" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-semibold">
           Logout
         </button>
@@ -188,13 +178,13 @@
     <div id="admin-main" class="hidden flex-1 flex flex-col overflow-hidden">
       
       <!-- Top App Header -->
-      <header class="px-5 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0 shadow-xs">
+      <header class="px-4 lg:px-6 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0 shadow-xs">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-primary to-amber-500 flex items-center justify-center text-white shadow-md shadow-primary/20">
             <span class="material-symbols-outlined text-[20px]">store</span>
           </div>
           <div>
-            <h1 id="header-rest-name" class="text-[15px] font-extrabold text-slate-900 tracking-tight leading-none truncate max-w-[170px]">Dera Gourmet</h1>
+            <h1 id="header-rest-name" class="text-[15px] font-extrabold text-slate-900 tracking-tight leading-none truncate max-w-[170px] sm:max-w-xs lg:max-w-md">Dera Gourmet</h1>
             <p id="header-user-role" class="text-[10px] text-orange-700 font-semibold mt-0.5">Admin Live &bull; Malik Tariq</p>
           </div>
         </div>
@@ -207,17 +197,16 @@
             <span class="material-symbols-outlined text-[16px]">palette</span>
             <span class="hidden sm:inline">Vibe</span>
           </button>
-          <a href="hub.html" title="Apps Hub" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
-            <span class="material-symbols-outlined text-[18px]">grid_view</span>
-          </a>
           <button onclick="handleLogout()" title="Logout" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700">
             <span class="material-symbols-outlined text-[18px]">logout</span>
           </button>
         </div>
       </header>
 
+      <!-- Body: sidebar navigation on desktop, bottom navigation on phones -->
+      <div class="flex-1 min-h-0 flex flex-col lg:flex-row-reverse relative">
       <!-- Scrollable Tab Content -->
-      <main class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 pb-20">
+      <main class="flex-1 min-w-0 overflow-y-auto custom-scrollbar p-4 lg:p-8 pb-24 lg:pb-10 [&>section]:max-w-6xl [&>section]:mx-auto">
 
         <!-- ================= TAB 0: HOME SCREEN WITH SQUARE BUTTONS ================= -->
         <section id="tab-home" class="space-y-4">
@@ -232,7 +221,7 @@
               </div>
               
               <!-- Square Buttons Grid: 2 in a row (2x2 grid) -->
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
                 <!-- 1st Button: Categories -->
                 <button type="button" onclick="openHomeSubView('categories')" class="aspect-square bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-3.5 flex flex-col justify-between items-start text-white shadow-md shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-95 transition-all text-left group relative overflow-hidden">
                   <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white border border-white/30 group-hover:rotate-6 transition-transform">
@@ -351,7 +340,7 @@
             </div>
 
             <!-- Quick Store Operations Link -->
-            <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
               <div onclick="switchTab('qr')" class="p-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-primary transition-all shadow-2xs">
                 <span class="material-symbols-outlined text-indigo-600 text-[20px]">qr_code_2</span>
                 <span class="text-[12px] font-bold text-slate-800 block mt-1">QR Stands</span>
@@ -627,6 +616,26 @@
         <section id="tab-waiters" class="hidden space-y-4">
           <!-- Root View: 3 Square Buttons Hub (Same layout as Menu Tab) -->
           <div id="staff-main-view" class="space-y-3.5">
+            <!-- Waiter app on/off (only if included in the subscription) -->
+            <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs lg:max-w-3xl">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[22px]">phone_iphone</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-[14px] font-black text-slate-900">Waiter app</h4>
+                    <span id="waiter-app-plan-lock" class="hidden px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-[12px]">lock</span>Upgrade</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">Waiters get a buzz on their phone for new orders and table requests. Turn it off to receive everything on the Live screen instead.</p>
+                  <p id="waiter-app-status" class="text-[12px] font-semibold text-slate-800 mt-1.5">Checking...</p>
+                </div>
+                <button type="button" id="waiter-app-toggle" role="switch" aria-checked="true" aria-label="Waiter app" onclick="toggleWaiterApp()" class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors bg-slate-300">
+                  <span id="waiter-app-toggle-knob" class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform translate-x-1"></span>
+                </button>
+              </div>
+            </div>
+
             <div class="space-y-2">
               <div class="flex items-center justify-between px-1">
                 <h3 class="text-[12px] font-black text-slate-900 uppercase tracking-wider">Staff Operations</h3>
@@ -634,7 +643,7 @@
               </div>
 
               <!-- 3 Square Buttons Grid: Same layout as Menu Tab buttons -->
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3 lg:max-w-3xl">
                 <!-- 1st Button: Waiter Rank -->
                 <button type="button" onclick="openStaffSubView('ranks')" class="aspect-square bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-3.5 flex flex-col justify-between items-start text-white shadow-md shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-95 transition-all text-left group relative overflow-hidden">
                   <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white border border-white/30 group-hover:rotate-6 transition-transform">
@@ -658,7 +667,7 @@
                 </button>
 
                 <!-- 3rd Button: Cashiers -->
-                <button type="button" onclick="openStaffSubView('cashiers')" class="aspect-square bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-3.5 flex flex-col justify-between items-start text-white shadow-md shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-95 transition-all text-left group relative overflow-hidden">
+                <!-- Cashier app is hidden in the MVP --><button type="button" onclick="openStaffSubView('cashiers')" class="hidden aspect-square bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-3.5 flex flex-col justify-between items-start text-white shadow-md shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-95 transition-all text-left group relative overflow-hidden">
                   <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white border border-white/30 group-hover:rotate-6 transition-transform">
                     <span class="material-symbols-outlined text-[24px]">point_of_sale</span>
                   </div>
@@ -689,7 +698,7 @@
               </div>
 
               <!-- Quick Add Cashier -->
-              <div class="p-3.5 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-2xs">
+              <div class="hidden p-3.5 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-2xs">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-2xs">
                     <span class="material-symbols-outlined text-[22px]">point_of_sale</span>
@@ -991,6 +1000,48 @@
           </div>
         </section>
 
+        <!-- TAB: LIVE ORDERS & SERVICE CALLS (new orders, rounds to confirm, bells) -->
+        <section id="tab-live" class="hidden space-y-4">
+          <div class="flex items-center justify-between px-1">
+            <div>
+              <h3 class="text-[15px] font-black text-slate-900 tracking-tight">Live orders &amp; requests</h3>
+              <p class="text-[11px] text-slate-500">Updates instantly as guests order and call for service</p>
+            </div>
+            <button type="button" id="btn-enable-sound" onclick="enableAdminAlertSound()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1 border border-slate-200">
+              <span class="material-symbols-outlined text-[16px]">volume_up</span>
+              <span id="btn-enable-sound-label">Turn on sound</span>
+            </button>
+          </div>
+
+          <div id="live-waiter-off-banner" class="hidden p-3.5 rounded-2xl bg-sky-50 border border-sky-200 flex items-start gap-3">
+            <span class="material-symbols-outlined text-[22px] text-sky-600 shrink-0">info</span>
+            <div class="text-[12px] text-sky-950 leading-snug">
+              <strong class="block text-[13px]">Waiter app is off</strong>
+              New orders and service calls come to this screen. Keep it open on the counter phone or PC.
+              <button type="button" onclick="switchTab('waiters')" class="font-bold text-sky-700 hover:underline ml-1">Change in Staff</button>
+            </div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-5 items-start">
+            <div class="lg:col-span-2 space-y-2.5">
+              <div class="flex items-center justify-between px-1">
+                <h4 class="text-[12px] font-black text-slate-900 uppercase tracking-wider">Service calls</h4>
+                <span id="live-bells-count" class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">0</span>
+              </div>
+              <div id="live-bells-container" class="space-y-2"></div>
+            </div>
+            <div class="lg:col-span-3 space-y-2.5">
+              <div class="flex items-center justify-between px-1">
+                <h4 class="text-[12px] font-black text-slate-900 uppercase tracking-wider">Open orders</h4>
+                <span id="live-orders-count" class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">0</span>
+              </div>
+              <div id="live-orders-container" class="grid gap-2.5 xl:grid-cols-2">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- TAB 6: DINING TABLES STATUS & CARDS -->
         <section id="tab-tables" class="hidden space-y-3 pb-16">
           <!-- Header Actions -->
@@ -1033,39 +1084,41 @@
 
       </main>
 
-      <!-- Bottom Mobile Navigation (Menu -> Tables -> Staff -> QR) -->
-      <nav class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 px-3 py-2 flex justify-around items-center z-20 shadow-lg">
-        <!-- 1st: Menu Tab -->
-        <button onclick="switchTab('home'); backToHome();" id="btn-tab-home" class="nav-btn active flex flex-col items-center gap-0.5 text-primary font-bold text-[9px]">
+      <!-- Navigation: bottom bar on phones, left sidebar on desktop (lg and up) -->
+      <nav class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 px-1 py-2 flex justify-around items-center z-20 shadow-lg lg:static lg:shadow-none lg:border-t-0 lg:border-r lg:w-60 lg:flex-col lg:justify-start lg:items-stretch lg:gap-1 lg:px-3 lg:py-5 lg:flex-shrink-0">
+        <span class="hidden lg:block px-3 pb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Restaurant</span>
+        <button type="button" onclick="switchTab('live')" id="btn-tab-live" class="nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative">
+          <span class="material-symbols-outlined text-[20px]">notifications_active</span>
+          <span>Live</span>
+          <span id="nav-live-badge" class="hidden absolute -top-1 left-1/2 ml-1.5 lg:static lg:ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-black leading-[18px] text-center">0</span>
+        </button>
+        <button type="button" onclick="switchTab('home'); backToHome();" id="btn-tab-home" class="nav-btn active flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-primary lg:bg-orange-50 font-bold text-[9px] lg:text-[13px] relative">
           <span class="material-symbols-outlined text-[20px]">restaurant_menu</span>
           <span>Menu</span>
         </button>
-        <!-- 2nd: Tables Tab (next to Menu tab) -->
-        <button onclick="switchTab('tables')" id="btn-tab-tables" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
+        <button type="button" onclick="switchTab('tables')" id="btn-tab-tables" class="nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative">
           <span class="material-symbols-outlined text-[20px]">table_bar</span>
           <span>Tables</span>
         </button>
-        <!-- 3rd: Staff Tab -->
-        <button onclick="switchTab('waiters')" id="btn-tab-waiters" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
+        <button type="button" onclick="switchTab('waiters')" id="btn-tab-waiters" class="nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative">
           <span class="material-symbols-outlined text-[20px]">badge</span>
           <span>Staff</span>
         </button>
-        <!-- 4th: QR Codes Tab -->
-        <button onclick="switchTab('qr')" id="btn-tab-qr" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
+        <button type="button" onclick="switchTab('qr')" id="btn-tab-qr" class="nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative">
           <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
-          <span>QR Codes</span>
+          <span><span class="lg:hidden">QR</span><span class="hidden lg:inline">QR Codes</span></span>
         </button>
-        <!-- 5th: Orders & Controls Tab -->
-        <button onclick="switchTab('orders')" id="btn-tab-orders" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
+        <span class="hidden lg:block px-3 pt-4 pb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Controls</span>
+        <button type="button" onclick="switchTab('orders')" id="btn-tab-orders" class="nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative">
           <span class="material-symbols-outlined text-[20px]">fact_check</span>
           <span>Orders</span>
         </button>
-        <!-- 6th: Reports Tab -->
-        <button onclick="switchTab('reports')" id="btn-tab-reports" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
+        <button type="button" onclick="switchTab('reports')" id="btn-tab-reports" class="nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative">
           <span class="material-symbols-outlined text-[20px]">monitoring</span>
           <span>Reports</span>
         </button>
       </nav>
+      </div>
 
     </div>
 
@@ -3760,6 +3813,7 @@
       if (greetingEl) greetingEl.textContent = `${currentRestaurant.name} Console`;
 
       await refreshAllData();
+      await loadWaiterAppModule();
       await loadCategories();
       await loadSides();
       await loadExtras();
@@ -3772,9 +3826,12 @@
       if (currentRestaurant && currentRestaurant.theme) {
         updateHomeVibeBadge(currentRestaurant.theme);
       }
-      renderOnlineQr();
-      renderTableQrs();
-      switchTab('home');
+      try { renderOnlineQr(); renderTableQrs(); } catch (e) { console.warn('QR render failed', e); }
+      switchTab(waiterAppFlags.active ? 'home' : 'live');
+      if (sessionStorage.getItem('admin_sound_on') === '1') {
+        const label = document.getElementById('btn-enable-sound-label');
+        if (label) label.textContent = 'Tap to re-enable sound';
+      }
     }
 
     function getAdminAuthHeaders() {
@@ -3811,11 +3868,16 @@
         renderWaitersList();
         renderCashiersList();
         renderKitchenOrders();
+        renderLiveOrders();
+        renderLiveBells();
         renderTableFloor();
       } catch (e) {
         console.error('Failed to refresh data', e);
       }
     }
+
+    const NAV_CLASS_ACTIVE = "nav-btn active flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-primary lg:bg-orange-50 font-bold text-[9px] lg:text-[13px] relative";
+    const NAV_CLASS_IDLE = "nav-btn flex-1 min-w-0 lg:flex-none flex flex-col lg:flex-row items-center lg:justify-start gap-0.5 lg:gap-3 lg:w-full lg:px-3 lg:py-2.5 rounded-xl text-slate-500 hover:text-slate-900 lg:hover:bg-slate-100 font-medium text-[9px] lg:text-[13px] relative";
 
     function switchTab(tabId) {
       if (tabId === 'menu') {
@@ -3823,15 +3885,15 @@
         openHomeSubView('dishes');
         return;
       }
-      ['home', 'tables', 'waiters', 'qr', 'orders', 'reports'].forEach(t => {
+      ['live', 'home', 'tables', 'waiters', 'qr', 'orders', 'reports'].forEach(t => {
         const sec = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`btn-tab-${t}`);
         if (t === tabId) {
           if (sec) sec.classList.remove('hidden');
-          if (btn) btn.className = "nav-btn active flex flex-col items-center gap-0.5 text-primary font-bold text-[9px]";
+          if (btn) btn.className = NAV_CLASS_ACTIVE;
         } else {
           if (sec) sec.classList.add('hidden');
-          if (btn) btn.className = "nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]";
+          if (btn) btn.className = NAV_CLASS_IDLE;
         }
       });
       if (tabId === 'home') {
@@ -3848,6 +3910,10 @@
       if (tabId === 'qr') {
         renderTableQrs();
         renderOnlineQr();
+      }
+      if (tabId === 'live') {
+        renderLiveOrders();
+        renderLiveBells();
       }
       if (tabId === 'orders') {
         loadOrdersControlsTab();
@@ -7010,6 +7076,289 @@
     }
 
     // ==========================================
+    // Live screen: open orders with rounds to confirm, next kitchen step, bill requests
+    // (works with or without the waiter app; status only moves forward: New -> In Kitchen -> Plated & Ready -> Served)
+    // ==========================================
+    const LIVE_NEXT_STEP = {
+      'New': { status: 'In Kitchen', label: 'Send to kitchen', icon: 'skillet' },
+      'In Kitchen': { status: 'Plated & Ready', label: 'Food ready', icon: 'room_service' },
+      'Plated & Ready': { status: 'Served', label: 'Mark served', icon: 'check' }
+    };
+
+    function liveOpenTickets() {
+      if (!dbCache) return [];
+      return (dbCache.tickets || [])
+        .filter(t => ocIsMine(t) && !OC_CLOSED_STATUSES.includes(t.status))
+        .sort((a, b) => {
+          const pa = (a.pendingRounds || []).length ? 1 : 0, pb = (b.pendingRounds || []).length ? 1 : 0;
+          if (pa !== pb) return pb - pa;
+          return (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0);
+        });
+    }
+
+    function renderLiveOrders() {
+      const container = document.getElementById('live-orders-container');
+      if (!container || !dbCache || !currentRestaurant) return;
+      const tickets = liveOpenTickets();
+      const countEl = document.getElementById('live-orders-count');
+      if (countEl) countEl.textContent = tickets.length;
+      updateLiveBadge();
+      container.innerHTML = '';
+      if (tickets.length === 0) {
+        container.innerHTML = `<div class="p-6 bg-white border border-slate-200 rounded-2xl text-center text-slate-400 text-[12px] xl:col-span-2">No open orders right now.</div>`;
+        return;
+      }
+      tickets.forEach(t => {
+        const pendingRounds = t.pendingRounds || [];
+        const items = (t.items || []).filter(l => !l.voided);
+        const next = LIVE_NEXT_STEP[t.status];
+        const statusTone = t.status === 'Pending' ? 'bg-amber-50 text-amber-800 border-amber-200'
+          : t.status === 'Served' ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+          : t.status === 'Plated & Ready' ? 'bg-sky-50 text-sky-800 border-sky-200'
+          : 'bg-slate-50 text-slate-700 border-slate-200';
+        const row = document.createElement('div');
+        row.className = `p-3.5 bg-white border ${pendingRounds.length ? 'border-amber-300 ring-1 ring-amber-200' : 'border-slate-200'} rounded-2xl space-y-2 shadow-2xs`;
+        row.innerHTML = `
+          <div class="flex items-start justify-between text-[12px] gap-2">
+            <div class="min-w-0">
+              <strong class="text-slate-900 text-[14px]">${escapeHtml(t.table || 'Table')}</strong>
+              <span class="text-[11px] text-slate-500 font-mono ml-1">${escapeHtml(t.ticketId || '')}</span>
+              <span class="text-[11px] text-slate-500 block">${escapeHtml(t.time || '')}${t.guest ? ' &bull; ' + escapeHtml(t.guest) : ''}</span>
+            </div>
+            <div class="shrink-0 flex flex-col items-end gap-1">
+              <span class="px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-wider ${statusTone}">${escapeHtml(t.status === 'Pending' ? 'Needs confirmation' : (t.status || 'New'))}</span>
+              ${t.billRequested ? `<span class="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase flex items-center gap-0.5"><span class="material-symbols-outlined text-[12px]">receipt</span>Bill requested</span>` : ''}
+            </div>
+          </div>
+          ${items.length ? `<div class="p-2 bg-slate-50 border border-slate-100 rounded-xl text-[12px] text-slate-700 space-y-1">
+            ${items.map(i => `<div><strong>${Number(i.qty) || 1}×</strong> ${escapeHtml(i.title || i.dishId || 'Item')} <span class="text-slate-500">(${escapeHtml(i.size || 'Standard')})</span>${i.notes ? `<span class="block text-[11px] text-slate-500">${escapeHtml(i.notes)}</span>` : ''}</div>`).join('')}
+          </div>` : ''}
+          ${pendingRounds.map(r => `
+            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[12px] space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-black text-amber-900 text-[11px] uppercase tracking-wider">${(t.items || []).length ? 'Added' : 'New'} round ${escapeHtml(String(r.round || ''))} &bull; needs confirmation</span>
+                <span class="text-[10px] text-amber-700">${r.createdAt ? ocTime(r.createdAt) : ''}</span>
+              </div>
+              <div class="space-y-0.5 text-amber-950">${(r.items || []).map(i => `<div><strong>${Number(i.qty) || 1}×</strong> ${escapeHtml(i.title || i.dishId || 'Item')}${i.size && i.size !== 'Standard' ? ` <span class="text-amber-700">(${escapeHtml(i.size)})</span>` : ''}${i.notes ? `<span class="block text-[11px] text-amber-700">${escapeHtml(i.notes)}</span>` : ''}</div>`).join('')}</div>
+              <div class="flex gap-2 pt-0.5">
+                <button type="button" class="live-confirm-round flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[12px] flex items-center justify-center gap-1 active:scale-95" data-round-id="${escapeHtml(r.roundId || '')}">
+                  <span class="material-symbols-outlined text-[16px]">check</span>Confirm
+                </button>
+                <button type="button" class="live-reject-round flex-1 py-2 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 font-bold text-[12px] active:scale-95" data-round-id="${escapeHtml(r.roundId || '')}">Reject</button>
+              </div>
+            </div>`).join('')}
+          ${t.notes ? `<div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900"><strong>Note:</strong> ${escapeHtml(t.notes)}</div>` : ''}
+          <div class="flex items-center justify-between gap-2 text-[11px] text-slate-600 pt-0.5">
+            <span class="min-w-0 truncate">Waiter: <strong class="text-orange-700">${escapeHtml(t.assignedWaiterName || 'Unassigned')}</strong></span>
+            <span class="text-right shrink-0">
+              <strong class="text-slate-900 font-bold">${ocMoney(t.total)}</strong>
+              ${Number(t.pendingTotal) ? `<span class="text-[10px] text-amber-700 block">+ ${ocMoney(t.pendingTotal)} to confirm</span>` : ''}
+            </span>
+          </div>
+          ${next && items.length ? `
+          <div class="flex gap-2 pt-1">
+            <button type="button" class="live-next-step flex-1 py-2 rounded-xl ${next.status === 'Served' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'} font-bold text-[12px] flex items-center justify-center gap-1" data-status="${escapeHtml(next.status)}">
+              <span class="material-symbols-outlined text-[16px]">${next.icon}</span>${escapeHtml(next.label)}
+            </button>
+            ${next.status !== 'Served' ? `<button type="button" class="live-next-step flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[12px] flex items-center justify-center gap-1" data-status="Served">
+              <span class="material-symbols-outlined text-[16px]">check</span>Mark served
+            </button>` : ''}
+          </div>` : ''}
+        `;
+        row.querySelectorAll('.live-confirm-round').forEach(b => {
+          b.onclick = () => liveRunAction(b, () => ocPost('/api/orders/confirm', b.dataset.roundId ? { ticketId: t.ticketId, roundId: b.dataset.roundId } : { ticketId: t.ticketId }));
+        });
+        row.querySelectorAll('.live-reject-round').forEach(b => {
+          b.onclick = () => {
+            const reason = ocAskReason(`Reject this round for ${t.table || 'the table'}? The guest will see your reason:`);
+            if (!reason) return;
+            liveRunAction(b, () => ocPost('/api/orders/reject', b.dataset.roundId ? { ticketId: t.ticketId, roundId: b.dataset.roundId, reason } : { ticketId: t.ticketId, reason }));
+          };
+        });
+        row.querySelectorAll('.live-next-step').forEach(b => {
+          b.onclick = () => liveRunAction(b, () => ocPost('/api/broadcast', { type: 'STATUS_UPDATE', ticketId: t.ticketId, status: b.dataset.status }));
+        });
+        container.appendChild(row);
+      });
+    }
+
+    async function liveRunAction(btn, fn) {
+      if (btn) btn.disabled = true;
+      try {
+        await fn();
+      } catch (e) {
+        showAdminNotice(e.message || 'Could not update the order.');
+      }
+      if (btn) btn.disabled = false;
+      await refreshAllData();
+    }
+
+    function escapeAdminHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // ---------- Service calls (water, tissues, call waiter...) ----------
+    function renderLiveBells() {
+      const container = document.getElementById('live-bells-container');
+      if (!container || !dbCache) return;
+      const bells = dbCache.serviceBells || [];
+      const countEl = document.getElementById('live-bells-count');
+      if (countEl) countEl.textContent = bells.length;
+      updateLiveBadge();
+      if (bells.length === 0) {
+        container.innerHTML = `<div class="p-6 bg-white border border-slate-200 rounded-2xl text-center text-slate-400 text-[12px]">No service calls waiting.</div>`;
+        return;
+      }
+      container.innerHTML = bells.map(b => `
+        <div class="p-3 bg-white border border-rose-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></span>
+              <strong class="text-slate-900 text-[14px]">${escapeAdminHtml(b.table)}</strong>
+              <span class="text-[11px] text-slate-500">${escapeAdminHtml(b.time || '')}</span>
+            </div>
+            <p class="text-[13px] text-rose-700 font-semibold mt-0.5">${escapeAdminHtml(b.request || 'Needs assistance')}</p>
+          </div>
+          <button type="button" data-bell-id="${escapeAdminHtml(b.id || '')}" data-table="${escapeAdminHtml(b.table || '')}" onclick="resolveServiceBell(this.dataset.bellId, this.dataset.table)" class="shrink-0 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-[12px] font-bold flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">done</span>Done
+          </button>
+        </div>`).join('');
+    }
+
+    async function resolveServiceBell(bellId, table) {
+      if (dbCache) {
+        dbCache.serviceBells = (dbCache.serviceBells || []).filter(b => bellId ? b.id !== bellId : b.table !== table);
+        renderLiveBells();
+      }
+      try {
+        await fetch(`${getApiBase()}/api/broadcast`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ type: 'SERVICE_BELL_RESOLVED', bellId: bellId || undefined, table, by: 'Restaurant Admin' })
+        });
+      } catch (e) {}
+    }
+
+    function updateLiveBadge() {
+      const badge = document.getElementById('nav-live-badge');
+      if (!badge || !dbCache) return;
+      const bells = (dbCache.serviceBells || []).length;
+      // New orders and rounds still waiting for confirmation
+      const fresh = (dbCache.tickets || []).filter(t => ocIsMine(t) && !OC_CLOSED_STATUSES.includes(t.status) && (t.status === 'New' || !t.status || (t.pendingRounds || []).length > 0)).length;
+      const n = bells + fresh;
+      badge.textContent = n > 99 ? '99+' : n;
+      badge.classList.toggle('hidden', n === 0);
+    }
+
+    // ---------- Alert sound for new orders / calls ----------
+    let adminAudioCtx = null;
+    function enableAdminAlertSound() {
+      try {
+        adminAudioCtx = adminAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        adminAudioCtx.resume();
+        sessionStorage.setItem('admin_sound_on', '1');
+        const label = document.getElementById('btn-enable-sound-label');
+        if (label) label.textContent = 'Sound on';
+        playAdminChime();
+      } catch (e) {}
+    }
+    function playAdminChime() {
+      if (!adminAudioCtx) return;
+      try {
+        const now = adminAudioCtx.currentTime;
+        [0, 0.18].forEach((offset, i) => {
+          const o = adminAudioCtx.createOscillator();
+          const g = adminAudioCtx.createGain();
+          o.type = 'sine';
+          o.frequency.value = i === 0 ? 880 : 1175;
+          g.gain.setValueAtTime(0.0001, now + offset);
+          g.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.25);
+          o.connect(g); g.connect(adminAudioCtx.destination);
+          o.start(now + offset); o.stop(now + offset + 0.3);
+        });
+      } catch (e) {}
+    }
+
+    let adminNoticeTimer = null;
+    function showAdminNotice(msg) {
+      let el = document.getElementById('admin-live-notice');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'admin-live-notice';
+        el.setAttribute('role', 'status');
+        el.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[80] max-w-sm w-[calc(100%-32px)] px-4 py-3 rounded-2xl bg-slate-900 text-white text-[13px] font-semibold shadow-2xl flex items-center gap-2 cursor-pointer';
+        el.onclick = () => { switchTab('live'); el.classList.add('hidden'); };
+        document.body.appendChild(el);
+      }
+      el.innerHTML = `<span class="material-symbols-outlined text-[20px] text-amber-300">notifications_active</span><span class="flex-1">${escapeAdminHtml(msg)}</span>`;
+      el.classList.remove('hidden');
+      clearTimeout(adminNoticeTimer);
+      adminNoticeTimer = setTimeout(() => el.classList.add('hidden'), 5000);
+    }
+
+    // ---------- Waiter app module (subscription controlled) ----------
+    let waiterAppFlags = { allowed: true, enabled: true, active: true };
+
+    async function loadWaiterAppModule() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/restaurant/modules?restaurantId=${encodeURIComponent(currentRestaurant.id)}`, { headers: getAdminAuthHeaders() });
+        const d = await res.json();
+        if (d && d.waiterApp) waiterAppFlags = d.waiterApp;
+      } catch (e) {}
+      renderWaiterAppModule();
+    }
+
+    function renderWaiterAppModule() {
+      const f = waiterAppFlags;
+      const toggle = document.getElementById('waiter-app-toggle');
+      const knob = document.getElementById('waiter-app-toggle-knob');
+      const status = document.getElementById('waiter-app-status');
+      const lock = document.getElementById('waiter-app-plan-lock');
+      if (toggle) {
+        toggle.setAttribute('aria-checked', f.active ? 'true' : 'false');
+        toggle.disabled = !f.allowed;
+        toggle.className = `relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${f.active ? 'bg-emerald-500' : 'bg-slate-300'} ${f.allowed ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`;
+      }
+      if (knob) knob.className = `inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${f.active ? 'translate-x-6' : 'translate-x-1'}`;
+      if (status) {
+        status.textContent = !f.allowed
+          ? 'Not included in your plan'
+          : f.active ? 'On: orders and service calls go to waiters\' phones' : 'Off: orders and service calls come to the Live screen';
+      }
+      if (lock) lock.classList.toggle('hidden', f.allowed);
+      const banner = document.getElementById('live-waiter-off-banner');
+      if (banner) banner.classList.toggle('hidden', f.active);
+    }
+
+    async function toggleWaiterApp() {
+      if (!waiterAppFlags.allowed) {
+        showAdminNotice('The waiter app is not in your subscription. Contact us to add it.');
+        return;
+      }
+      const want = !waiterAppFlags.active;
+      try {
+        const res = await fetch(`${getApiBase()}/api/restaurant/modules`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ waiterAppEnabled: want })
+        });
+        const d = await res.json();
+        if (!res.ok) {
+          showAdminNotice(d.error || 'Could not change the waiter app setting.');
+          if (d.waiterApp) waiterAppFlags = d.waiterApp;
+        } else {
+          waiterAppFlags = d.waiterApp;
+          showAdminNotice(want ? 'Waiter app turned on. Waiters can log in now.' : 'Waiter app turned off. Orders and calls will come to the Live screen.');
+        }
+      } catch (e) {
+        showAdminNotice('Server connection error');
+      }
+      renderWaiterAppModule();
+    }
+
+    // ==========================================
     // Interactive Visual Floor Plan Controller
     // ==========================================
     let currentFloorSection = 'ALL';
@@ -7472,12 +7821,9 @@
 
           <!-- Quick Navigation Links -->
           <div class="flex items-center gap-2 pt-1">
-            <a href="cashier.html" target="_blank" class="flex-1 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-center text-[11px] font-bold transition-all">
-              View in Cashier &rarr;
-            </a>
-            <a href="waiter.html" target="_blank" class="flex-1 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-center text-[11px] font-bold transition-all">
-              View in Waiter &rarr;
-            </a>
+            <button type="button" onclick="switchTab('live')" class="flex-1 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-center text-[11px] font-bold transition-all">
+              View in Live orders &rarr;
+            </button>
           </div>
         `;
       } else {
@@ -8049,7 +8395,20 @@
             if (dbCache) dbCache.soldOut = Array.isArray(data.soldOutList) ? data.soldOutList : [];
             renderMenuDishes();
           }
-          if (['NEW_ORDER', 'ORDER_UPDATED', 'STATUS_UPDATE', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE', 'ORDER_SETTINGS_UPDATED'].includes(data.type)) {
+          if (currentRestaurant && data.type === 'MODULES_UPDATED' && (!data.restaurantId || data.restaurantId === currentRestaurant.id)) {
+            if (data.waiterApp) { waiterAppFlags = data.waiterApp; renderWaiterAppModule(); }
+            return;
+          }
+          if (currentRestaurant && (data.type === 'NEW_ORDER' || data.type === 'SERVICE_BELL') && !data.duplicate) {
+            const isOurs = !data.order || !data.order.restaurantId || ocIsMine(data.order);
+            if (isOurs) {
+              playAdminChime();
+              showAdminNotice(data.type === 'NEW_ORDER'
+                ? `New order from ${(data.order && data.order.table) || data.table || 'a table'}`
+                : `${data.table || 'A table'}: ${data.request || 'needs service'}`);
+            }
+          }
+          if (['NEW_ORDER', 'ORDER_UPDATED', 'STATUS_UPDATE', 'SERVICE_BELL', 'SERVICE_BELL_RESOLVED', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE', 'ORDER_SETTINGS_UPDATED'].includes(data.type)) {
             if (currentRestaurant) {
               refreshAllData();
               if (data.type === 'MENU_UPDATE') {
