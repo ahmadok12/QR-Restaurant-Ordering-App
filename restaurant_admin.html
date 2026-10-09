@@ -3781,12 +3781,18 @@
       }
     }
 
-    function handleLogout() {
+    function handleLogout(message) {
       sessionStorage.removeItem('rest_admin_auth');
       currentRestaurant = null;
+      if (adminEvents) { adminEvents.close(); adminEvents = null; }
       document.getElementById('admin-main').classList.add('hidden');
       document.getElementById('cancelled-screen').classList.add('hidden');
       document.getElementById('login-screen').classList.remove('hidden');
+      const errBox = document.getElementById('login-error');
+      if (errBox && typeof message === 'string' && message) {
+        errBox.textContent = message;
+        errBox.classList.remove('hidden');
+      }
     }
 
     let currentStaffSubtab = 'waiters';
@@ -3812,6 +3818,7 @@
       const greetingEl = document.getElementById('home-greeting-name');
       if (greetingEl) greetingEl.textContent = `${currentRestaurant.name} Console`;
 
+      connectAdminEvents();
       await refreshAllData();
       await loadWaiterAppModule();
       await loadCategories();
@@ -3853,6 +3860,12 @@
         const res = await fetch(`${getApiBase()}/api/db`, {
           headers: getAdminAuthHeaders()
         });
+        if (res.status === 401 || res.status === 403) {
+          handleLogout('Your login has expired. Please sign in again.');
+          return;
+        }
+        // Keep showing the last data rather than empty lists when the server has a hiccup.
+        if (!res.ok) throw new Error('Server returned ' + res.status);
         dbCache = await res.json();
         
         // Check if subscription was cancelled while active
@@ -6962,7 +6975,7 @@
       const from = (document.getElementById('oc-report-from') || {}).value || ocTodayStr();
       const to = (document.getElementById('oc-report-to') || {}).value || ocTodayStr();
       try {
-        const res = await fetch(`${getApiBase()}/api/reports/exceptions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { headers: getAdminAuthHeaders() });
+        const res = await fetch(`${getApiBase()}/api/reports/exceptions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&tzOffset=${new Date().getTimezoneOffset()}`, { headers: getAdminAuthHeaders() });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.report) throw new Error(data.error || 'Could not load report');
         ocLastReport = data.report;
@@ -7014,14 +7027,23 @@
       if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // keep spreadsheet apps from running it as a formula
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     }
+    // Local date and time for spreadsheets, e.g. 2026-10-09 19:45.
+    function ocCsvTime(v) {
+      const t = v && (v.at || v.timestamp);
+      if (!t) return '';
+      const d = new Date(t);
+      if (isNaN(d.getTime())) return String(t);
+      const p2 = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    }
     async function downloadExceptionsCsv() {
       if (!ocLastReport) await loadExceptionsReport();
       const rep = ocLastReport;
       if (!rep) { alert('Report not loaded yet.'); return; }
       const rows = [['Type', 'Time', 'Table', 'Ticket', 'Item', 'Qty', 'Amount', 'Reason', 'By']];
-      (rep.voids || []).forEach(v => rows.push(['Order void', v.at || '', v.table || '', v.ticketId || '', '', '', Number(v.amount) || 0, v.reason || '', v.by || '']));
-      (rep.lineVoids || []).forEach(v => rows.push(['Item removal', v.at || '', v.table || '', v.ticketId || '', v.title || '', v.qty || '', Number(v.amount) || 0, v.reason || '', v.by || '']));
-      (rep.rejections || []).forEach(v => rows.push(['Rejected round', v.at || '', v.table || '', v.ticketId || '', v.round ? `Round ${v.round}` : '', v.lines || '', '', v.reason || '', v.by || '']));
+      (rep.voids || []).forEach(v => rows.push(['Order void', ocCsvTime(v), v.table || '', v.ticketId || '', '', '', Number(v.amount) || 0, v.reason || '', v.by || '']));
+      (rep.lineVoids || []).forEach(v => rows.push(['Item removal', ocCsvTime(v), v.table || '', v.ticketId || '', v.title || '', v.qty || '', Number(v.amount) || 0, v.reason || '', v.by || '']));
+      (rep.rejections || []).forEach(v => rows.push(['Rejected round', ocCsvTime(v), v.table || '', v.ticketId || '', v.round ? `Round ${v.round}` : '', v.lines || '', '', v.reason || '', v.by || '']));
       const csv = rows.map(r => r.map(ocCsvCell).join(',')).join('\r\n');
       const from = (document.getElementById('oc-report-from') || {}).value || ocTodayStr();
       const to = (document.getElementById('oc-report-to') || {}).value || ocTodayStr();
@@ -7164,7 +7186,27 @@
               <span class="material-symbols-outlined text-[16px]">check</span>Mark served
             </button>` : ''}
           </div>` : ''}
+          ${items.length ? `
+          <div class="flex gap-2 pt-1 items-stretch">
+            <select class="live-pay-method px-2 rounded-xl border border-slate-200 bg-white text-[12px] font-semibold text-slate-700" aria-label="Payment method">
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Online">Online</option>
+            </select>
+            <button type="button" class="live-settle flex-1 py-2 rounded-xl ${t.status === 'Served' || t.billRequested ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700'} font-bold text-[12px] flex items-center justify-center gap-1 active:scale-95">
+              <span class="material-symbols-outlined text-[16px]">payments</span>Paid, close bill
+            </button>
+          </div>` : ''}
         `;
+        row.querySelectorAll('.live-settle').forEach(b => {
+          b.onclick = () => {
+            const method = (row.querySelector('.live-pay-method') || {}).value || 'Cash';
+            let msg = `Mark ${t.table || 'this table'} as paid (${method}, ${ocMoney(t.total)}) and close the bill?`;
+            if ((t.pendingRounds || []).length) msg += '\n\nItems still waiting for confirmation will be dropped, not billed.';
+            if (!confirm(msg)) return;
+            liveRunAction(b, () => ocPost('/api/cashier/settle', { ticketId: t.ticketId, paymentMethod: method }));
+          };
+        });
         row.querySelectorAll('.live-confirm-round').forEach(b => {
           b.onclick = () => liveRunAction(b, () => ocPost('/api/orders/confirm', b.dataset.roundId ? { ticketId: t.ticketId, roundId: b.dataset.roundId } : { ticketId: t.ticketId }));
         });
@@ -8082,7 +8124,7 @@
       if (toEl && !toEl.value) toEl.value = ocTodayStr();
       let from = fromEl.value, to = toEl.value;
       if (from > to) { const t = from; from = to; to = t; fromEl.value = from; toEl.value = to; }
-      return { from, to, qs: `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}` };
+      return { from, to, qs: `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&tzOffset=${new Date().getTimezoneOffset()}` };
     }
     function rpBarList(rows, labelFn, valueFn, subFn, tone) {
       const max = Math.max(1, ...rows.map(r => Number(valueFn(r)) || 0));
@@ -8385,52 +8427,76 @@
       }
     }
 
-    // Listen for SSE events to sync real-time
-    try {
-      const evtSource = new EventSource(`${getApiBase()}/api/events`);
-      evtSource.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (data.type === 'ITEM_86_UPDATE' && currentRestaurant) {
-            if (dbCache) dbCache.soldOut = Array.isArray(data.soldOutList) ? data.soldOutList : [];
-            renderMenuDishes();
-          }
-          if (currentRestaurant && data.type === 'MODULES_UPDATED' && (!data.restaurantId || data.restaurantId === currentRestaurant.id)) {
-            if (data.waiterApp) { waiterAppFlags = data.waiterApp; renderWaiterAppModule(); }
-            return;
-          }
-          if (currentRestaurant && (data.type === 'NEW_ORDER' || data.type === 'SERVICE_BELL') && !data.duplicate) {
-            const isOurs = !data.order || !data.order.restaurantId || ocIsMine(data.order);
-            if (isOurs) {
-              playAdminChime();
-              showAdminNotice(data.type === 'NEW_ORDER'
-                ? `New order from ${(data.order && data.order.table) || data.table || 'a table'}`
-                : `${data.table || 'A table'}: ${data.request || 'needs service'}`);
-            }
-          }
-          if (['NEW_ORDER', 'ORDER_UPDATED', 'STATUS_UPDATE', 'SERVICE_BELL', 'SERVICE_BELL_RESOLVED', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE', 'ORDER_SETTINGS_UPDATED'].includes(data.type)) {
-            if (currentRestaurant) {
-              refreshAllData();
-              if (data.type === 'MENU_UPDATE') {
-                loadMenuDishes();
-              }
-              if (data.type === 'TABLES_UPDATED') {
-                renderTableQrs();
-              }
-              if (data.type === 'WAITER_SERVICES_UPDATE') {
-                loadWaiterServices();
-              }
-              if (data.type === 'ORDER_SETTINGS_UPDATED') {
-                const ordersTab = document.getElementById('tab-orders');
-                if (ordersTab && !ordersTab.classList.contains('hidden')) loadOrderSettings();
-              }
-            }
-          }
-        } catch (err) {}
+    // Live updates. The login token goes in the URL because EventSource cannot send headers;
+    // the server only sends this restaurant's events to it.
+    let adminEvents = null;
+    let adminEventsOpened = false;
+    let adminPollTimer = null;
+    function connectAdminEvents() {
+      const authStr = sessionStorage.getItem('rest_admin_auth');
+      let token = '';
+      try { token = (JSON.parse(authStr || 'null') || {}).token || ''; } catch (e) {}
+      if (adminEvents) adminEvents.close();
+      adminEventsOpened = false;
+      try {
+        adminEvents = new EventSource(`${getApiBase()}/api/events?token=${encodeURIComponent(token)}`);
+      } catch (err) { return; }
+      // Catch up on anything missed while the connection was down.
+      adminEvents.onopen = () => {
+        if (adminEventsOpened && currentRestaurant) refreshAllData();
+        adminEventsOpened = true;
       };
+      adminEvents.onmessage = handleAdminEvent;
       // Let the browser reconnect on its own so live order updates resume after a network blip.
-      evtSource.onerror = () => {};
-    } catch(err) {}
+      adminEvents.onerror = () => {};
+      // Safety net: refresh the Live screen every 45 s in case an event was lost.
+      clearInterval(adminPollTimer);
+      adminPollTimer = setInterval(() => {
+        const live = document.getElementById('tab-live');
+        if (currentRestaurant && !document.hidden && live && !live.classList.contains('hidden')) refreshAllData();
+      }, 45000);
+    }
+
+    function handleAdminEvent(e) {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'ITEM_86_UPDATE' && currentRestaurant) {
+          if (dbCache) dbCache.soldOut = Array.isArray(data.soldOutList) ? data.soldOutList : [];
+          renderMenuDishes();
+        }
+        if (currentRestaurant && data.type === 'MODULES_UPDATED' && (!data.restaurantId || data.restaurantId === currentRestaurant.id)) {
+          if (data.waiterApp) { waiterAppFlags = data.waiterApp; renderWaiterAppModule(); }
+          return;
+        }
+        if (currentRestaurant && (data.type === 'NEW_ORDER' || data.type === 'SERVICE_BELL') && !data.duplicate) {
+          const isOurs = !data.order || !data.order.restaurantId || ocIsMine(data.order);
+          if (isOurs) {
+            playAdminChime();
+            showAdminNotice(data.type === 'NEW_ORDER'
+              ? `New order from ${(data.order && data.order.table) || data.table || 'a table'}`
+              : `${data.table || 'A table'}: ${data.request || 'needs service'}`);
+          }
+        }
+        if (['NEW_ORDER', 'ORDER_UPDATED', 'STATUS_UPDATE', 'SERVICE_BELL', 'SERVICE_BELL_RESOLVED', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE', 'ORDER_SETTINGS_UPDATED'].includes(data.type)) {
+          if (currentRestaurant) {
+            refreshAllData();
+            if (data.type === 'MENU_UPDATE') {
+              loadMenuDishes();
+            }
+            if (data.type === 'TABLES_UPDATED') {
+              renderTableQrs();
+            }
+            if (data.type === 'WAITER_SERVICES_UPDATE') {
+              loadWaiterServices();
+            }
+            if (data.type === 'ORDER_SETTINGS_UPDATED') {
+              const ordersTab = document.getElementById('tab-orders');
+              if (ordersTab && !ordersTab.classList.contains('hidden')) loadOrderSettings();
+            }
+          }
+        }
+      } catch (err) {}
+    }
 
     // Auto-login if session exists
     const savedSession = sessionStorage.getItem('rest_admin_auth');

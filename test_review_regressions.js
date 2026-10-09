@@ -151,8 +151,50 @@ async function runTests() {
     await api('POST', '/api/restaurant/modules', { waiterAppEnabled: true }, admin);
     assert('A waiter token stops working while the app is off', blocked.status === 401 || blocked.status === 403);
 
+    // 14. A stale cart screen cannot change another diner's dish by position
+    const C = '83';
+    await resetTable(C);
+    const tokC = await tableToken(C);
+    const cart = (body) => api('POST', '/api/table-session/cart', { table: C, tableToken: tokC, ...body });
+    await api('POST', '/api/table-session/join', { table: C, deviceId: 'rr-ali', name: 'Ali', tableToken: tokC });
+    await api('POST', '/api/table-session/join', { table: C, deviceId: 'rr-sara', name: 'Sara', tableToken: tokC });
+    await api('POST', '/api/table-session/join', { table: C, deviceId: 'rr-omar', name: 'Omar', tableToken: tokC });
+    await cart({ deviceId: 'rr-sara', action: 'add', item: { dishId: 'dish-2', title: 'Mutton', qty: 1 } });
+    await cart({ deviceId: 'rr-sara', action: 'add', item: { dishId: 'dish-3', title: 'Biryani', qty: 2 } });
+    const omarAdd = await cart({ deviceId: 'rr-omar', action: 'add', item: { dishId: 'dish-4', title: 'Malai Boti', qty: 1 } });
+    const staleList = omarAdd.data.draftCart || (await api('GET', `/api/table-session/poll?table=${C}&deviceId=rr-ali&t=${tokC}`)).data.draftCart;
+    const biryani = staleList.find(l => l.dishId === 'dish-3');
+    await cart({ deviceId: 'rr-sara', action: 'remove', index: 0, item: staleList[0] });
+    await cart({ deviceId: 'rr-ali', action: 'adjust', index: 1, delta: -1, item: biryani });
+    const cartAfter = (await api('GET', `/api/table-session/poll?table=${C}&deviceId=rr-ali&t=${tokC}`)).data;
+    assert('Minus on a co-diner\'s line changes that line, not the one now at its position',
+      cartAfter.draftCart.some(l => l.dishId === 'dish-4') && (cartAfter.draftCart.find(l => l.dishId === 'dish-3') || {}).qty === 1, JSON.stringify(cartAfter.draftCart.map(l => [l.dishId, l.qty])));
+    const addEv = cartAfter.events.find(e => e.kind === 'item_added' && e.title === 'Biryani');
+    assert('Table alerts carry name, quantity and dish so phones can show them in Urdu', addEv && addEv.qty === 2 && addEv.name === 'Sara');
+
+    // 15. Settling a named ticket that is already closed never bills another order on the table
+    const settled = await api('POST', '/api/cashier/settle', { ticketId: tid, paymentMethod: 'Card' }, admin);
+    assert('Admin can mark a bill paid from the Live screen', settled.status === 200, JSON.stringify(settled.data));
+    const again = await api('POST', '/api/cashier/settle', { ticketId: tid, paymentMethod: 'Card' }, admin);
+    assert('Settling the same ticket again is refused', again.status === 404);
+
+    // 16. Reports read days in the browser's time zone
+    const today = new Date().toISOString().slice(0, 10);
+    const tzRep = await api('GET', `/api/reports/sales?from=${today}&to=${today}&tzOffset=0`, null, admin);
+    assert('Sales report accepts the browser time zone', tzRep.status === 200 && tzRep.data.report.from.startsWith(today + 'T00:00:00'), tzRep.data.report && tzRep.data.report.from);
+
+    // 17. A waiter's live connection gets nothing private while the waiter app is off
+    await api('POST', '/api/restaurant/modules', { waiterAppEnabled: false }, admin);
+    const offEvents = listen(`?token=${encodeURIComponent(waiterT)}`, 600);
+    await new Promise(r => setTimeout(r, 150));
+    await order(C, tokC, [{ dishId: 'dish-1', title: 'Chicken Makhni Karahi', qty: 1 }], 'rr-ali');
+    const gotOff = await offEvents;
+    await api('POST', '/api/restaurant/modules', { waiterAppEnabled: true }, admin);
+    assert('Waiter live updates stop while the app is off', !gotOff.some(e => e.type === 'NEW_ORDER'));
+
     await resetTable(A);
     await resetTable(T2);
+    await resetTable(C);
   } catch (err) {
     console.error('Test execution error:', err);
     failed++;

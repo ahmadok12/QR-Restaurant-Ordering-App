@@ -387,6 +387,9 @@
     async function initWaiterDashboard() {
       document.getElementById('waiter-login-screen').classList.add('hidden');
       document.getElementById('waiter-main').classList.remove('hidden');
+      // Reconnect live updates with this login so the server sends this restaurant's orders.
+      sseHasOpened = false;
+      connectWaiterEvents();
 
       document.getElementById('header-waiter-name').textContent = currentWaiter.name;
       document.getElementById('header-rank-badge').textContent = `R${currentWaiter.hierarchyLevel || 1}`;
@@ -1002,9 +1005,9 @@
                   <span class="text-orange-700 text-[12px] font-semibold">${escapeHtml(i.spice || '')}</span>
                   ${i.notes ? `<span class="block text-[12px] text-amber-800 italic">&ldquo;${escapeHtml(i.notes)}&rdquo;</span>` : ''}
                 </span>
-                <button type="button" class="tap-44 px-2 rounded-xl text-[12px] font-bold text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 flex-shrink-0"
+                ${i.lineId ? `<button type="button" class="tap-44 px-2 rounded-xl text-[12px] font-bold text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 flex-shrink-0"
                   data-ticket="${escapeHtml(t.ticketId)}" data-line="${escapeHtml(i.lineId)}" onclick="removeConfirmedLine(this)"
-                  aria-label="Remove ${escapeHtml(i.title)} from ${escapeHtml(t.table)}">Remove</button>
+                  aria-label="Remove ${escapeHtml(i.title)} from ${escapeHtml(t.table)}">Remove</button>` : ''}
               </div>
             `).join('');
 
@@ -1295,7 +1298,9 @@
       clearTimeout(sseRetryTimer);
       try {
         if (evtSource) evtSource.close();
-        evtSource = new EventSource(`${getApiBase()}/api/events`);
+        // EventSource cannot send headers, so the login token goes in the URL.
+        const liveToken = getStaffToken();
+        evtSource = new EventSource(`${getApiBase()}/api/events${liveToken ? '?token=' + encodeURIComponent(liveToken) : ''}`);
       } catch (err) {
         setConnBanner(true);
         sseRetryTimer = setTimeout(connectWaiterEvents, 5000);

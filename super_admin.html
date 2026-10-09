@@ -1311,7 +1311,7 @@
 
     // Connect SSE for live synchronization
     try {
-      const evtSource = new EventSource(`${getApiBase()}/api/events`);
+      const evtSource = new EventSource(`${getApiBase()}/api/events?token=${encodeURIComponent(getSuperAuthToken() || '')}`);
       evtSource.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);

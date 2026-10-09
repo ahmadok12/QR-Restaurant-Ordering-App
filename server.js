@@ -656,16 +656,18 @@ function verifyAuthToken(token) {
 
 function getRequestAuth(req) {
   const authHeader = req.headers['authorization'] || '';
-  if (authHeader.startsWith('Bearer ')) {
-    const auth = verifyAuthToken(authHeader.substring(7).trim());
-    // Switching the waiter app off also stops waiter logins that are already open
-    if (auth && auth.role === 'waiter') {
-      const rest = findRestaurant(readDb(), auth.restaurantId);
-      if (rest && !isWaiterAppActive(rest)) return null;
-    }
-    return auth;
-  }
+  if (authHeader.startsWith('Bearer ')) return authFromToken(authHeader.substring(7).trim());
   return null;
+}
+
+function authFromToken(token) {
+  const auth = verifyAuthToken(token);
+  // Switching the waiter app off also stops waiter logins that are already open
+  if (auth && auth.role === 'waiter') {
+    const rest = findRestaurant(readDb(), auth.restaurantId);
+    if (rest && !isWaiterAppActive(rest)) return null;
+  }
+  return auth;
 }
 
 const ADMIN_ROLES = ['restaurant_admin', 'super_admin'];
@@ -1538,7 +1540,7 @@ function removeConfirmedLine(db, data, auth) {
   if (!reason) return { status: 400, body: { error: 'Please give a reason for removing the item.' } };
   const [ticket, err] = loadStaffTicket(db, data.ticketId, auth);
   if (err) return err;
-  const line = (ticket.items || []).find(l => l.lineId === data.lineId);
+  const line = data.lineId ? (ticket.items || []).find(l => l.lineId === data.lineId) : null;
   if (!line) return { status: 404, body: { error: 'Item not found on this order.' } };
   if (line.voided) return { status: 409, body: { error: 'This item was already removed.' } };
 
@@ -1579,22 +1581,50 @@ function removeConfirmedLine(db, data, auth) {
 }
 
 // Reads ?from=YYYY-MM-DD&to=YYYY-MM-DD (local days); defaults to today.
+// Days are read in the browser's time zone when it sends tzOffset (minutes, as from getTimezoneOffset()).
 function reportRange(query) {
+  const tz = Number(query.tzOffset);
+  const hasTz = query.tzOffset !== undefined && Number.isFinite(tz) && Math.abs(tz) <= 14 * 60;
   const parseDay = (v, endOfDay) => {
     if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    if (hasTz) {
+      const utcMidnight = Date.parse(v + 'T00:00:00Z');
+      if (isNaN(utcMidnight)) return null;
+      return utcMidnight + tz * 60000 + (endOfDay ? 86400000 - 1 : 0);
+    }
     const d = new Date(v + (endOfDay ? 'T23:59:59.999' : 'T00:00:00'));
     return isNaN(d.getTime()) ? null : d.getTime();
   };
-  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const now = Date.now();
+  let startOfToday;
+  if (hasTz) {
+    const local = new Date(now - tz * 60000);
+    startOfToday = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) + tz * 60000;
+  } else {
+    const d = new Date(); d.setHours(0, 0, 0, 0); startOfToday = d.getTime();
+  }
   return {
-    fromMs: parseDay(query.from, false) || startOfToday.getTime(),
-    toMs: parseDay(query.to, true) || Date.now()
+    fromMs: parseDay(query.from, false) || startOfToday,
+    toMs: parseDay(query.to, true) || now,
+    tzOffset: hasTz ? tz : null
   };
 }
 
-function localDay(ms) {
+// tzOffset (minutes, browser style) shifts the day to the caller's zone; null uses the server's zone.
+function localDay(ms, tzOffset) {
+  if (tzOffset !== null && tzOffset !== undefined) return new Date(ms - tzOffset * 60000).toISOString().slice(0, 10);
   const d = new Date(ms);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function localTime(ms, tzOffset) {
+  if (tzOffset === null || tzOffset === undefined || !ms) return '';
+  return new Date(ms - tzOffset * 60000).toISOString().slice(11, 16);
+}
+
+function localHour(ms, tzOffset) {
+  if (tzOffset !== null && tzOffset !== undefined) return new Date(ms - tzOffset * 60000).getUTCHours();
+  return new Date(ms).getHours();
 }
 
 function csvCell(v) {
@@ -1604,7 +1634,7 @@ function csvCell(v) {
 }
 
 // Sales report for owners: settled bills in a date range.
-function buildSalesReport(db, restId, fromMs, toMs) {
+function buildSalesReport(db, restId, fromMs, toMs, tzOffset) {
   const key = canonicalRestId(restId);
   const sales = (db.sales || []).filter(s => canonicalRestId(s.restaurantId) === key && s.timestamp >= fromMs && s.timestamp <= toMs);
   const ticketsById = new Map((db.tickets || []).map(t => [t.ticketId, t]));
@@ -1638,14 +1668,14 @@ function buildSalesReport(db, restId, fromMs, toMs) {
       tax: sales.reduce((s, x) => s + (Number(x.tax) || 0), 0),
       averageBill: sales.length ? Math.round(gross / sales.length) : 0
     },
-    byDay: group(sale => localDay(sale.timestamp)).sort((a, b) => a.key.localeCompare(b.key)),
-    byHour: group(sale => String(new Date(sale.timestamp).getHours()).padStart(2, '0') + ':00').sort((a, b) => a.key.localeCompare(b.key)),
+    byDay: group(sale => localDay(sale.timestamp, tzOffset)).sort((a, b) => a.key.localeCompare(b.key)),
+    byHour: group(sale => String(localHour(sale.timestamp, tzOffset)).padStart(2, '0') + ':00').sort((a, b) => a.key.localeCompare(b.key)),
     byPayment: group(sale => sale.paymentMethod),
     byWaiter: group(waiterOf),
     topDishes: [...dishes.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 20),
     sales: sales.map(sale => ({
-      invoiceNumber: sale.invoiceNumber, ticketId: sale.ticketId, table: sale.table, date: localDay(sale.timestamp),
-      time: sale.time, waiter: waiterOf(sale) || '', cashier: sale.cashierName, paymentMethod: sale.paymentMethod,
+      invoiceNumber: sale.invoiceNumber, ticketId: sale.ticketId, table: sale.table, date: localDay(sale.timestamp, tzOffset),
+      time: localTime(sale.timestamp, tzOffset) || sale.time, waiter: waiterOf(sale) || '', cashier: sale.cashierName, paymentMethod: sale.paymentMethod,
       subtotal: sale.subtotal, tax: sale.tax, total: sale.total
     }))
   };
@@ -1786,6 +1816,17 @@ function ensureSessionShape(session) {
     session.participants.unshift({ deviceId: session.hostDeviceId, name: session.hostName || 'Table Host', joinedAt: session.createdAt || Date.now() });
   }
   return session;
+}
+
+// When each phone last polled its table, kept in memory so the 2 s poll never writes the database.
+const tablePresence = new Map();
+const HOST_AWAY_MS = Number(process.env.HOST_AWAY_MS) || 2 * 60 * 1000;
+function markPresent(tNum, deviceId) {
+  if (deviceId) tablePresence.set(tNum + '|' + deviceId, Date.now());
+}
+function lastSeen(tNum, person) {
+  if (!person) return 0;
+  return Math.max(tablePresence.get(tNum + '|' + person.deviceId) || 0, Number(person.lastSeenAt) || 0, Number(person.joinedAt) || 0);
 }
 
 function cleanGuestName(raw) {
@@ -2004,7 +2045,7 @@ const server = http.createServer(async (req, res) => {
       'Connection': 'keep-alive'
     });
     const q = parsedUrl.query;
-    const liveAuth = verifyAuthToken(String(q.token || '')) || getRequestAuth(req);
+    const liveAuth = (q.token ? authFromToken(String(q.token)) : null) || getRequestAuth(req);
     if (liveAuth && STAFF_ROLES.includes(liveAuth.role)) {
       res.liveScope = { staff: true, superAdmin: liveAuth.role === 'super_admin', restKey: canonicalRestId(liveAuth.restaurantId) };
     } else {
@@ -3041,7 +3082,19 @@ const server = http.createServer(async (req, res) => {
         person.name = clientName;
       }
       person.lastSeenAt = Date.now();
+      markPresent(tNum, deviceId);
       if (openTicket) addTicketDiner(openTicket, deviceId);
+      // A host who scanned and left before ordering would block the table: once nothing has been
+      // ordered or added and the host's phone has been gone for 2 minutes, the person joining takes over.
+      const session = tbl.session;
+      if (!openTicket && session.hostDeviceId !== deviceId && !(session.draftCart || []).length) {
+        const host = session.participants.find(p => p.deviceId === session.hostDeviceId);
+        if (Date.now() - lastSeen(tNum, host) > HOST_AWAY_MS) {
+          session.hostDeviceId = deviceId;
+          session.hostName = person.name;
+          broadcastEvent({ type: 'TABLE_SESSION_UPDATED', table: tableStr, hostName: session.hostName, sessionId: session.sessionId });
+        }
+      }
       if (tbl.session.hostDeviceId === deviceId && clientName) {
         tbl.session.hostName = clientName;
       }
@@ -3107,7 +3160,7 @@ const server = http.createServer(async (req, res) => {
         tbl.session = {
           sessionId: 'sess_' + Date.now(),
           hostDeviceId: deviceId || 'host',
-          hostName: 'Table Lead',
+          hostName: cleanGuestName(data.name) || 'Table Host',
           createdAt: Date.now(),
           draftCart: []
         };
@@ -3124,7 +3177,7 @@ const server = http.createServer(async (req, res) => {
       if (actor) actor.lastSeenAt = Date.now();
       const actorName = actor ? actor.name : 'Someone';
       // Phones only know other diners by key, so a line's owner is matched by device id or key.
-      const ownerKey = line => line.addedByKey || deviceKey(line.addedByDeviceId);
+      const ownerKey = line => line.addedByKey || (line.addedByDeviceId ? deviceKey(line.addedByDeviceId) : '');
       const sameLine = (ci, item) =>
         (ci.dishId === item.dishId || (!item.dishId && ci.title === item.title)) &&
         ci.size === item.size && ci.spice === item.spice && ci.note === item.note &&
@@ -3144,23 +3197,23 @@ const server = http.createServer(async (req, res) => {
           item.qty = addQty;
           tbl.session.draftCart.push(item);
         }
-        activity = { kind: 'item_added', text: `${actorName} added ${addQty}× ${item.title || 'an item'}` };
+        activity = { kind: 'item_added', qty: addQty, title: item.title || '', text: `${actorName} added ${addQty}× ${item.title || 'an item'}` };
       } else if (action === 'adjust') {
         const delta = Number(data.delta) || 0;
         let targetIdx = -1;
         if (data.item) {
           targetIdx = tbl.session.draftCart.findIndex(ci => sameLine(ci, data.item));
         }
-        if (targetIdx === -1 && typeof data.index === 'number') {
+        if (!data.item && typeof data.index === 'number') {
           targetIdx = data.index;
         }
         if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
           const line = tbl.session.draftCart[targetIdx];
           line.qty += delta;
           if (delta > 0) {
-            activity = { kind: 'item_added', text: `${actorName} added ${delta}× ${line.title || 'an item'}` };
+            activity = { kind: 'item_added', qty: delta, title: line.title || '', text: `${actorName} added ${delta}× ${line.title || 'an item'}` };
           } else if (delta < 0) {
-            activity = { kind: 'item_removed', text: `${actorName} removed ${Math.abs(delta)}× ${line.title || 'an item'}` };
+            activity = { kind: 'item_removed', qty: Math.abs(delta), title: line.title || '', text: `${actorName} removed ${Math.abs(delta)}× ${line.title || 'an item'}` };
           }
           if (line.qty <= 0) {
             tbl.session.draftCart.splice(targetIdx, 1);
@@ -3171,12 +3224,12 @@ const server = http.createServer(async (req, res) => {
         if (data.item) {
           targetIdx = tbl.session.draftCart.findIndex(ci => sameLine(ci, data.item));
         }
-        if (targetIdx === -1 && typeof data.index === 'number') {
+        if (!data.item && typeof data.index === 'number') {
           targetIdx = data.index;
         }
         if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
           const removed = tbl.session.draftCart.splice(targetIdx, 1)[0];
-          activity = { kind: 'item_removed', text: `${actorName} removed ${removed.title || 'an item'}` };
+          activity = { kind: 'item_removed', title: removed.title || '', text: `${actorName} removed ${removed.title || 'an item'}` };
         }
       } else if (action === 'clear') {
         if (tbl.session.draftCart.length) {
@@ -3235,6 +3288,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    markPresent(tNum, deviceId);
     const openTicket = findOpenTicketForTable(db, tbl);
     const hasActiveOrder = Boolean(openTicket);
     const isHost = Boolean(tbl && tbl.session && tbl.session.hostDeviceId === deviceId);
@@ -4120,7 +4174,8 @@ const server = http.createServer(async (req, res) => {
 
       // Only an open ticket can be settled, and only by staff of its restaurant
       const byId = data.ticketId ? findTicket(db, data.ticketId) : null;
-      const ticket = (byId && isTicketOpen(byId)) ? byId : findOpenTicketForTable(db, tbl);
+      // A named ticket that is already closed is an error, never a reason to bill another order on the table
+      const ticket = data.ticketId ? ((byId && isTicketOpen(byId)) ? byId : null) : findOpenTicketForTable(db, tbl);
       if (!ticket) {
         sendJson(res, 404, { error: byId ? `Order ${byId.ticketId} is already ${byId.status}.` : 'No open order found for this table.' });
         return;
@@ -4366,12 +4421,12 @@ const server = http.createServer(async (req, res) => {
     const auth = getRequestAuth(req);
     const db = readDb();
     const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
-    const { fromMs, toMs } = reportRange(parsedUrl.query);
-    const report = buildSalesReport(db, restId, fromMs, toMs);
+    const { fromMs, toMs, tzOffset } = reportRange(parsedUrl.query);
+    const report = buildSalesReport(db, restId, fromMs, toMs, tzOffset);
     if (parsedUrl.query.format === 'csv') {
       res.writeHead(200, {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="sales-${localDay(fromMs)}-to-${localDay(toMs)}.csv"`
+        'Content-Disposition': `attachment; filename="sales-${localDay(fromMs, tzOffset)}-to-${localDay(toMs, tzOffset)}.csv"`
       });
       res.end(salesReportCsv(report));
       return;
