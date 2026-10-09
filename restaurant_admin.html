@@ -362,6 +362,14 @@
                 <span class="text-[12px] font-bold text-slate-800 block mt-1">Dining Tables</span>
                 <span class="text-[10px] text-slate-400">Live floor cards</span>
               </div>
+              <div onclick="switchTab('orders')" class="col-span-2 p-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-primary transition-all shadow-2xs flex items-center gap-3">
+                <span class="material-symbols-outlined text-rose-600 text-[22px]">fact_check</span>
+                <span class="min-w-0 flex-1">
+                  <span class="text-[12px] font-bold text-slate-800 block">Orders &amp; Controls</span>
+                  <span class="text-[10px] text-slate-400">Open orders, order settings, voids &amp; audit log</span>
+                </span>
+                <span id="home-orders-pending-badge" class="hidden px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black"></span>
+              </div>
             </div>
           </div>
 
@@ -820,17 +828,111 @@
           <div id="menu-dishes-list" class="space-y-2.5"></div>
         </section>
 
-        <!-- TAB 5: KITCHEN ORDERS LIVE MONITOR -->
-        <section id="tab-orders" class="hidden space-y-3">
-          <div class="flex items-center justify-between px-1">
-            <h3 class="text-[13px] font-bold text-slate-900">Live Kitchen Tickets</h3>
-            <a href="kds.html" target="_blank" class="text-[11px] text-amber-600 font-bold hover:underline flex items-center gap-0.5">
-              <span>Open KDS App</span>
+        <!-- TAB 5: ORDERS & CONTROLS (order settings, open orders, exceptions, audit log) -->
+        <section id="tab-orders" class="hidden space-y-4 pb-20">
+          <div class="flex items-center justify-between gap-2 px-1">
+            <div class="min-w-0">
+              <h3 class="text-[15px] font-black text-slate-900 tracking-tight">Orders &amp; Controls</h3>
+              <p class="text-[11px] text-slate-500">Ordering rules, open orders, voids and the audit trail</p>
+            </div>
+            <a href="kds.html" target="_blank" class="shrink-0 text-[11px] text-amber-600 font-bold hover:underline flex items-center gap-0.5">
+              <span>KDS</span>
               <span class="material-symbols-outlined text-[14px]">open_in_new</span>
             </a>
           </div>
-          <div id="kitchen-orders-container" class="space-y-2.5">
-            <!-- Rendered via JS -->
+
+          <!-- a. Order settings -->
+          <div class="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-[13px] font-black text-slate-900 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px] text-indigo-600">tune</span>Order settings
+              </h4>
+              <span id="oc-settings-status" class="text-[10px] font-bold text-slate-400"></span>
+            </div>
+            <div id="oc-settings-paused-banner" class="hidden p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold">
+              Ordering is paused. Guests cannot send orders until you turn this off.
+            </div>
+            <div class="divide-y divide-slate-100">
+              <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
+                <span class="min-w-0"><span class="text-[12px] font-bold text-slate-800 block">Waiter must confirm every guest order</span><span class="text-[10px] text-slate-500">Guest rounds wait for a waiter before reaching the kitchen</span></span>
+                <input type="checkbox" id="oc-requireWaiterConfirm" onchange="saveOrderSettings()" class="w-5 h-5 shrink-0 accent-orange-600"/>
+              </label>
+              <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
+                <span class="min-w-0"><span class="text-[12px] font-bold text-slate-800 block">Waiter opens table before guests can order</span><span class="text-[10px] text-slate-500">A scanned QR cannot order until staff open the table</span></span>
+                <input type="checkbox" id="oc-requireTableOpen" onchange="saveOrderSettings()" class="w-5 h-5 shrink-0 accent-orange-600"/>
+              </label>
+              <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
+                <span class="min-w-0"><span class="text-[12px] font-bold text-slate-800 block">Online ordering</span><span class="text-[10px] text-slate-500">Allow takeaway / delivery orders from the online link</span></span>
+                <input type="checkbox" id="oc-onlineOrdering" onchange="saveOrderSettings()" class="w-5 h-5 shrink-0 accent-orange-600"/>
+              </label>
+              <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
+                <span class="min-w-0"><span class="text-[12px] font-bold text-rose-700 block">Pause all ordering</span><span class="text-[10px] text-slate-500">Guests see the message below instead of sending orders</span></span>
+                <input type="checkbox" id="oc-orderingPaused" onchange="saveOrderSettings()" class="w-5 h-5 shrink-0 accent-rose-600"/>
+              </label>
+            </div>
+            <div class="space-y-1.5">
+              <label for="oc-pausedMessage" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Message shown while paused</label>
+              <div class="flex gap-2">
+                <input type="text" id="oc-pausedMessage" maxlength="200" placeholder="Ordering is paused right now. Please ask a member of staff."
+                  class="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] text-slate-800 focus:outline-none focus:border-primary"/>
+                <button type="button" onclick="saveOrderSettings()" class="shrink-0 px-3 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-[11px] font-bold active:scale-95">Save</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- b. Open orders -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between px-1">
+              <h4 class="text-[13px] font-black text-slate-900 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px] text-amber-600">receipt_long</span>Open orders
+                <span id="oc-open-count" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">0</span>
+              </h4>
+              <button type="button" onclick="refreshAllData()" class="text-[11px] font-bold text-slate-500 hover:text-slate-900 flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[15px]">refresh</span>Refresh
+              </button>
+            </div>
+            <div id="kitchen-orders-container" class="space-y-2.5">
+              <!-- Rendered via JS (renderKitchenOrders) -->
+            </div>
+          </div>
+
+          <!-- c. Exceptions report -->
+          <div class="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-3">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <h4 class="text-[13px] font-black text-slate-900 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px] text-rose-600">report</span>Exceptions report
+              </h4>
+              <button type="button" onclick="downloadExceptionsCsv()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 active:scale-95">
+                <span class="material-symbols-outlined text-[15px]">download</span>Download CSV
+              </button>
+            </div>
+            <div class="flex items-end gap-2 flex-wrap">
+              <label class="flex flex-col text-[10px] font-bold text-slate-500 uppercase tracking-wider gap-1">From
+                <input type="date" id="oc-report-from" class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] text-slate-800 normal-case"/>
+              </label>
+              <label class="flex flex-col text-[10px] font-bold text-slate-500 uppercase tracking-wider gap-1">To
+                <input type="date" id="oc-report-to" class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] text-slate-800 normal-case"/>
+              </label>
+              <button type="button" onclick="loadExceptionsReport()" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold active:scale-95">Run report</button>
+            </div>
+            <div id="oc-report-body" class="space-y-3 text-[11px]">
+              <div class="text-slate-400 text-[11px]">Loading report...</div>
+            </div>
+          </div>
+
+          <!-- d. Audit log -->
+          <div class="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-[13px] font-black text-slate-900 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-600">history</span>Recent audit log
+              </h4>
+              <button type="button" onclick="loadAuditLog()" class="text-[11px] font-bold text-slate-500 hover:text-slate-900 flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[15px]">refresh</span>Refresh
+              </button>
+            </div>
+            <div id="oc-audit-list" class="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-slate-100 text-[11px]">
+              <div class="text-slate-400 py-2">Loading...</div>
+            </div>
           </div>
         </section>
 
@@ -897,6 +999,11 @@
         <button onclick="switchTab('qr')" id="btn-tab-qr" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
           <span class="material-symbols-outlined text-[20px]">qr_code_2</span>
           <span>QR Codes</span>
+        </button>
+        <!-- 5th: Orders & Controls Tab -->
+        <button onclick="switchTab('orders')" id="btn-tab-orders" class="nav-btn flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-900 font-medium text-[9px]">
+          <span class="material-symbols-outlined text-[20px]">fact_check</span>
+          <span>Orders</span>
         </button>
       </nav>
 
@@ -3674,6 +3781,9 @@
         renderTableQrs();
         renderOnlineQr();
       }
+      if (tabId === 'orders') {
+        loadOrdersControlsTab();
+      }
     }
 
     // Dashboard Render (Safe null guards)
@@ -3742,6 +3852,40 @@
       });
     }
 
+    // Customer URL for a table QR. Appends the table's secret (&t=) so the printed code works.
+    function buildTableQrUrl(restId, tableOrId) {
+      let t = tableOrId;
+      if (!t || typeof t !== 'object') {
+        t = ((dbCache && dbCache.tables) || []).find(x => String(x.id) === String(tableOrId)) || { id: tableOrId };
+      }
+      let url = `${window.location.origin}/index.html?restaurantId=${encodeURIComponent(restId)}&table=${encodeURIComponent(t.id)}`;
+      if (t.qrToken) url += `&t=${encodeURIComponent(t.qrToken)}`;
+      return url;
+    }
+
+    async function rotateTableQrToken(tableId, tableName) {
+      if (!confirm(`Create a new QR code for ${tableName}?\n\nThe old printed QR code for this table will stop working immediately. You will need to print and place the new code on the table.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`${getApiBase()}/api/tables/rotate-token`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ tableId })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          alert(data.error || 'Could not create a new QR code.');
+          return;
+        }
+        await refreshAllData();
+        renderTableQrs();
+        alert(`New QR code ready for ${tableName}. Print it and replace the old one.`);
+      } catch (e) {
+        alert('Server error creating a new QR code.');
+      }
+    }
+
     function getShapeDisplay(shape) {
       if (!shape) return { name: 'Square', icon: 'crop_square' };
       const s = String(shape).toLowerCase();
@@ -3803,8 +3947,15 @@
               <span class="material-symbols-outlined text-[13px]">print</span>
               <span>Print</span>
             </button>
+            <button type="button" class="btn-table-rotate mt-1 w-full py-1.5 px-2 rounded-xl bg-white hover:bg-rose-50 text-rose-700 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors border border-rose-200 active:scale-95 shadow-2xs" title="Replace this table's QR code; the old printed code stops working">
+              <span class="material-symbols-outlined text-[13px]">autorenew</span>
+              <span>New QR code</span>
+            </button>
           </div>
         `;
+
+        const btnRotate = item.querySelector('.btn-table-rotate');
+        if (btnRotate) btnRotate.onclick = () => rotateTableQrToken(t.id, t.name || t.id);
 
         // Direct closure bindings (only print)
         const btnPrint = item.querySelector('.btn-table-print');
@@ -3817,7 +3968,7 @@
         grid.appendChild(item);
 
         try {
-          const tableUrl = `${window.location.origin}/index.html?restaurantId=${restId}&table=${t.id}`;
+          const tableUrl = buildTableQrUrl(restId, t);
           new QRCode(document.getElementById(qrId), {
             text: tableUrl,
             width: 72,
@@ -3874,7 +4025,7 @@
       const content = document.getElementById('qr-preview-frame-content');
       const restName = currentRestaurant ? currentRestaurant.name : 'Dera Gourmet Restaurant';
       const restId = currentRestaurant ? currentRestaurant.id : 'REST-001';
-      const tableUrl = `${window.location.origin}/index.html?restaurantId=${restId}&table=${tableId}`;
+      const tableUrl = buildTableQrUrl(restId, tableId);
 
       document.getElementById('qr-preview-modal-title').textContent = `${tableName} QR Stand Preview`;
       document.getElementById('qr-print-action-btn-text').textContent = `Print ${tableName} Frame`;
@@ -3994,7 +4145,7 @@
       `;
 
       tables.forEach(t => {
-        const tableUrl = `${window.location.origin}/index.html?restaurantId=${restId}&table=${t.id}`;
+        const tableUrl = buildTableQrUrl(restId, t);
         new QRCode(document.getElementById(`all-preview-qr-${t.id}`), {
           text: tableUrl,
           width: 110,
@@ -4076,7 +4227,7 @@
 
       if (currentPrintTarget.mode === 'single') {
         const { tableId, tableName, zoneName, shapeName } = currentPrintTarget;
-        const tableUrl = `${window.location.origin}/index.html?restaurantId=${restId}&table=${tableId}`;
+        const tableUrl = buildTableQrUrl(restId, tableId);
         printArea.innerHTML = `
           <div class="printable-qr-page">
             <div style="width: 320px; background: #fff; border: 4px solid #0f172a; border-radius: 24px; padding: 22px 18px; text-align: center; box-sizing: border-box; position: relative; margin: 0 auto;">
@@ -4162,7 +4313,7 @@
         printArea.innerHTML = html;
 
         tables.forEach(t => {
-          const tableUrl = `${window.location.origin}/index.html?restaurantId=${restId}&table=${t.id}`;
+          const tableUrl = buildTableQrUrl(restId, t);
           const qrTarget = document.getElementById(`print-final-all-qr-${t.id}`);
           if (qrTarget) {
             new QRCode(qrTarget, {
@@ -6415,43 +6566,367 @@
       }
     }
 
-    // Kitchen orders render
+    // ==========================================
+    // Orders & Controls tab: open orders, order settings, exceptions report, audit log
+    // ==========================================
+    const OC_CLOSED_STATUSES = ['Settled', 'Voided', 'Rejected'];
+    let ocLastReport = null;
+
+    function ocCanonRestId(id) { return id === 'rest-dera-01' ? 'REST-001' : id; }
+    function ocIsMine(rec) {
+      if (!currentRestaurant || !rec || !rec.restaurantId) return true;
+      return ocCanonRestId(rec.restaurantId) === ocCanonRestId(currentRestaurant.id);
+    }
+    function ocMoney(n) { return 'Rs. ' + (Number(n) || 0).toLocaleString(); }
+    function ocTime(v) {
+      if (!v) return '';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return escapeHtml(v);
+      return escapeHtml(d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
+    }
+    function ocTodayStr() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    async function ocPost(path, body) {
+      const res = await fetch(`${getApiBase()}${path}`, {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify(body || {})
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || `Request failed (${res.status})`);
+      return data;
+    }
+    function ocAskReason(question) {
+      const r = prompt(question);
+      if (r === null) return null;
+      const trimmed = r.trim();
+      if (!trimmed) { alert('A reason is required.'); return null; }
+      return trimmed;
+    }
+
+    function loadOrdersControlsTab() {
+      const fromEl = document.getElementById('oc-report-from');
+      const toEl = document.getElementById('oc-report-to');
+      if (fromEl && !fromEl.value) fromEl.value = ocTodayStr();
+      if (toEl && !toEl.value) toEl.value = ocTodayStr();
+      loadOrderSettings();
+      renderKitchenOrders();
+      loadExceptionsReport();
+      loadAuditLog();
+    }
+
+    // ---- a. Order settings ----
+    const OC_SETTING_KEYS = ['requireWaiterConfirm', 'requireTableOpen', 'onlineOrdering', 'orderingPaused'];
+    function ocSetSettingsStatus(text, tone) {
+      const el = document.getElementById('oc-settings-status');
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = `text-[10px] font-bold ${tone === 'err' ? 'text-rose-600' : tone === 'ok' ? 'text-emerald-600' : 'text-slate-400'}`;
+    }
+    function ocApplySettings(settings) {
+      if (!settings) return;
+      OC_SETTING_KEYS.forEach(k => {
+        const el = document.getElementById(`oc-${k}`);
+        if (el) el.checked = !!settings[k];
+      });
+      const msg = document.getElementById('oc-pausedMessage');
+      if (msg && document.activeElement !== msg) msg.value = settings.pausedMessage || '';
+      const banner = document.getElementById('oc-settings-paused-banner');
+      if (banner) banner.classList.toggle('hidden', !settings.orderingPaused);
+    }
+    async function loadOrderSettings() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/restaurant/order-settings`, { headers: getAdminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.settings) throw new Error(data.error || 'Could not load settings');
+        ocApplySettings(data.settings);
+      } catch (e) {
+        ocSetSettingsStatus(e.message, 'err');
+      }
+    }
+    async function saveOrderSettings() {
+      const body = {};
+      OC_SETTING_KEYS.forEach(k => {
+        const el = document.getElementById(`oc-${k}`);
+        if (el) body[k] = !!el.checked;
+      });
+      const msg = document.getElementById('oc-pausedMessage');
+      if (msg) body.pausedMessage = msg.value.trim();
+      ocSetSettingsStatus('Saving...');
+      try {
+        const data = await ocPost('/api/restaurant/order-settings', body);
+        ocApplySettings(data.settings);
+        ocSetSettingsStatus('Saved', 'ok');
+      } catch (e) {
+        ocSetSettingsStatus(e.message, 'err');
+        loadOrderSettings();
+      }
+    }
+
+    // ---- b. Open orders (rendered from dbCache.tickets; called by refreshAllData) ----
+    function ocLineHtml(l, pending) {
+      const opts = [l.size && l.size !== 'Standard' ? l.size : '', l.spice || '', l.notes || ''].filter(Boolean).map(escapeHtml).join(' &bull; ');
+      const amount = (Number(l.voided ? (l.originalPrice != null ? l.originalPrice : l.price) : l.price) || 0) * (Number(l.qty) || 0);
+      const canRemove = !pending && !l.voided && l.lineId;
+      return `
+        <div class="flex items-start justify-between gap-2 py-1">
+          <div class="min-w-0">
+            <div class="${l.voided ? 'line-through text-slate-400' : 'text-slate-700'}">
+              <span class="font-bold">${escapeHtml(String(l.qty || 0))}&times;</span> ${escapeHtml(l.title || l.dishId || 'Item')}
+              ${opts ? `<span class="text-[10px] text-slate-400 block">${opts}</span>` : ''}
+            </div>
+            ${l.voided ? `<div class="text-[10px] text-rose-600">Removed: ${escapeHtml(l.voidReason || 'no reason')}${l.voidedBy ? ' (' + escapeHtml(l.voidedBy) + ')' : ''}</div>` : ''}
+          </div>
+          <div class="shrink-0 flex items-center gap-1.5">
+            <span class="${l.voided ? 'line-through text-slate-400' : 'text-slate-600'} text-[10px] font-bold">${ocMoney(amount)}</span>
+            ${canRemove ? `<button type="button" class="oc-remove-line w-6 h-6 rounded-lg bg-white border border-slate-200 hover:border-rose-300 hover:bg-rose-50 text-rose-600 flex items-center justify-center" data-line-id="${escapeHtml(l.lineId)}" data-title="${escapeHtml(l.title || '')}" title="Remove this item">
+              <span class="material-symbols-outlined text-[14px]">close</span></button>` : ''}
+          </div>
+        </div>`;
+    }
+
     function renderKitchenOrders() {
       const container = document.getElementById('kitchen-orders-container');
+      if (!container || !dbCache || !currentRestaurant) return;
       container.innerHTML = '';
-      const tickets = (dbCache.tickets || []).filter(t => 
-        (!t.restaurantId || t.restaurantId === currentRestaurant.id) && 
-        t.status !== 'Settled'
-      );
+      const tickets = (dbCache.tickets || [])
+        .filter(t => ocIsMine(t) && !OC_CLOSED_STATUSES.includes(t.status))
+        .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+
+      const pendingCount = tickets.filter(t => (t.pendingRounds || []).length > 0).length;
+      const countEl = document.getElementById('oc-open-count');
+      if (countEl) countEl.textContent = String(tickets.length);
+      const homeBadge = document.getElementById('home-orders-pending-badge');
+      if (homeBadge) {
+        homeBadge.textContent = pendingCount ? `${pendingCount} awaiting waiter` : '';
+        homeBadge.classList.toggle('hidden', !pendingCount);
+      }
 
       if (tickets.length === 0) {
-        container.innerHTML = `<div class="p-4 bg-white border border-slate-200 rounded-xl text-center text-slate-400 text-[12px]">No active orders in kitchen.</div>`;
+        container.innerHTML = `<div class="p-4 bg-white border border-slate-200 rounded-xl text-center text-slate-400 text-[12px]">No open orders right now.</div>`;
         return;
       }
 
       tickets.forEach(t => {
+        const pendingRounds = t.pendingRounds || [];
+        const statusTone = t.status === 'Pending' ? 'bg-amber-50 text-amber-800 border-amber-200'
+          : t.status === 'Plated & Ready' ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+          : t.status === 'Served' ? 'bg-sky-50 text-sky-800 border-sky-200'
+          : 'bg-slate-50 text-slate-700 border-slate-200';
         const row = document.createElement('div');
-        row.className = "p-3 bg-white border border-slate-200 rounded-2xl space-y-2 shadow-2xs";
+        row.className = `p-3 bg-white border ${pendingRounds.length ? 'border-amber-300' : 'border-slate-200'} rounded-2xl space-y-2 shadow-2xs`;
         row.innerHTML = `
-          <div class="flex items-center justify-between text-[12px]">
-            <div>
-              <strong class="text-slate-900">${t.table} &bull; ${t.ticketId}</strong>
-              <span class="text-[10px] text-slate-500 block">${t.time}</span>
+          <div class="flex items-start justify-between gap-2 text-[12px]">
+            <div class="min-w-0">
+              <strong class="text-slate-900">${escapeHtml(t.table || 'Table')}</strong>
+              <span class="text-[10px] text-slate-500 font-mono block truncate">${escapeHtml(t.ticketId || '')}${t.time ? ' &bull; ' + escapeHtml(t.time) : ''}</span>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-              t.status === 'Plated & Ready' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
-            }">${t.status}</span>
+            <div class="shrink-0 flex flex-col items-end gap-1">
+              <span class="px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-wider ${statusTone}">${escapeHtml(t.status || '')}</span>
+              ${pendingRounds.length ? `<span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black uppercase">Awaiting waiter</span>` : ''}
+              ${t.billRequested ? `<span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[9px] font-black uppercase">Bill requested</span>` : ''}
+            </div>
           </div>
-          <div class="p-2 bg-slate-50 border border-slate-100 rounded-xl text-[11px] text-slate-700 space-y-1">
-            ${(t.items || []).map(i => `<div>${i.qty}x ${i.title} (${i.size || 'Standard'})</div>`).join('')}
+          ${(t.items || []).length ? `<div class="px-2 py-1 bg-slate-50 border border-slate-100 rounded-xl text-[11px] divide-y divide-slate-100">${t.items.map(l => ocLineHtml(l, false)).join('')}</div>` : ''}
+          ${pendingRounds.map(r => `
+            <div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] space-y-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-black text-amber-900 text-[10px] uppercase tracking-wider">Round ${escapeHtml(String(r.round || ''))} &bull; awaiting waiter${r.createdAt ? ' &bull; ' + ocTime(r.createdAt) : ''}</span>
+                <span class="text-[10px] text-amber-700">${escapeHtml(r.source || 'guest')}</span>
+              </div>
+              <div class="divide-y divide-amber-100">${(r.items || []).map(l => ocLineHtml(l, true)).join('')}</div>
+              <div class="flex gap-1.5 pt-1">
+                <button type="button" class="oc-confirm-round flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold active:scale-95" data-round-id="${escapeHtml(r.roundId || '')}">Confirm</button>
+                <button type="button" class="oc-reject-round flex-1 py-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-[10px] font-bold active:scale-95" data-round-id="${escapeHtml(r.roundId || '')}">Reject</button>
+              </div>
+            </div>`).join('')}
+          <div class="flex items-center justify-between gap-2 text-[11px] text-slate-600 pt-0.5 flex-wrap">
+            <span class="min-w-0 truncate">Waiter: <strong class="text-orange-700">${escapeHtml(t.assignedWaiterName || 'Unassigned')}</strong></span>
+            <span class="text-right">
+              <strong class="text-slate-900 font-bold">${ocMoney(t.total)}</strong>
+              ${Number(t.pendingTotal) ? `<span class="text-[10px] text-amber-700 block">+ ${ocMoney(t.pendingTotal)} pending</span>` : ''}
+            </span>
           </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
-            <span>Assigned: <strong class="text-orange-700">${t.assignedWaiterName || 'Auto-assigning...'}</strong></span>
-            <strong class="text-slate-900 font-bold">Rs. ${(Number(t.total)||0).toLocaleString()}</strong>
+          <div class="flex justify-end">
+            <button type="button" class="oc-void-order px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold flex items-center gap-1 active:scale-95">
+              <span class="material-symbols-outlined text-[14px]">block</span>Void order
+            </button>
           </div>
         `;
+        const label = `${t.table || ''} (${t.ticketId || ''})`;
+        row.querySelector('.oc-void-order').onclick = () => ocVoidOrder(t.ticketId, label);
+        row.querySelectorAll('.oc-remove-line').forEach(b => {
+          b.onclick = () => ocRemoveLine(t.ticketId, b.dataset.lineId, b.dataset.title);
+        });
+        row.querySelectorAll('.oc-confirm-round').forEach(b => {
+          b.onclick = () => ocConfirmRound(t.ticketId, b.dataset.roundId);
+        });
+        row.querySelectorAll('.oc-reject-round').forEach(b => {
+          b.onclick = () => ocRejectRound(t.ticketId, b.dataset.roundId);
+        });
         container.appendChild(row);
       });
+    }
+
+    async function ocRunAction(fn) {
+      try {
+        await fn();
+        await refreshAllData();
+        loadExceptionsReport();
+        loadAuditLog();
+      } catch (e) {
+        alert(e.message || 'Action failed');
+      }
+    }
+    function ocVoidOrder(ticketId, label) {
+      const reason = ocAskReason(`Void the whole order for ${label}?\nThe guest's bill will be cancelled. Enter a reason:`);
+      if (!reason) return;
+      ocRunAction(() => ocPost('/api/orders/void', { ticketId, reason }));
+    }
+    function ocRemoveLine(ticketId, lineId, title) {
+      const reason = ocAskReason(`Remove "${title || 'this item'}" from the order? Enter a reason:`);
+      if (!reason) return;
+      ocRunAction(() => ocPost('/api/orders/remove-line', { ticketId, lineId, reason }));
+    }
+    function ocConfirmRound(ticketId, roundId) {
+      ocRunAction(() => ocPost('/api/orders/confirm', roundId ? { ticketId, roundId } : { ticketId }));
+    }
+    function ocRejectRound(ticketId, roundId) {
+      const reason = ocAskReason('Reject this round? The guest will see your reason:');
+      if (!reason) return;
+      ocRunAction(() => ocPost('/api/orders/reject', roundId ? { ticketId, roundId, reason } : { ticketId, reason }));
+    }
+
+    // ---- c. Exceptions report ----
+    function ocTable(headers, rows) {
+      if (!rows.length) return `<div class="text-slate-400 text-[11px] py-1">None.</div>`;
+      return `<div class="overflow-x-auto custom-scrollbar -mx-1"><table class="w-full text-[11px] text-left min-w-[420px]">
+        <thead><tr class="text-[9px] uppercase tracking-wider text-slate-400">${headers.map(h => `<th class="px-1 py-1 font-bold">${escapeHtml(h)}</th>`).join('')}</tr></thead>
+        <tbody class="divide-y divide-slate-100">${rows.map(r => `<tr class="align-top">${r.map(c => `<td class="px-1 py-1 text-slate-700">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table></div>`;
+    }
+    function ocSection(title, count, inner) {
+      return `<div class="space-y-1"><h5 class="text-[11px] font-black text-slate-800 uppercase tracking-wider">${escapeHtml(title)} <span class="text-slate-400">(${count})</span></h5>${inner}</div>`;
+    }
+    async function loadExceptionsReport() {
+      const body = document.getElementById('oc-report-body');
+      if (!body) return;
+      const from = (document.getElementById('oc-report-from') || {}).value || ocTodayStr();
+      const to = (document.getElementById('oc-report-to') || {}).value || ocTodayStr();
+      try {
+        const res = await fetch(`${getApiBase()}/api/reports/exceptions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { headers: getAdminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.report) throw new Error(data.error || 'Could not load report');
+        ocLastReport = data.report;
+        renderExceptionsReport(data.report);
+      } catch (e) {
+        body.innerHTML = `<div class="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">${escapeHtml(e.message)}</div>`;
+      }
+    }
+    function renderExceptionsReport(rep) {
+      const body = document.getElementById('oc-report-body');
+      if (!body) return;
+      const tot = rep.totals || {};
+      const card = (label, value, sub, tone) => `
+        <div class="p-2.5 rounded-xl border ${tone}">
+          <div class="text-[9px] font-black uppercase tracking-wider opacity-70">${escapeHtml(label)}</div>
+          <div class="text-[16px] font-black leading-tight">${escapeHtml(String(value))}</div>
+          ${sub ? `<div class="text-[10px] font-bold opacity-80">${escapeHtml(sub)}</div>` : ''}
+        </div>`;
+      const voids = rep.voids || [], lineVoids = rep.lineVoids || [], rejections = rep.rejections || [];
+      const served = rep.servedNotSettled || [], pending = rep.pendingTooLong || [], resets = rep.tablesClosedWithoutInvoice || [];
+      const perWaiter = rep.perWaiter || [];
+      body.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          ${card('Order voids', Number(tot.orderVoids) || 0, ocMoney(tot.orderVoidValue), 'bg-rose-50 border-rose-200 text-rose-900')}
+          ${card('Item removals', Number(tot.lineVoids) || 0, ocMoney(tot.lineVoidValue), 'bg-amber-50 border-amber-200 text-amber-900')}
+          ${card('Rejected rounds', Number(tot.rejectedRounds) || 0, '', 'bg-slate-50 border-slate-200 text-slate-900')}
+          ${card('Failed PIN tries', Number(tot.failedPinAttempts) || 0, '', 'bg-indigo-50 border-indigo-200 text-indigo-900')}
+        </div>
+        ${ocSection('By waiter', perWaiter.length, ocTable(['Waiter', 'Voids', 'Removals', 'Rejected', 'Edits', 'Value'],
+          perWaiter.map(w => [escapeHtml(w.waiter || w.name || w.waiterId || 'Unassigned'), escapeHtml(String(Number(w.orderVoids ?? w.voids) || 0)),
+            escapeHtml(String(Number(w.lineVoids) || 0)), escapeHtml(String(Number(w.rejectedRounds ?? w.rejections) || 0)),
+            escapeHtml(String(Number(w.edits) || 0)), ocMoney(w.voidedValue)])))}
+        ${ocSection('Order voids', voids.length, ocTable(['Time', 'Table', 'Ticket', 'Amount', 'Reason', 'By'],
+          voids.map(v => [ocTime(v.at || v.timestamp), escapeHtml(v.table || ''), escapeHtml(v.ticketId || ''), ocMoney(v.amount), escapeHtml(v.reason || ''), escapeHtml(v.by || v.authorizedBy || v.actor || '')])))}
+        ${ocSection('Item removals', lineVoids.length, ocTable(['Time', 'Table', 'Item', 'Amount', 'Reason', 'By'],
+          lineVoids.map(v => [ocTime(v.at || v.timestamp), escapeHtml(v.table || ''), escapeHtml(`${v.qty || ''}× ${v.title || ''}`), ocMoney(v.amount), escapeHtml(v.reason || ''), escapeHtml(v.by || v.actor || '')])))}
+        ${ocSection('Rejected rounds', rejections.length, ocTable(['Time', 'Table', 'Ticket', 'Round', 'Reason', 'By'],
+          rejections.map(v => [ocTime(v.at || v.timestamp), escapeHtml(v.table || ''), escapeHtml(v.ticketId || ''), escapeHtml(String(v.round || '')), escapeHtml(v.reason || ''), escapeHtml(v.by || v.actor || '')])))}
+        ${ocSection('Served but not paid', served.length, ocTable(['Table', 'Ticket', 'Waiter', 'Total', 'Open'],
+          served.map(v => [escapeHtml(v.table || ''), escapeHtml(v.ticketId || ''), escapeHtml(v.waiter || ''), ocMoney(v.total), escapeHtml(`${Number(v.minutesOpen) || 0} min`)])))}
+        ${ocSection('Waiting for confirmation too long', pending.length, ocTable(['Table', 'Ticket', 'Waiter', 'Waiting'],
+          pending.map(v => [escapeHtml(v.table || ''), escapeHtml(v.ticketId || ''), escapeHtml(v.waiter || ''), escapeHtml(`${Number(v.oldestMinutes) || 0} min`)])))}
+        ${ocSection('Tables reset without invoice', resets.length, ocTable(['Time', 'Table', 'Ticket', 'Amount', 'By'],
+          resets.map(v => [ocTime(v.at || v.timestamp), escapeHtml(v.table || ''), escapeHtml(v.ticketId || ''), ocMoney(v.amount), escapeHtml(v.by || v.actor || '')])))}
+      `;
+    }
+    function ocCsvCell(v) {
+      let s = v == null ? '' : String(v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // keep spreadsheet apps from running it as a formula
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }
+    async function downloadExceptionsCsv() {
+      if (!ocLastReport) await loadExceptionsReport();
+      const rep = ocLastReport;
+      if (!rep) { alert('Report not loaded yet.'); return; }
+      const rows = [['Type', 'Time', 'Table', 'Ticket', 'Item', 'Qty', 'Amount', 'Reason', 'By']];
+      (rep.voids || []).forEach(v => rows.push(['Order void', v.at || '', v.table || '', v.ticketId || '', '', '', Number(v.amount) || 0, v.reason || '', v.by || '']));
+      (rep.lineVoids || []).forEach(v => rows.push(['Item removal', v.at || '', v.table || '', v.ticketId || '', v.title || '', v.qty || '', Number(v.amount) || 0, v.reason || '', v.by || '']));
+      (rep.rejections || []).forEach(v => rows.push(['Rejected round', v.at || '', v.table || '', v.ticketId || '', v.round ? `Round ${v.round}` : '', v.lines || '', '', v.reason || '', v.by || '']));
+      const csv = rows.map(r => r.map(ocCsvCell).join(',')).join('\r\n');
+      const from = (document.getElementById('oc-report-from') || {}).value || ocTodayStr();
+      const to = (document.getElementById('oc-report-to') || {}).value || ocTodayStr();
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `exceptions_${from}_to_${to}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+
+    // ---- d. Audit log ----
+    function ocAuditDetails(d) {
+      if (d == null) return '';
+      if (typeof d !== 'object') return String(d).slice(0, 140);
+      const parts = [];
+      ['table', 'ticketId', 'title', 'reason', 'amount'].forEach(k => {
+        if (d[k] != null && d[k] !== '') parts.push(k === 'amount' ? ocMoney(d[k]) : String(d[k]));
+      });
+      if (parts.length) return parts.join(' · ').slice(0, 140);
+      try { return JSON.stringify(d).slice(0, 140); } catch (e) { return ''; }
+    }
+    async function loadAuditLog() {
+      const list = document.getElementById('oc-audit-list');
+      if (!list) return;
+      try {
+        const res = await fetch(`${getApiBase()}/api/audit-logs`, { headers: getAdminAuthHeaders() });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !Array.isArray(data)) throw new Error((data && data.error) || 'Could not load audit log');
+        const logs = data.filter(ocIsMine)
+          .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0))
+          .slice(0, 100);
+        if (!logs.length) {
+          list.innerHTML = `<div class="text-slate-400 py-2">No audit entries yet.</div>`;
+          return;
+        }
+        list.innerHTML = logs.map(l => `
+          <div class="py-1.5 flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <span class="font-mono font-bold text-[10px] text-slate-800 break-all">${escapeHtml(l.action || '')}</span>
+              <span class="text-slate-500 block break-words" style="overflow-wrap:anywhere">${escapeHtml(ocAuditDetails(l.details))}</span>
+            </div>
+            <div class="shrink-0 text-right text-[10px] text-slate-500">
+              <span class="font-bold text-slate-700 block truncate max-w-[110px]">${escapeHtml(l.actor || '')}</span>
+              ${ocTime(l.timestamp || l.isoTime)}
+            </div>
+          </div>`).join('');
+      } catch (e) {
+        list.innerHTML = `<div class="text-rose-600 py-2">${escapeHtml(e.message)}</div>`;
+      }
     }
 
     // ==========================================
@@ -7158,7 +7633,7 @@
       evtSource.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          if (['NEW_ORDER', 'STATUS_UPDATE', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE'].includes(data.type)) {
+          if (['NEW_ORDER', 'ORDER_UPDATED', 'STATUS_UPDATE', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE', 'ORDER_SETTINGS_UPDATED'].includes(data.type)) {
             if (currentRestaurant) {
               refreshAllData();
               if (data.type === 'MENU_UPDATE') {
@@ -7170,11 +7645,16 @@
               if (data.type === 'WAITER_SERVICES_UPDATE') {
                 loadWaiterServices();
               }
+              if (data.type === 'ORDER_SETTINGS_UPDATED') {
+                const ordersTab = document.getElementById('tab-orders');
+                if (ordersTab && !ordersTab.classList.contains('hidden')) loadOrderSettings();
+              }
             }
           }
         } catch (err) {}
       };
-      evtSource.onerror = () => { evtSource.close(); };
+      // Let the browser reconnect on its own so live order updates resume after a network blip.
+      evtSource.onerror = () => {};
     } catch(err) {}
 
     // Auto-login if session exists

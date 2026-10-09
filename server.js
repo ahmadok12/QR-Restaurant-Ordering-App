@@ -1585,8 +1585,9 @@ function broadcastEvent(eventData) {
 }
 
 function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
-  const waiters = (db.staff || []).filter(s => 
-    s.restaurantId === restaurantId && 
+  const restKey = canonicalRestId(restaurantId);
+  const waiters = (db.staff || []).filter(s =>
+    canonicalRestId(s.restaurantId) === restKey &&
     s.role === 'waiter' && 
     s.status === 'active'
   );
@@ -1599,7 +1600,7 @@ function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
 
   // Count active orders currently assigned to each waiter (not yet served/settled)
   const activeTickets = (db.tickets || []).filter(t => 
-    (t.restaurantId === restaurantId || !t.restaurantId) && 
+    (canonicalRestId(t.restaurantId) === restKey || !t.restaurantId) &&
     t.status !== 'Served' &&
     !CLOSED_STATUSES.includes(t.status)
   );
@@ -3949,7 +3950,7 @@ const server = http.createServer(async (req, res) => {
       logAuditEvent(db, 'ORDER_VOIDED', {
         ticketId: ticketId,
         table: ticket.table,
-        amount: ticket.total,
+        amount: (Number(ticket.total) || 0) + (Number(ticket.pendingTotal) || 0),
         reason: ticket.voidReason,
         authorizedBy: actor,
         requestedBy: requestedBy,
