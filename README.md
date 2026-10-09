@@ -35,11 +35,7 @@ Optional environment variables:
 - `PORT`: port to listen on (default `3000`).
 
 ### 2. Test the Customer Portal
-Open in your browser:
-```text
-http://localhost:3000/index.html?restaurantId=rest-dera-01&table=04
-```
-Or open the Testing Hub to launch customer, kitchen, waiter, and cashier side-by-side:
+Each table's QR code carries a secret (`&t=...`), so a plain `?table=04` link no longer lets anyone order. Print table QR codes from the restaurant admin portal (Tables / QR section), or open the Testing Hub, which fetches the demo table's code for you to launch customer, kitchen, waiter, and cashier side-by-side:
 ```text
 http://localhost:3000/hub.html
 ```
@@ -48,7 +44,7 @@ http://localhost:3000/hub.html
 ```bash
 node run_tests.js
 ```
-This starts the server against a throwaway database on port 3000 and runs every suite (fraud controls, table layouts, billing and deals, multi-person ordering, co-host sync, security). Your real `data/pos_db.json` is never touched.
+This starts the server against a throwaway database on port 3000 and runs every suite (fraud controls, table layouts, billing and deals, multi-person ordering, co-host sync, order controls, security). Your real `data/pos_db.json` is never touched.
 
 ---
 
@@ -62,3 +58,13 @@ This starts the server against a throwaway database on port 3000 and runs every 
 - **Brute-Force Limits**: 10 failed logins per account in 15 minutes, and 5 wrong manager PINs lock voids for that restaurant for 15 minutes.
 - **No Guest-Set Prices**: Orders containing items that are not on the restaurant's menu are rejected.
 - **Private Data Files**: Only the app's HTML pages are served; the database, server code and tests are not downloadable.
+
+## ✅ Order Controls (customer → waiter → kitchen → cashier)
+- **Waiter confirms every guest order**: a guest's order arrives as a pending round. The waiter confirms it at the table, can lower quantities or drop a wrong item, or rejects it with a reason the guest sees. Only confirmed items reach the kitchen and the bill. Owners can turn this off; rounds over 10 items always need a waiter.
+- **Table QR secrets**: every table QR carries a secret. Orders, carts and the service bell need it, unknown tables are refused, and the owner can issue a new code for a table (old printed codes stop working). Optionally, a waiter must open a table before guests can order.
+- **Server-owned tickets**: ticket ids, status and prices come from the server. A guest's later orders are added as new rounds to the same table ticket; earlier rounds cannot be changed.
+- **Limits**: at most 20 of one item per line, 30 lines per round, one round per phone every 5 seconds; sold-out dishes are refused.
+- **Status only moves forward** (New → In Kitchen → Plated & Ready → Served). Only the cashier settles, and a settled bill cannot be voided or changed. Paying closes the table session, so the next guests start fresh.
+- **Removing items**: removing a confirmed item needs a reason; once the kitchen has started, a waiter also needs the manager PIN. Removed items stay on the record, struck through.
+- **Exceptions report**: the admin portal lists voids, removed items, rejected rounds and failed PIN attempts per waiter, plus served-but-unpaid orders and tables reset without an invoice, with a CSV export.
+- **Pause ordering**: the owner can pause all ordering with a message, or switch off online orders.

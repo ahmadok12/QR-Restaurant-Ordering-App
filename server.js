@@ -3968,7 +3968,7 @@ const server = http.createServer(async (req, res) => {
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, message: `Order ${ticketId} successfully voided.`, ticket: ticket }));
+      res.end(JSON.stringify({ ok: true, message: `Order ${ticketId} successfully voided.`, ticket: guestTicketView(ticket) }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
