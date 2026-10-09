@@ -656,10 +656,18 @@ function verifyAuthToken(token) {
 
 function getRequestAuth(req) {
   const authHeader = req.headers['authorization'] || '';
-  if (authHeader.startsWith('Bearer ')) {
-    return verifyAuthToken(authHeader.substring(7).trim());
-  }
+  if (authHeader.startsWith('Bearer ')) return authFromToken(authHeader.substring(7).trim());
   return null;
+}
+
+function authFromToken(token) {
+  const auth = verifyAuthToken(token);
+  // Switching the waiter app off also stops waiter logins that are already open
+  if (auth && auth.role === 'waiter') {
+    const rest = findRestaurant(readDb(), auth.restaurantId);
+    if (rest && !isWaiterAppActive(rest)) return null;
+  }
+  return auth;
 }
 
 const ADMIN_ROLES = ['restaurant_admin', 'super_admin'];
@@ -730,6 +738,9 @@ function staffTable(t, auth) {
   if (isAdmin) rest.qrToken = qrToken;
   if (session) {
     const { hostDeviceId, ...sessionRest } = session;
+    sessionRest.participants = (session.participants || []).map(p => ({ key: deviceKey(p.deviceId), name: p.name, isHost: p.deviceId === hostDeviceId, joinedAt: p.joinedAt }));
+    sessionRest.draftCart = (session.draftCart || []).map(publicCartLine);
+    sessionRest.events = (session.events || []).map(publicSessionEvent);
     rest.session = sessionRest;
   }
   return rest;
@@ -737,11 +748,27 @@ function staffTable(t, auth) {
 
 function publicDb(db, auth) {
   const copy = { ...db };
+  copy.soldOut = soldOutListFor(db, auth && auth.restaurantId !== 'ALL' ? auth.restaurantId : 'REST-001');
+  delete copy.soldOutByRestaurant;
+  const isAdmin = Boolean(auth && ADMIN_ROLES.includes(auth.role));
+  const isSuper = Boolean(auth && auth.role === 'super_admin');
+  const mine = item => canAccessRestaurant(auth, item && item.restaurantId);
+  const noDevice = ({ deviceId, ownerDeviceId, diners, ...rest }) => rest;
   copy.tables = (db.tables || []).map(t => staffTable(t, auth));
   delete copy.superAdmin;
   delete copy.managerPin;
-  copy.restaurants = (db.restaurants || []).map(publicRestaurant);
-  copy.staff = (db.staff || []).map(publicStaff);
+  copy.restaurants = (db.restaurants || []).filter(r => isSuper || mine({ restaurantId: r.id })).map(publicRestaurant);
+  copy.staff = (db.staff || []).filter(mine).map(publicStaff);
+  copy.tickets = (db.tickets || []).filter(mine).map(t => ({
+    ...noDevice(t),
+    pendingRounds: (t.pendingRounds || []).map(noDevice),
+    rounds: (t.rounds || []).map(noDevice)
+  }));
+  const cashRoles = isAdmin || (auth && auth.role === 'cashier');
+  copy.sales = cashRoles ? (db.sales || []).filter(mine) : [];
+  copy.shifts = cashRoles ? (db.shifts || []).filter(mine) : [];
+  copy.auditLogs = isAdmin ? (db.auditLogs || []).filter(l => isSuper || (l.restaurantId && mine(l))) : [];
+  copy.feedback = isAdmin ? (db.feedback || []).filter(mine).map(noDevice) : [];
   return copy;
 }
 
@@ -888,8 +915,10 @@ function calculateAuthoritativeOrder(order, db, targetRestId, options = {}) {
 
     if (canonical && canonical.sizeOptions && Array.isArray(canonical.sizeOptions) && item.size) {
       const sizeOpt = canonical.sizeOptions.find(s => s.name === item.size);
-      if (sizeOpt && !isNaN(Number(sizeOpt.price))) {
+      if (sizeOpt && sizeOpt.price !== undefined && sizeOpt.price !== null && !isNaN(Number(sizeOpt.price))) {
         unitPrice = Number(sizeOpt.price);
+      } else if (sizeOpt && !isNaN(Number(sizeOpt.extra))) {
+        unitPrice = canonical.price + Number(sizeOpt.extra);
       }
     }
 
@@ -1073,11 +1102,19 @@ function findOpenTicketForTable(db, tbl) {
   return (db.tickets || []).find(t => isTicketOpen(t) && t.table && tableNames.includes(String(t.table).toLowerCase())) || null;
 }
 
+// Each restaurant keeps its own sold-out list. The old shared list counts for the demo restaurant.
+function soldOutListFor(db, restId) {
+  const key = canonicalRestId(restId || 'REST-001');
+  const byRest = db.soldOutByRestaurant || {};
+  if (Array.isArray(byRest[key])) return byRest[key];
+  return key === canonicalRestId('REST-001') && Array.isArray(db.soldOut) ? db.soldOut : [];
+}
+
 function isDishSoldOut(db, dish) {
   if (!dish) return false;
   if (dish.isAvailable === false) return true;
   if (['sold_out', 'unavailable', 'soldout'].includes(String(dish.status || '').toLowerCase())) return true;
-  const soldOut = Array.isArray(db.soldOut) ? db.soldOut.map(String) : [];
+  const soldOut = soldOutListFor(db, dish.restaurantId || 'REST-001').map(String);
   return soldOut.includes(String(dish.id)) || (dish.title && soldOut.includes(dish.title));
 }
 
@@ -1181,12 +1218,28 @@ function guestTicketView(ticket) {
     pendingTotal: ticket.pendingTotal || 0,
     notices: ticket.notices || [],
     billRequested: Boolean(ticket.billRequested),
+    estimatedReadyAt: ['New', 'In Kitchen'].includes(ticket.status) ? (ticket.estimatedReadyAt || null) : null,
     invoiceNumber: ticket.invoiceNumber || null
   };
 }
 
 function staffActorName(auth) {
   return auth ? (auth.name || auth.role) : 'Staff';
+}
+
+// Upper bound of a dish's prep time ("20-25 mins" -> 25), 20 minutes when unknown.
+function prepMinutesFor(db, dishId) {
+  const dish = (db.menu || []).find(d => String(d.id) === String(dishId));
+  const nums = String((dish && dish.prepTime) || '').match(/\d+/g);
+  const mins = nums ? parseInt(nums[nums.length - 1], 10) : 20;
+  return Math.min(Math.max(mins || 20, 5), 120);
+}
+
+// Phones that ordered or sat at the table for this ticket; only they may rate it.
+function addTicketDiner(ticket, deviceId) {
+  if (!ticket || !deviceId) return;
+  if (!Array.isArray(ticket.diners)) ticket.diners = [];
+  if (!ticket.diners.includes(deviceId) && ticket.diners.length < 30) ticket.diners.push(deviceId);
 }
 
 function confirmRound(db, ticket, round, auth, edits) {
@@ -1222,6 +1275,10 @@ function confirmRound(db, ticket, round, auth, edits) {
   }
   if (lines.length === 0 && (ticket.items || []).length === 0 && (ticket.pendingRounds || []).length === 0) {
     ticket.status = 'Rejected';
+  }
+  if (lines.length > 0) {
+    const prep = Math.max(...lines.map(l => prepMinutesFor(db, l.dishId)));
+    ticket.estimatedReadyAt = Math.max(ticket.estimatedReadyAt || 0, confirmedAt + prep * 60000);
   }
   recomputeTicketTotals(ticket, db);
   addTicketNotice(ticket, changes.length
@@ -1279,6 +1336,9 @@ function placeOrder(db, eventData, auth) {
       return { status: 404, body: { error: 'Table not found.' } };
     }
     ticket = findOpenTicketForTable(db, tbl);
+    if (ticket && canonicalRestId(ticket.restaurantId) !== restId) {
+      return { status: 409, body: { error: 'This table already has an order with another restaurant.' } };
+    }
 
     if (!isStaff && settings.requireTableOpen && !ticket && !tbl.openForOrders) {
       return { status: 423, body: { error: 'This table has not been opened yet. Please ask your waiter.', tableClosed: true } };
@@ -1376,6 +1436,8 @@ function placeOrder(db, eventData, auth) {
 
   if (tbl && tbl.session) tbl.session.draftCart = [];
   if (!isStaff) lastRoundByDevice.set(deviceId, Date.now());
+  addTicketDiner(ticket, deviceId);
+  if (tbl && tbl.session) (tbl.session.participants || []).forEach(p => addTicketDiner(ticket, p.deviceId));
   syncTableOrder(db, ticket);
 
   logAuditEvent(db, isNewTicket ? 'ORDER_CREATED' : 'ORDER_ROUND_ADDED', {
@@ -1413,6 +1475,7 @@ function changeTicketStatus(db, ticketId, newStatus, auth) {
 
   const previous = ticket.status;
   ticket.status = target;
+  if (target !== 'New') ticket.kitchenStartedAt = Date.now();
   if (!ticket.statusHistory) ticket.statusHistory = [];
   ticket.statusHistory.push({ from: previous, to: target, by: staffActorName(auth), staffId: auth.userId, at: Date.now() });
   if (target === 'Plated & Ready') addTicketNotice(ticket, 'Your food is ready and on its way.');
@@ -1477,11 +1540,13 @@ function removeConfirmedLine(db, data, auth) {
   if (!reason) return { status: 400, body: { error: 'Please give a reason for removing the item.' } };
   const [ticket, err] = loadStaffTicket(db, data.ticketId, auth);
   if (err) return err;
-  const line = (ticket.items || []).find(l => l.lineId === data.lineId);
+  const line = data.lineId ? (ticket.items || []).find(l => l.lineId === data.lineId) : null;
   if (!line) return { status: 404, body: { error: 'Item not found on this order.' } };
   if (line.voided) return { status: 409, body: { error: 'This item was already removed.' } };
 
-  const kitchenStarted = ticket.status !== 'New';
+  // A line the kitchen may already have started needs the PIN, even if a later round put the ticket back to New
+  const kitchenStarted = ticket.status !== 'New' ||
+    Boolean(ticket.kitchenStartedAt && (line.confirmedAt || 0) <= ticket.kitchenStartedAt);
   const isAdmin = ADMIN_ROLES.includes(auth.role);
   let authorizedBy = staffActorName(auth);
   if (kitchenStarted && !isAdmin) {
@@ -1513,6 +1578,124 @@ function removeConfirmedLine(db, data, auth) {
     afterKitchenStarted: kitchenStarted, authorizedBy, staffId: auth.userId, assignedWaiterId: ticket.assignedWaiterId
   }, staffActorName(auth), ticket.restaurantId);
   return { status: 200, body: { ok: true, ticket: guestTicketView(ticket) }, ticket };
+}
+
+// Reads ?from=YYYY-MM-DD&to=YYYY-MM-DD (local days); defaults to today.
+// Days are read in the browser's time zone when it sends tzOffset (minutes, as from getTimezoneOffset()).
+function reportRange(query) {
+  const tz = Number(query.tzOffset);
+  const hasTz = query.tzOffset !== undefined && Number.isFinite(tz) && Math.abs(tz) <= 14 * 60;
+  const parseDay = (v, endOfDay) => {
+    if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    if (hasTz) {
+      const utcMidnight = Date.parse(v + 'T00:00:00Z');
+      if (isNaN(utcMidnight)) return null;
+      return utcMidnight + tz * 60000 + (endOfDay ? 86400000 - 1 : 0);
+    }
+    const d = new Date(v + (endOfDay ? 'T23:59:59.999' : 'T00:00:00'));
+    return isNaN(d.getTime()) ? null : d.getTime();
+  };
+  const now = Date.now();
+  let startOfToday;
+  if (hasTz) {
+    const local = new Date(now - tz * 60000);
+    startOfToday = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) + tz * 60000;
+  } else {
+    const d = new Date(); d.setHours(0, 0, 0, 0); startOfToday = d.getTime();
+  }
+  return {
+    fromMs: parseDay(query.from, false) || startOfToday,
+    toMs: parseDay(query.to, true) || now,
+    tzOffset: hasTz ? tz : null
+  };
+}
+
+// tzOffset (minutes, browser style) shifts the day to the caller's zone; null uses the server's zone.
+function localDay(ms, tzOffset) {
+  if (tzOffset !== null && tzOffset !== undefined) return new Date(ms - tzOffset * 60000).toISOString().slice(0, 10);
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function localTime(ms, tzOffset) {
+  if (tzOffset === null || tzOffset === undefined || !ms) return '';
+  return new Date(ms - tzOffset * 60000).toISOString().slice(11, 16);
+}
+
+function localHour(ms, tzOffset) {
+  if (tzOffset !== null && tzOffset !== undefined) return new Date(ms - tzOffset * 60000).getUTCHours();
+  return new Date(ms).getHours();
+}
+
+function csvCell(v) {
+  let str = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\-@]/.test(str)) str = "'" + str; // keep spreadsheet formulas from running
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+// Sales report for owners: settled bills in a date range.
+function buildSalesReport(db, restId, fromMs, toMs, tzOffset) {
+  const key = canonicalRestId(restId);
+  const sales = (db.sales || []).filter(s => canonicalRestId(s.restaurantId) === key && s.timestamp >= fromMs && s.timestamp <= toMs);
+  const ticketsById = new Map((db.tickets || []).map(t => [t.ticketId, t]));
+  const group = (keyFn) => {
+    const map = new Map();
+    sales.forEach(sale => {
+      const k = keyFn(sale) || 'Unknown';
+      const row = map.get(k) || { key: k, orders: 0, total: 0 };
+      row.orders += 1;
+      row.total += Number(sale.total) || 0;
+      map.set(k, row);
+    });
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  };
+  const dishes = new Map();
+  sales.forEach(sale => (sale.items || []).filter(l => !l.voided).forEach(l => {
+    const row = dishes.get(l.title) || { title: l.title, qty: 0, revenue: 0 };
+    row.qty += Number(l.qty) || 0;
+    row.revenue += (Number(l.price) || 0) * (Number(l.qty) || 0);
+    dishes.set(l.title, row);
+  }));
+  const gross = sales.reduce((s, x) => s + (Number(x.total) || 0), 0);
+  const waiterOf = sale => sale.waiterName || (ticketsById.get(sale.ticketId) || {}).assignedWaiterName;
+  return {
+    from: new Date(fromMs).toISOString(),
+    to: new Date(toMs).toISOString(),
+    totals: {
+      orders: sales.length,
+      gross,
+      subtotal: sales.reduce((s, x) => s + (Number(x.subtotal) || 0), 0),
+      tax: sales.reduce((s, x) => s + (Number(x.tax) || 0), 0),
+      averageBill: sales.length ? Math.round(gross / sales.length) : 0
+    },
+    byDay: group(sale => localDay(sale.timestamp, tzOffset)).sort((a, b) => a.key.localeCompare(b.key)),
+    byHour: group(sale => String(localHour(sale.timestamp, tzOffset)).padStart(2, '0') + ':00').sort((a, b) => a.key.localeCompare(b.key)),
+    byPayment: group(sale => sale.paymentMethod),
+    byWaiter: group(waiterOf),
+    topDishes: [...dishes.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 20),
+    sales: sales.map(sale => ({
+      invoiceNumber: sale.invoiceNumber, ticketId: sale.ticketId, table: sale.table, date: localDay(sale.timestamp, tzOffset),
+      time: localTime(sale.timestamp, tzOffset) || sale.time, waiter: waiterOf(sale) || '', cashier: sale.cashierName, paymentMethod: sale.paymentMethod,
+      subtotal: sale.subtotal, tax: sale.tax, total: sale.total
+    }))
+  };
+}
+
+function salesReportCsv(report) {
+  const cols = ['invoiceNumber', 'date', 'time', 'table', 'waiter', 'cashier', 'paymentMethod', 'subtotal', 'tax', 'total'];
+  return [cols.join(','), ...report.sales.map(row => cols.map(c => csvCell(row[c])).join(','))].join('\n') + '\n';
+}
+
+function buildFeedbackReport(db, restId, fromMs, toMs) {
+  const key = canonicalRestId(restId);
+  const entries = (db.feedback || []).filter(f => canonicalRestId(f.restaurantId) === key && f.timestamp >= fromMs && f.timestamp <= toMs);
+  const distribution = [1, 2, 3, 4, 5].map(r => ({ rating: r, count: entries.filter(f => f.rating === r).length }));
+  return {
+    count: entries.length,
+    averageRating: entries.length ? Math.round(entries.reduce((s, f) => s + f.rating, 0) / entries.length * 10) / 10 : null,
+    distribution,
+    entries: entries.slice(0, 200)
+  };
 }
 
 // Exceptions report for owners: who voided, removed or rejected what, and loose ends.
@@ -1570,12 +1753,38 @@ function buildExceptionsReport(db, restId, fromMs, toMs) {
 
 const sseClients = new Set();
 
+// Who may receive which live event:
+// - staff (connected with ?token=) get their own restaurant's events;
+// - a guest phone (connected with ?table=&t=) gets its own table's events plus public ones;
+// - anyone else only gets public menu/settings events.
+const PUBLIC_LIVE_EVENTS = new Set([
+  'MENU_UPDATE', 'CATEGORIES_UPDATE', 'SIDES_UPDATE', 'TAGS_UPDATE', 'EXTRAS_UPDATE', 'WAITER_SERVICES_UPDATE',
+  'THEME_UPDATED', 'ITEM_86_UPDATE', 'ORDER_SETTINGS_UPDATED', 'MODULES_UPDATED', 'TABLES_UPDATED', 'SECTIONS_UPDATED'
+]);
+const TABLE_LIVE_EVENTS = new Set([
+  'NEW_ORDER', 'STATUS_UPDATE', 'ORDER_UPDATED', 'BILL_SETTLED', 'SERVICE_BELL', 'SERVICE_BELL_RESOLVED',
+  'TABLE_SESSION_UPDATED', 'TABLE_CART_UPDATED', 'TABLE_ACTIVITY', 'TABLE_ORDER_UPDATED'
+]);
+
+function liveEventAllowed(client, ev) {
+  const scope = client.liveScope || {};
+  const restMatches = !ev.restaurantId || !scope.restKey || canonicalRestId(ev.restaurantId) === scope.restKey;
+  if (scope.staff) return scope.superAdmin || restMatches;
+  if (PUBLIC_LIVE_EVENTS.has(ev.type)) return restMatches;
+  if (scope.table && TABLE_LIVE_EVENTS.has(ev.type)) {
+    const evTable = String(ev.table || (ev.order && ev.order.table) || '').toLowerCase();
+    return scope.table.includes(evTable);
+  }
+  return false;
+}
+
 function broadcastEvent(eventData) {
   if (!eventData.eventId) {
     eventData.eventId = 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
   }
   const payload = 'data: ' + JSON.stringify(eventData) + '\n\n';
   sseClients.forEach(client => {
+    if (!liveEventAllowed(client, eventData)) return;
     try {
       client.write(payload);
     } catch (e) {
@@ -1584,7 +1793,129 @@ function broadcastEvent(eventData) {
   });
 }
 
+// ==========================================
+// Table session helpers (multi-person ordering)
+// ==========================================
+const SESSION_IDLE_TIMEOUT_MS = 3 * 60 * 60 * 1000; // 3 hours without activity ends a table session
+const SESSION_EVENT_LIMIT = 60;
+
+function isSessionActive(session) {
+  if (!session || !session.hostDeviceId) return false;
+  const last = session.lastActivityAt || session.createdAt || 0;
+  return (Date.now() - last) < SESSION_IDLE_TIMEOUT_MS;
+}
+
+function ensureSessionShape(session) {
+  if (!session) return session;
+  if (!Array.isArray(session.draftCart)) session.draftCart = [];
+  if (!Array.isArray(session.participants)) session.participants = [];
+  if (!Array.isArray(session.events)) session.events = [];
+  if (typeof session.eventSeq !== 'number') session.eventSeq = 0;
+  // Make sure the host is always listed as a participant
+  if (session.hostDeviceId && !session.participants.find(p => p.deviceId === session.hostDeviceId) && !String(session.hostDeviceId).startsWith('host_peer_')) {
+    session.participants.unshift({ deviceId: session.hostDeviceId, name: session.hostName || 'Table Host', joinedAt: session.createdAt || Date.now() });
+  }
+  return session;
+}
+
+// When each phone last polled its table, kept in memory so the 2 s poll never writes the database.
+const tablePresence = new Map();
+const HOST_AWAY_MS = Number(process.env.HOST_AWAY_MS) || 2 * 60 * 1000;
+function markPresent(tNum, deviceId) {
+  if (deviceId) tablePresence.set(tNum + '|' + deviceId, Date.now());
+}
+function lastSeen(tNum, person) {
+  if (!person) return 0;
+  return Math.max(tablePresence.get(tNum + '|' + person.deviceId) || 0, Number(person.lastSeenAt) || 0, Number(person.joinedAt) || 0);
+}
+
+function cleanGuestName(raw) {
+  return String(raw || '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 24);
+}
+
+function nextGuestName(session) {
+  const n = (session && Array.isArray(session.participants) ? session.participants.length : 0) + 1;
+  return `Guest ${n}`;
+}
+
+// Device ids act as a guest's identity for ordering, so other phones only ever see a one-way key.
+function deviceKey(deviceId) {
+  if (!deviceId) return null;
+  return crypto.createHmac('sha256', AUTH_SECRET).update('device:' + deviceId).digest('hex').slice(0, 16);
+}
+
+function publicSessionEvent(ev) {
+  if (!ev) return ev;
+  const { deviceId, ...rest } = ev;
+  return { ...rest, actorKey: deviceKey(deviceId) };
+}
+
+function publicCartLine(line) {
+  if (!line) return line;
+  const { addedByDeviceId, ...rest } = line;
+  return { ...rest, addedByKey: deviceKey(addedByDeviceId) };
+}
+
+function publicParticipants(session) {
+  ensureSessionShape(session);
+  return session.participants.map(p => ({
+    key: deviceKey(p.deviceId),
+    name: p.name,
+    isHost: p.deviceId === session.hostDeviceId,
+    joinedAt: p.joinedAt
+  }));
+}
+
+// Records a table activity (joined / added / removed) so every phone at the table can show it.
+// Phones receive it instantly over SSE, and the 2s poll returns anything they missed (by seq number).
+function pushSessionEvent(tbl, tableStr, ev, broadcast = true) {
+  const session = ensureSessionShape(tbl.session);
+  session.eventSeq += 1;
+  const event = { seq: session.eventSeq, at: Date.now(), ...ev };
+  session.events.push(event);
+  if (session.events.length > SESSION_EVENT_LIMIT) {
+    session.events = session.events.slice(-SESSION_EVENT_LIMIT);
+  }
+  if (broadcast) {
+    broadcastEvent({
+      type: 'TABLE_ACTIVITY',
+      table: tableStr,
+      activity: publicSessionEvent(event),
+      participants: publicParticipants(session),
+      hostName: session.hostName
+    });
+  }
+  return event;
+}
+
+// ==========================================
+// Optional modules controlled by subscription
+// ==========================================
+// features.waiterApp   -> set by the platform Super Admin (is it included in the plan?)
+// settings.waiterAppEnabled -> set by the Restaurant Admin (do they want to use it right now?)
+// The waiter app works only when BOTH are true.
+function getWaiterAppFlags(rest) {
+  const r = rest || {};
+  const allowed = r.features && typeof r.features.waiterApp === 'boolean' ? r.features.waiterApp : true; // existing restaurants keep access
+  const enabled = r.settings && typeof r.settings.waiterAppEnabled === 'boolean' ? r.settings.waiterAppEnabled : true;
+  return { allowed, enabled, active: allowed && enabled };
+}
+
+function isWaiterAppActive(rest) {
+  return getWaiterAppFlags(rest).active;
+}
+
+
 function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
+  // Waiter app switched off (or not in plan): orders and calls go to the admin panel instead
+  const restForAssign = findRestaurant(db, restaurantId);
+  if (restForAssign && !isWaiterAppActive(restForAssign)) {
+    return { id: 'unassigned', name: 'Restaurant Admin (Waiter app off)' };
+  }
   const restKey = canonicalRestId(restaurantId);
   const waiters = (db.staff || []).filter(s =>
     canonicalRestId(s.restaurantId) === restKey &&
@@ -1634,7 +1965,8 @@ function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
 
 const PUBLIC_PAGES = new Set([
   'index.html', 'hub.html', 'restaurant_admin.html', 'super_admin.html',
-  'cashier.html', 'waiter.html', 'kds.html', 'admin.html'
+  'cashier.html', 'waiter.html', 'kds.html', 'admin.html',
+  'waiter.webmanifest', 'waiter-icon.svg'
 ]);
 
 const MIME_TYPES = {
@@ -1646,7 +1978,8 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
 
 function parseBody(req) {
@@ -1680,8 +2013,8 @@ function requiredRolesFor(method, pathname) {
   if (isWrite && (pathname === '/api/restaurant/theme' || pathname === '/api/restaurant/billing-settings')) return ADMIN_ROLES;
   if (pathname === '/api/test/reset-table') return ADMIN_ROLES;
   if (pathname === '/api/table-session/switch-role') return ADMIN_ROLES;
-  if (['/api/orders/confirm', '/api/orders/reject', '/api/orders/remove-line', '/api/tables/open'].includes(pathname)) return STAFF_ROLES;
-  if (pathname === '/api/tables/rotate-token' || pathname === '/api/restaurant/order-settings' || pathname === '/api/reports/exceptions') return ADMIN_ROLES;
+  if (['/api/orders/confirm', '/api/orders/reject', '/api/orders/remove-line', '/api/orders/void', '/api/tables/open'].includes(pathname)) return STAFF_ROLES;
+  if (pathname === '/api/tables/rotate-token' || pathname === '/api/restaurant/order-settings' || pathname.startsWith('/api/reports/')) return ADMIN_ROLES;
   if (method === 'GET' && (pathname === '/api/db' || pathname === '/api/tables')) return STAFF_ROLES;
   return null;
 }
@@ -1711,6 +2044,20 @@ const server = http.createServer(async (req, res) => {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive'
     });
+    const q = parsedUrl.query;
+    const liveAuth = (q.token ? authFromToken(String(q.token)) : null) || getRequestAuth(req);
+    if (liveAuth && STAFF_ROLES.includes(liveAuth.role)) {
+      res.liveScope = { staff: true, superAdmin: liveAuth.role === 'super_admin', restKey: canonicalRestId(liveAuth.restaurantId) };
+    } else {
+      res.liveScope = { restKey: q.restaurantId ? canonicalRestId(String(q.restaurantId)) : null };
+      if (q.table) {
+        const liveDb = readDb();
+        const liveTable = findTable(liveDb, String(q.table));
+        if (liveTable && !tableAccessError(liveTable, q.t || q.tableToken)) {
+          res.liveScope.table = [liveTable.name, `Table ${liveTable.id}`].filter(Boolean).map(n => String(n).toLowerCase());
+        }
+      }
+    }
     res.write(': connected\n\n');
     sseClients.add(res);
     req.on('close', () => {
@@ -1752,6 +2099,7 @@ const server = http.createServer(async (req, res) => {
           const o = getOrderSettings(rest);
           return { paused: o.orderingPaused, message: o.pausedMessage, online: o.onlineOrdering, waiterConfirms: o.requireWaiterConfirm };
         })(),
+        modules: { waiterApp: getWaiterAppFlags(rest) },
         theme: rest.theme || DEFAULT_THEME,
         billingCharges: (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
           ? rest.billingCharges
@@ -1770,7 +2118,7 @@ const server = http.createServer(async (req, res) => {
           ],
       sections: db.sections || Array.from(new Set(safeTables.map(t => t.zone))),
       tables: safeTables,
-      soldOut: db.soldOut || [],
+      soldOut: soldOutListFor(db, rest.id || restId),
       serverIp: getLocalIpAddress(),
       port: PORT,
       mobileUrl: `http://${getLocalIpAddress()}:${PORT}/?table=04`
@@ -1848,6 +2196,9 @@ const server = http.createServer(async (req, res) => {
         currency: 'Rs.',
         taxRate: 0.05,
         theme: { ...DEFAULT_THEME },
+        // Optional modules: waiter app only when the plan includes it (Super Admin decides)
+        features: { waiterApp: !!(data.features && data.features.waiterApp) },
+        settings: { waiterAppEnabled: !!(data.features && data.features.waiterApp) },
         createdAt: new Date().toISOString()
       };
 
@@ -1878,7 +2229,7 @@ const server = http.createServer(async (req, res) => {
       const auth = getRequestAuth(req);
       const data = await parseBody(req);
       const db = readDb();
-      const idx = (db.restaurants || []).findIndex(r => r.id === restId);
+      const idx = (db.restaurants || []).findIndex(r => canonicalRestId(r.id) === canonicalRestId(restId));
       if (idx === -1) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Restaurant not found' }));
@@ -1938,6 +2289,20 @@ const server = http.createServer(async (req, res) => {
         rest.subscriptionCancelled = false;
         rest.status = 'active';
         logAuditEvent(db, 'SUBSCRIPTION_CHANGED', { restaurantId: restId, newPlan: data.plan }, auth ? auth.name : 'Super Admin', restId);
+      }
+
+      // Optional modules included in this restaurant's subscription (Super Admin only)
+      if (data.features && typeof data.features === 'object') {
+        if (!auth || auth.role !== 'super_admin') {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Only the platform super admin can change subscription features.' }));
+          return;
+        }
+        if (typeof data.features.waiterApp === 'boolean') {
+          rest.features = { ...(rest.features || {}), waiterApp: data.features.waiterApp };
+          logAuditEvent(db, 'SUBSCRIPTION_FEATURES_CHANGED', { restaurantId: restId, waiterApp: data.features.waiterApp }, auth.name || 'Super Admin', restId);
+          broadcastEvent({ type: 'MODULES_UPDATED', restaurantId: restId, waiterApp: getWaiterAppFlags(rest) });
+        }
       }
 
       if (data.credentials) {
@@ -2066,6 +2431,21 @@ const server = http.createServer(async (req, res) => {
           res.end(JSON.stringify({ 
             error: 'Restaurant subscription is inactive. Access locked.',
             isCancelled: true 
+          }));
+          return;
+        }
+
+        // Waiter app is an optional, subscription-controlled module
+        if (staffMember.role === 'waiter' && !isWaiterAppActive(staffRest)) {
+          const wf = getWaiterAppFlags(staffRest);
+          logAuditEvent(db, 'LOGIN_BLOCKED_WAITER_APP_OFF', { role: 'waiter', email: email, staffId: staffMember.id }, staffMember.name, staffMember.restaurantId);
+          writeDb(db);
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: wf.allowed
+              ? 'The waiter app is turned off for this restaurant. Ask your manager to switch it on in the admin panel.'
+              : 'The waiter app is not included in this restaurant\'s subscription.',
+            waiterAppDisabled: true
           }));
           return;
         }
@@ -2390,6 +2770,66 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ==========================================
+  // Optional modules (Waiter App on/off)
+  // ==========================================
+
+  // GET /api/restaurant/modules?restaurantId=REST-001
+  if (pathname === '/api/restaurant/modules' && req.method === 'GET') {
+    const db = readDb();
+    const auth = getRequestAuth(req);
+    const restId = parsedUrl.query.restaurantId || (auth ? auth.restaurantId : null) || 'REST-001';
+    const rest = findRestaurant(db, restId);
+    if (!rest) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Restaurant not found' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, restaurantId: rest.id, waiterApp: getWaiterAppFlags(rest) }));
+    return;
+  }
+
+  // POST /api/restaurant/modules  { waiterAppEnabled: true|false }  (Restaurant Admin only)
+  if (pathname === '/api/restaurant/modules' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      if (!auth || (auth.role !== 'restaurant_admin' && auth.role !== 'super_admin')) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Only the restaurant admin can change app modules.' }));
+        return;
+      }
+      const data = await parseBody(req);
+      const db = readDb();
+      const restId = auth.role === 'restaurant_admin' ? auth.restaurantId : (data.restaurantId || 'REST-001');
+      const rest = findRestaurant(db, restId);
+      if (!rest) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Restaurant not found' }));
+        return;
+      }
+      if (typeof data.waiterAppEnabled === 'boolean') {
+        const flags = getWaiterAppFlags(rest);
+        if (data.waiterAppEnabled && !flags.allowed) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'The waiter app is not included in your subscription. Contact us to upgrade.', notInPlan: true, waiterApp: flags }));
+          return;
+        }
+        rest.settings = { ...(rest.settings || {}), waiterAppEnabled: data.waiterAppEnabled };
+        logAuditEvent(db, 'WAITER_APP_TOGGLED', { restaurantId: rest.id, enabled: data.waiterAppEnabled }, auth.name || 'Restaurant Admin', rest.id);
+      }
+      writeDb(db);
+      const waiterApp = getWaiterAppFlags(rest);
+      broadcastEvent({ type: 'MODULES_UPDATED', restaurantId: rest.id, waiterApp });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, waiterApp }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ==========================================
   // Restaurant Billing & Tax Charges Endpoints
   // ==========================================
 
@@ -2554,6 +2994,30 @@ const server = http.createServer(async (req, res) => {
   // Multi-Person Table Session Endpoints
   // ==========================================
 
+  // GET /api/table-session/peek (Who is already at this table? Used by the name screen before joining)
+  if (pathname === '/api/table-session/peek' && req.method === 'GET') {
+    const rawTable = (parsedUrl.query.table || '04').toString().replace('Table ', '').trim();
+    const tNum = rawTable.padStart(2, '0');
+    const tableStr = `Table ${tNum}`;
+    const db = readDb();
+    const tbl = findTable(db, rawTable);
+    const accessError = tableAccessError(tbl, parsedUrl.query.t || parsedUrl.query.tableToken);
+    if (accessError) {
+      sendJson(res, 403, { error: accessError, invalidTable: true });
+      return;
+    }
+    const active = Boolean(isSessionActive(tbl.session));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      table: tNum,
+      active,
+      hostName: active ? tbl.session.hostName : null,
+      participants: active ? publicParticipants(tbl.session) : []
+    }));
+    return;
+  }
+
   // POST /api/table-session/join (1st person to scan becomes Host)
   if (pathname === '/api/table-session/join' && req.method === 'POST') {
     try {
@@ -2562,7 +3026,7 @@ const server = http.createServer(async (req, res) => {
       const tNum = rawTable.padStart(2, '0');
       const tableStr = `Table ${tNum}`;
       const deviceId = (data.deviceId || '').trim();
-      const clientName = cleanText((data.name || '').trim(), 60);
+      const clientName = cleanText(cleanGuestName(data.name), 60);
 
       if (!deviceId) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -2582,21 +3046,23 @@ const server = http.createServer(async (req, res) => {
       const openTicket = findOpenTicketForTable(db, tbl);
       const hasActiveOrder = Boolean(openTicket);
 
-      // Check if existing session is active and valid (less than 1 hour old)
-      const sessionValid = tbl.session && tbl.session.hostDeviceId && (Date.now() - (tbl.session.createdAt || 0) < 3600000);
+      // A session stays valid while the table is active (idle timeout, not a fixed age),
+      // so long dinners keep the same host. The FIRST person to scan an idle table becomes host;
+      // later scanners join as co-diners and never reset the shared cart.
+      const sessionValid = isSessionActive(tbl.session);
 
-      // If table is vacant, has no session, has no active order, or client claims host:
-      let isNewSession = false;
-      if (!sessionValid || (!hasActiveOrder && data.claimHost) || data.forceHost) {
+      if (!sessionValid) {
         tbl.session = {
           sessionId: (sessionValid && tbl.session.sessionId) || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
           hostDeviceId: deviceId,
-          hostName: clientName || `Table Host`,
+          hostName: clientName || 'Table Host',
           createdAt: Date.now(),
-          draftCart: (!hasActiveOrder && (data.claimHost || data.forceHost)) ? [] : (tbl.session ? (tbl.session.draftCart || []) : [])
+          lastActivityAt: Date.now(),
+          draftCart: (sessionValid && tbl.session.draftCart) ? tbl.session.draftCart : [],
+          participants: (sessionValid && tbl.session.participants) ? tbl.session.participants : [],
+          events: (sessionValid && tbl.session.events) ? tbl.session.events : [],
+          eventSeq: (sessionValid && tbl.session.eventSeq) ? tbl.session.eventSeq : 0
         };
-        isNewSession = true;
-        writeDb(db);
         broadcastEvent({
           type: 'TABLE_SESSION_UPDATED',
           table: tableStr,
@@ -2604,6 +3070,44 @@ const server = http.createServer(async (req, res) => {
           sessionId: tbl.session.sessionId
         });
       }
+      ensureSessionShape(tbl.session);
+
+      // Register (or rename) this person at the table
+      let person = tbl.session.participants.find(p => p.deviceId === deviceId);
+      const isFirstJoin = !person;
+      if (!person) {
+        person = { deviceId, name: clientName || nextGuestName(tbl.session), joinedAt: Date.now() };
+        tbl.session.participants.push(person);
+      } else if (clientName && clientName !== person.name) {
+        person.name = clientName;
+      }
+      person.lastSeenAt = Date.now();
+      markPresent(tNum, deviceId);
+      if (openTicket) addTicketDiner(openTicket, deviceId);
+      // A host who scanned and left before ordering would block the table: once nothing has been
+      // ordered or added and the host's phone has been gone for 2 minutes, the person joining takes over.
+      const session = tbl.session;
+      if (!openTicket && session.hostDeviceId !== deviceId && !(session.draftCart || []).length) {
+        const host = session.participants.find(p => p.deviceId === session.hostDeviceId);
+        if (Date.now() - lastSeen(tNum, host) > HOST_AWAY_MS) {
+          session.hostDeviceId = deviceId;
+          session.hostName = person.name;
+          broadcastEvent({ type: 'TABLE_SESSION_UPDATED', table: tableStr, hostName: session.hostName, sessionId: session.sessionId });
+        }
+      }
+      if (tbl.session.hostDeviceId === deviceId && clientName) {
+        tbl.session.hostName = clientName;
+      }
+      tbl.session.lastActivityAt = Date.now();
+      if (isFirstJoin) {
+        pushSessionEvent(tbl, tableStr, {
+          kind: 'joined',
+          deviceId,
+          name: person.name,
+          text: `${person.name} joined the table`
+        });
+      }
+      writeDb(db);
 
       const isHost = (tbl.session.hostDeviceId === deviceId);
 
@@ -2613,9 +3117,13 @@ const server = http.createServer(async (req, res) => {
         table: tNum,
         tableStr: tableStr,
         isHost: isHost,
+        myName: person.name,
+        myKey: deviceKey(deviceId),
         hostName: tbl.session.hostName,
         sessionId: tbl.session.sessionId,
-        draftCart: tbl.session.draftCart || [],
+        participants: publicParticipants(tbl.session),
+        eventSeq: tbl.session.eventSeq,
+        draftCart: (tbl.session.draftCart || []).map(publicCartLine),
         hasActiveOrder: hasActiveOrder,
         activeTicket: hasActiveOrder ? guestTicketView(openTicket) : null
       }));
@@ -2635,6 +3143,10 @@ const server = http.createServer(async (req, res) => {
       const tableStr = `Table ${tNum}`;
       const deviceId = (data.deviceId || '').trim();
       const action = data.action || 'sync'; // 'sync' | 'add' | 'adjust' | 'remove' | 'clear'
+      if (!deviceId) {
+        sendJson(res, 400, { error: 'deviceId is required.' });
+        return;
+      }
 
       const db = readDb();
       const tbl = findTable(db, rawTable);
@@ -2648,82 +3160,112 @@ const server = http.createServer(async (req, res) => {
         tbl.session = {
           sessionId: 'sess_' + Date.now(),
           hostDeviceId: deviceId || 'host',
-          hostName: 'Table Lead',
+          hostName: cleanGuestName(data.name) || 'Table Host',
           createdAt: Date.now(),
           draftCart: []
         };
       }
-      if (!Array.isArray(tbl.session.draftCart)) {
-        tbl.session.draftCart = [];
+      ensureSessionShape(tbl.session);
+      tbl.session.lastActivityAt = Date.now();
+
+      // Who is making this change? (for "Sara added 2x Karahi" notifications)
+      let actor = tbl.session.participants.find(p => p.deviceId === deviceId);
+      if (!actor && deviceId) {
+        actor = { deviceId, name: cleanGuestName(data.name) || nextGuestName(tbl.session), joinedAt: Date.now() };
+        tbl.session.participants.push(actor);
       }
+      if (actor) actor.lastSeenAt = Date.now();
+      const actorName = actor ? actor.name : 'Someone';
+      // Phones only know other diners by key, so a line's owner is matched by device id or key.
+      const ownerKey = line => line.addedByKey || (line.addedByDeviceId ? deviceKey(line.addedByDeviceId) : '');
+      const sameLine = (ci, item) =>
+        (ci.dishId === item.dishId || (!item.dishId && ci.title === item.title)) &&
+        ci.size === item.size && ci.spice === item.spice && ci.note === item.note &&
+        (!ownerKey(item) || !ownerKey(ci) || ownerKey(ci) === ownerKey(item));
+      let activity = null;
 
       if (action === 'add' && data.item) {
         const item = cleanGuestFields({ ...data.item });
-        const existing = tbl.session.draftCart.find(ci => 
-          ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
-        );
+        const addQty = Number(item.qty) || 1;
+        item.addedByDeviceId = deviceId || item.addedByDeviceId || null;
+        item.addedByName = actorName;
+        const existing = tbl.session.draftCart.find(ci => sameLine(ci, item));
         if (existing) {
-          existing.qty += (Number(item.qty) || 1);
+          existing.qty += addQty;
+          if (!existing.addedByName) { existing.addedByDeviceId = item.addedByDeviceId; existing.addedByName = actorName; }
         } else {
+          item.qty = addQty;
           tbl.session.draftCart.push(item);
         }
+        activity = { kind: 'item_added', qty: addQty, title: item.title || '', text: `${actorName} added ${addQty}× ${item.title || 'an item'}` };
       } else if (action === 'adjust') {
         const delta = Number(data.delta) || 0;
         let targetIdx = -1;
         if (data.item) {
-          targetIdx = tbl.session.draftCart.findIndex(ci =>
-            (ci.dishId === data.item.dishId || ci.title === data.item.title) &&
-            ci.size === data.item.size &&
-            ci.spice === data.item.spice &&
-            ci.note === data.item.note
-          );
+          targetIdx = tbl.session.draftCart.findIndex(ci => sameLine(ci, data.item));
         }
-        if (targetIdx === -1 && typeof data.index === 'number') {
+        if (!data.item && typeof data.index === 'number') {
           targetIdx = data.index;
         }
         if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
-          tbl.session.draftCart[targetIdx].qty += delta;
-          if (tbl.session.draftCart[targetIdx].qty <= 0) {
+          const line = tbl.session.draftCart[targetIdx];
+          line.qty += delta;
+          if (delta > 0) {
+            activity = { kind: 'item_added', qty: delta, title: line.title || '', text: `${actorName} added ${delta}× ${line.title || 'an item'}` };
+          } else if (delta < 0) {
+            activity = { kind: 'item_removed', qty: Math.abs(delta), title: line.title || '', text: `${actorName} removed ${Math.abs(delta)}× ${line.title || 'an item'}` };
+          }
+          if (line.qty <= 0) {
             tbl.session.draftCart.splice(targetIdx, 1);
           }
         }
       } else if (action === 'remove') {
         let targetIdx = -1;
         if (data.item) {
-          targetIdx = tbl.session.draftCart.findIndex(ci =>
-            (ci.dishId === data.item.dishId || ci.title === data.item.title) &&
-            ci.size === data.item.size &&
-            ci.spice === data.item.spice &&
-            ci.note === data.item.note
-          );
+          targetIdx = tbl.session.draftCart.findIndex(ci => sameLine(ci, data.item));
         }
-        if (targetIdx === -1 && typeof data.index === 'number') {
+        if (!data.item && typeof data.index === 'number') {
           targetIdx = data.index;
         }
         if (targetIdx >= 0 && tbl.session.draftCart[targetIdx]) {
-          tbl.session.draftCart.splice(targetIdx, 1);
+          const removed = tbl.session.draftCart.splice(targetIdx, 1)[0];
+          activity = { kind: 'item_removed', title: removed.title || '', text: `${actorName} removed ${removed.title || 'an item'}` };
         }
       } else if (action === 'clear') {
+        if (tbl.session.draftCart.length) {
+          activity = { kind: 'cart_cleared', text: `${actorName} cleared the table cart` };
+        }
         tbl.session.draftCart = [];
       } else {
         // Full sync
         if (Array.isArray(data.cart)) {
-          tbl.session.draftCart = data.cart;
+          // Keep who added each line: map the public key back to that diner's device.
+          const byKey = new Map(tbl.session.participants.map(p => [deviceKey(p.deviceId), p.deviceId]));
+          tbl.session.draftCart = data.cart.slice(0, 100).filter(l => l && typeof l === 'object').map(l => {
+            const { addedByKey, addedByDeviceId, ...line } = cleanGuestFields({ ...l });
+            const owner = (addedByKey && byKey.get(addedByKey)) || (addedByDeviceId === deviceId ? deviceId : null);
+            return { ...line, qty: Math.max(1, Math.min(99, parseInt(line.qty, 10) || 1)), addedByDeviceId: owner };
+          });
         }
       }
 
+      let activityEvent = null;
+      if (activity) {
+        activityEvent = pushSessionEvent(tbl, tableStr, { ...activity, deviceId, name: actorName }, false);
+      }
       writeDb(db);
 
       broadcastEvent({
         type: 'TABLE_CART_UPDATED',
         table: tableStr,
-        cart: tbl.session.draftCart,
-        senderDeviceId: deviceId,
-        action: action
+        cart: tbl.session.draftCart.map(publicCartLine),
+        senderKey: deviceKey(deviceId),
+        action: action,
+        activity: publicSessionEvent(activityEvent)
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, cart: tbl.session.draftCart }));
+      res.end(JSON.stringify({ ok: true, cart: tbl.session.draftCart.map(publicCartLine), eventSeq: tbl.session.eventSeq }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -2746,17 +3288,25 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    markPresent(tNum, deviceId);
     const openTicket = findOpenTicketForTable(db, tbl);
     const hasActiveOrder = Boolean(openTicket);
     const isHost = Boolean(tbl && tbl.session && tbl.session.hostDeviceId === deviceId);
+    const sinceSeq = Number(parsedUrl.query.since) || 0;
+    const sess = tbl && tbl.session ? tbl.session : null;
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       ok: true,
       table: tNum,
       isHost: isHost,
-      hostName: tbl && tbl.session ? tbl.session.hostName : 'Table Lead',
-      draftCart: tbl && tbl.session ? (tbl.session.draftCart || []) : [],
+      myKey: deviceKey(deviceId),
+      hostName: sess ? sess.hostName : 'Table Lead',
+      sessionId: sess ? sess.sessionId : null,
+      participants: sess ? publicParticipants(sess) : [],
+      eventSeq: sess ? (sess.eventSeq || 0) : 0,
+      events: sess && Array.isArray(sess.events) ? sess.events.filter(e => e.seq > sinceSeq).map(publicSessionEvent) : [],
+      draftCart: sess ? (sess.draftCart || []).map(publicCartLine) : [],
       hasActiveOrder: hasActiveOrder,
       activeTicket: hasActiveOrder ? guestTicketView(openTicket) : null
     }));
@@ -2991,11 +3541,8 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/menu' && req.method === 'GET') {
     const db = readDb();
     const restId = parsedUrl.query.restaurantId || 'REST-001';
-    let menuList = (db.menu || []).filter(m => 
-      !restId || 
-      m.restaurantId === restId || 
-      (restId === 'REST-001' && (m.restaurantId === 'REST-001' || m.restaurantId === 'rest-dera-01'))
-    );
+    const restKey = canonicalRestId(restId);
+    let menuList = (db.menu || []).filter(m => canonicalRestId(m.restaurantId) === restKey);
     if (menuList.length === 0 && (!db.menu || db.menu.length === 0)) {
       db.menu = DEFAULT_MENU;
       writeDb(db);
@@ -3018,7 +3565,7 @@ const server = http.createServer(async (req, res) => {
 
       const basePrice = Number(data.price) || Number(data.regularPrice) || (data.sizeOptions && data.sizeOptions[0] ? Number(data.sizeOptions[0].price || data.sizeOptions[0].extra || 0) : 0);
       const newDish = {
-        id: data.id || ('dish-' + Date.now()),
+        id: 'dish-' + Date.now() + '-' + crypto.randomBytes(2).toString('hex'),
         restaurantId: targetRestId,
         title: data.title || 'New Dish',
         category: data.category || 'karahi',
@@ -3074,7 +3621,11 @@ const server = http.createServer(async (req, res) => {
       const db = readDb();
       if (!db.menu) db.menu = [...(DEFAULT_MENU || [])];
 
-      const idx = db.menu.findIndex(d => String(d.id) === String(dishId));
+      const idx = db.menu.findIndex(d => String(d.id) === String(dishId) && canAccessRestaurant(auth, d.restaurantId));
+      if (idx < 0 && db.menu.some(d => String(d.id) === String(dishId))) {
+        denyOtherRestaurant(res);
+        return;
+      }
       if (idx >= 0) {
         if (!canAccessRestaurant(auth, db.menu[idx].restaurantId)) {
           denyOtherRestaurant(res);
@@ -3110,12 +3661,12 @@ const server = http.createServer(async (req, res) => {
     const auth = getRequestAuth(req);
     const db = readDb();
     if (!db.menu) db.menu = [];
-    const item = db.menu.find(d => String(d.id) === String(dishId));
-    if (item && !canAccessRestaurant(auth, item.restaurantId)) {
+    const item = db.menu.find(d => String(d.id) === String(dishId) && canAccessRestaurant(auth, d.restaurantId));
+    if (!item && db.menu.some(d => String(d.id) === String(dishId))) {
       denyOtherRestaurant(res);
       return;
     }
-    db.menu = db.menu.filter(d => String(d.id) !== String(dishId));
+    db.menu = db.menu.filter(d => d !== item);
     if (item) {
       logAuditEvent(db, 'MENU_ITEM_DELETED', { dishId: dishId, title: item.title }, auth ? auth.name : 'Admin', item.restaurantId);
     }
@@ -3489,7 +4040,7 @@ const server = http.createServer(async (req, res) => {
       const targetRestId = auth.restaurantId === 'ALL' ? 'REST-001' : (auth.restaurantId || 'REST-001');
 
       // Check if there is an active shift for this cashier
-      const existingOpen = db.shifts.find(s => s.status === 'open' && (s.cashierId === auth.userId || s.restaurantId === targetRestId));
+      const existingOpen = db.shifts.find(s => s.status === 'open' && (s.cashierId === auth.userId || canonicalRestId(s.restaurantId) === canonicalRestId(targetRestId)));
       if (existingOpen) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'A shift is already open. Please close current shift before starting a new one.', shift: existingOpen }));
@@ -3499,7 +4050,7 @@ const server = http.createServer(async (req, res) => {
       const openingFloat = Math.max(0, Number(data.openingFloat) || 0);
       const newShift = {
         id: 'SHIFT-' + Date.now(),
-        restaurantId: targetRestId,
+        restaurantId: canonicalRestId(targetRestId),
         cashierId: auth.userId,
         cashierName: auth.name || data.cashierName || 'Cashier',
         openedAt: new Date().toISOString(),
@@ -3529,7 +4080,7 @@ const server = http.createServer(async (req, res) => {
     const auth = getRequestAuth(req);
     const db = readDb();
     const restId = (auth && auth.restaurantId && auth.restaurantId !== 'ALL') ? auth.restaurantId : (parsedUrl.query.restaurantId || 'REST-001');
-    const openShift = (db.shifts || []).find(s => s.status === 'open' && (s.restaurantId === restId || (auth && s.cashierId === auth.userId)));
+    const openShift = (db.shifts || []).find(s => s.status === 'open' && (canonicalRestId(s.restaurantId) === canonicalRestId(restId) || (auth && s.cashierId === auth.userId)));
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, shift: openShift || null }));
     return;
@@ -3548,7 +4099,7 @@ const server = http.createServer(async (req, res) => {
       const data = await parseBody(req);
       const db = readDb();
       const targetRestId = auth.restaurantId === 'ALL' ? 'REST-001' : (auth.restaurantId || 'REST-001');
-      const shift = (db.shifts || []).find(s => s.status === 'open' && (s.cashierId === auth.userId || s.id === data.shiftId || s.restaurantId === targetRestId));
+      const shift = (db.shifts || []).find(s => s.status === 'open' && canonicalRestId(s.restaurantId) === canonicalRestId(targetRestId) && (s.cashierId === auth.userId || s.id === data.shiftId || ADMIN_ROLES.includes(auth.role)));
 
       if (!shift) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -3623,7 +4174,8 @@ const server = http.createServer(async (req, res) => {
 
       // Only an open ticket can be settled, and only by staff of its restaurant
       const byId = data.ticketId ? findTicket(db, data.ticketId) : null;
-      const ticket = (byId && isTicketOpen(byId)) ? byId : findOpenTicketForTable(db, tbl);
+      // A named ticket that is already closed is an error, never a reason to bill another order on the table
+      const ticket = data.ticketId ? ((byId && isTicketOpen(byId)) ? byId : null) : findOpenTicketForTable(db, tbl);
       if (!ticket) {
         sendJson(res, 404, { error: byId ? `Order ${byId.ticketId} is already ${byId.status}.` : 'No open order found for this table.' });
         return;
@@ -3632,6 +4184,9 @@ const server = http.createServer(async (req, res) => {
         denyOtherRestaurant(res);
         return;
       }
+      // Side effects follow the ticket's own table, never the table named in the request
+      const settledTable = ticket.tableId ? (db.tables || []).find(t => t.id === ticket.tableId) : findTable(db, ticket.table);
+      const settledTableName = ticket.table || tableStr;
 
       // Unconfirmed rounds were never served, so they are dropped rather than billed
       if ((ticket.pendingRounds || []).length > 0) {
@@ -3670,7 +4225,7 @@ const server = http.createServer(async (req, res) => {
 
       // Update active shift if any
       const targetRestId = (ticket && ticket.restaurantId) || auth.restaurantId || 'REST-001';
-      const activeShift = (db.shifts || []).find(s => s.status === 'open' && (s.cashierId === auth.userId || s.restaurantId === targetRestId));
+      const activeShift = (db.shifts || []).find(s => s.status === 'open' && (s.cashierId === auth.userId || canonicalRestId(s.restaurantId) === canonicalRestId(targetRestId)));
       if (activeShift) {
         if (paymentMethod === 'Cash') {
           activeShift.expectedCash = (Number(activeShift.expectedCash) || 0) + authoritativeTotal;
@@ -3687,10 +4242,10 @@ const server = http.createServer(async (req, res) => {
       addTicketNotice(ticket, `Paid. Invoice ${invoiceNumber}. Thank you!`);
       // Closing the ticket frees the table and ends the QR session
       syncTableOrder(db, ticket);
-      if (tbl && tbl.order === null) tbl.session = null;
+      if (settledTable && settledTable.order === null) settledTable.session = null;
 
       // Clear table service requests
-      db.serviceBells = (db.serviceBells || []).filter(b => b.table !== tableStr);
+      db.serviceBells = (db.serviceBells || []).filter(b => b.table !== settledTableName);
 
       // Record in immutable sales ledger
       const newSale = {
@@ -3698,7 +4253,7 @@ const server = http.createServer(async (req, res) => {
         invoiceNumber: invoiceNumber,
         ticketId: ticket ? ticket.ticketId : (data.ticketId || '#TKT-MISC'),
         restaurantId: targetRestId,
-        table: tableStr,
+        table: settledTableName,
         items: itemsSnapshot,
         subtotal: authoritativeSubtotal,
         tax: authoritativeTax,
@@ -3708,6 +4263,7 @@ const server = http.createServer(async (req, res) => {
         changeGiven: changeGiven,
         cashierId: auth.userId,
         cashierName: auth.name || 'Front Cashier',
+        waiterName: ticket ? (ticket.assignedWaiterName || '') : '',
         shiftId: activeShift ? activeShift.id : null,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now()
@@ -3720,7 +4276,7 @@ const server = http.createServer(async (req, res) => {
       logAuditEvent(db, 'BILL_SETTLED', {
         invoiceNumber: invoiceNumber,
         ticketId: newSale.ticketId,
-        table: tableStr,
+        table: settledTableName,
         total: authoritativeTotal,
         paymentMethod: paymentMethod,
         cashReceived: cashReceived,
@@ -3732,7 +4288,7 @@ const server = http.createServer(async (req, res) => {
 
       const eventPayload = {
         type: 'BILL_SETTLED',
-        table: tableStr,
+        table: settledTableName,
         ticketId: newSale.ticketId,
         invoiceNumber: invoiceNumber,
         total: authoritativeTotal,
@@ -3855,15 +4411,98 @@ const server = http.createServer(async (req, res) => {
     const auth = getRequestAuth(req);
     const db = readDb();
     const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
-    const parseDay = (v, endOfDay) => {
-      if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-      const d = new Date(v + (endOfDay ? 'T23:59:59.999' : 'T00:00:00'));
-      return isNaN(d.getTime()) ? null : d.getTime();
-    };
-    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
-    const fromMs = parseDay(parsedUrl.query.from, false) || startOfToday.getTime();
-    const toMs = parseDay(parsedUrl.query.to, true) || Date.now();
+    const { fromMs, toMs } = reportRange(parsedUrl.query);
     sendJson(res, 200, { ok: true, report: buildExceptionsReport(db, restId, fromMs, toMs) });
+    return;
+  }
+
+  // Admin: sales report (JSON, or CSV with ?format=csv)
+  if (pathname === '/api/reports/sales' && req.method === 'GET') {
+    const auth = getRequestAuth(req);
+    const db = readDb();
+    const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
+    const { fromMs, toMs, tzOffset } = reportRange(parsedUrl.query);
+    const report = buildSalesReport(db, restId, fromMs, toMs, tzOffset);
+    if (parsedUrl.query.format === 'csv') {
+      res.writeHead(200, {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="sales-${localDay(fromMs, tzOffset)}-to-${localDay(toMs, tzOffset)}.csv"`
+      });
+      res.end(salesReportCsv(report));
+      return;
+    }
+    sendJson(res, 200, { ok: true, report });
+    return;
+  }
+
+  // Admin: guest feedback
+  if (pathname === '/api/reports/feedback' && req.method === 'GET') {
+    const auth = getRequestAuth(req);
+    const db = readDb();
+    const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
+    const { fromMs, toMs } = reportRange(parsedUrl.query);
+    sendJson(res, 200, { ok: true, report: buildFeedbackReport(db, restId, fromMs, toMs) });
+    return;
+  }
+
+  // Public: a guest rates their meal. Needs the table QR secret and that table's ticket.
+  if (pathname === '/api/public/feedback' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      const rating = parseInt(data.rating, 10);
+      if (!(rating >= 1 && rating <= 5)) {
+        sendJson(res, 400, { error: 'Please choose 1 to 5 stars.' });
+        return;
+      }
+      const ticket = data.ticketId ? findTicket(db, String(data.ticketId)) : null;
+      if (!ticket) {
+        sendJson(res, 404, { error: 'Order not found.' });
+        return;
+      }
+      if (ticket.status !== 'Settled') {
+        sendJson(res, 409, { error: 'You can rate your visit after paying.' });
+        return;
+      }
+      if (ticket.isOnline) {
+        if (!data.deviceId || ticket.ownerDeviceId !== data.deviceId) {
+          sendJson(res, 403, { error: 'You can only rate your own order.' });
+          return;
+        }
+      } else {
+        const tbl = ticket.tableId ? (db.tables || []).find(t => t.id === ticket.tableId) : findTable(db, ticket.table);
+        const accessError = tableAccessError(tbl, data.tableToken);
+        if (accessError) {
+          sendJson(res, 403, { error: accessError, invalidTable: true });
+          return;
+        }
+        if (!data.deviceId || !(ticket.diners || []).includes(String(data.deviceId))) {
+          sendJson(res, 403, { error: 'Only guests at this table can rate this visit.' });
+          return;
+        }
+      }
+      if (!db.feedback) db.feedback = [];
+      const deviceId = cleanText(String(data.deviceId || ''), 80);
+      const existing = db.feedback.find(f => f.ticketId === ticket.ticketId && f.deviceId === deviceId);
+      const entry = existing || { id: 'FB-' + crypto.randomBytes(4).toString('hex') };
+      Object.assign(entry, {
+        restaurantId: ticket.restaurantId,
+        ticketId: ticket.ticketId,
+        table: ticket.table,
+        waiter: ticket.assignedWaiterName || '',
+        deviceId,
+        rating,
+        comment: cleanText(String(data.comment || ''), 500),
+        tags: Array.isArray(data.tags) ? data.tags.slice(0, 8).map(t => cleanText(String(t), 40)) : [],
+        timestamp: Date.now()
+      });
+      if (!existing) db.feedback.unshift(entry);
+      if (db.feedback.length > 5000) db.feedback.length = 5000;
+      writeDb(db);
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
     return;
   }
 
@@ -3989,9 +4628,9 @@ const server = http.createServer(async (req, res) => {
     const restId = parsedUrl.query.restaurantId;
     let logs = db.auditLogs || [];
     if (auth.role === 'restaurant_admin') {
-      logs = logs.filter(l => l.restaurantId === auth.restaurantId || !l.restaurantId);
+      logs = logs.filter(l => l.restaurantId && canonicalRestId(l.restaurantId) === canonicalRestId(auth.restaurantId));
     } else if (restId && restId !== 'ALL') {
-      logs = logs.filter(l => l.restaurantId === restId);
+      logs = logs.filter(l => l.restaurantId && canonicalRestId(l.restaurantId) === canonicalRestId(restId));
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(logs));
@@ -4103,13 +4742,43 @@ const server = http.createServer(async (req, res) => {
           }
           delete eventData.tableToken;
           if (!db.serviceBells) db.serviceBells = [];
+          // The same request from the same table within 20 seconds is a double tap, not a new call.
+          const recentSame = db.serviceBells.find(b => b.table === eventData.table && b.request === eventData.request && Date.now() - (b.timestamp || 0) < 20000);
+          if (recentSame) {
+            sendJson(res, 200, { ok: true, duplicate: true });
+            return;
+          }
+          if (/bill|check/i.test(String(eventData.request || ''))) {
+            const billTicket = findOpenTicketForTable(db, findTable(db, eventData.table));
+            if (billTicket && !billTicket.billRequested) {
+              billTicket.billRequested = true;
+              billTicket.billRequestedAt = Date.now();
+              addTicketNotice(billTicket, 'Bill requested. Your waiter will bring it shortly.');
+              syncTableOrder(db, billTicket);
+              eventData.ticketId = billTicket.ticketId;
+              eventData.billRequested = true;
+            }
+          }
+          const bellId = 'B-' + Date.now() + '-' + crypto.randomBytes(2).toString('hex');
+          for (const key of Object.keys(eventData)) {
+            if (!['type', 'eventId', 'table', 'request', 'ticketId', 'billRequested', 'restaurantId'].includes(key)) delete eventData[key];
+          }
+          eventData.bellId = bellId;
+          eventData.timestamp = Date.now();
           db.serviceBells.unshift({
-            id: 'B-' + Date.now(),
+            id: bellId,
             table: eventData.table,
             request: eventData.request,
+            ticketId: eventData.ticketId || null,
+            timestamp: Date.now(),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           });
           writeDb(db);
+        } else if (eventData.type === 'SERVICE_BELL_RESOLVED') {
+          // Waiter (or admin, when the waiter app is off) has handled the table's request
+          const before = (db.serviceBells || []).length;
+          db.serviceBells = (db.serviceBells || []).filter(b => eventData.bellId ? b.id !== eventData.bellId : b.table !== eventData.table);
+          if (db.serviceBells.length !== before) writeDb(db);
         } else if (eventData.type === 'BILL_SETTLED') {
           // Reject direct phantom unauthenticated BILL_SETTLED events on /api/broadcast
           const auth = getRequestAuth(req);
@@ -4119,7 +4788,13 @@ const server = http.createServer(async (req, res) => {
             return;
           }
         } else if (eventData.type === 'ITEM_86_UPDATE') {
-          db.soldOut = Array.isArray(eventData.soldOutList) ? eventData.soldOutList : [];
+          const soldAuth = getRequestAuth(req);
+          const soldRest = canonicalRestId((soldAuth && soldAuth.role === 'super_admin' ? eventData.restaurantId : soldAuth && soldAuth.restaurantId) || 'REST-001');
+          if (!db.soldOutByRestaurant) db.soldOutByRestaurant = {};
+          db.soldOutByRestaurant[soldRest] = Array.isArray(eventData.soldOutList)
+            ? eventData.soldOutList.slice(0, 500).map(v => cleanText(String(v), 80)) : [];
+          eventData.soldOutList = db.soldOutByRestaurant[soldRest];
+          eventData.restaurantId = soldRest;
           writeDb(db);
         }
 
@@ -4138,6 +4813,18 @@ const server = http.createServer(async (req, res) => {
   // Full DB Read Endpoint (staff only; secrets always stripped)
   if (pathname === '/api/db' && req.method === 'GET') {
     sendJson(res, 200, publicDb(readDb(), getRequestAuth(req)));
+    return;
+  }
+
+  // Public: an online order, readable only by the phone that placed it
+  if (pathname === '/api/public/online-ticket' && req.method === 'GET') {
+    const db = readDb();
+    const ticket = findTicket(db, String(parsedUrl.query.ticketId || ''));
+    if (!ticket || !ticket.isOnline || !parsedUrl.query.deviceId || ticket.ownerDeviceId !== parsedUrl.query.deviceId) {
+      sendJson(res, 404, { error: 'Order not found.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, ticket: guestTicketView(ticket) });
     return;
   }
 

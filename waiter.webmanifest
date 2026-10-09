@@ -1,0 +1,13 @@
+{
+  "name": "Waiter App",
+  "short_name": "Waiter",
+  "start_url": "/waiter.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/waiter-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

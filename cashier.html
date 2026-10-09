@@ -1010,7 +1010,7 @@
 
     // SSE Sync
     try {
-      const evtSource = new EventSource(`${getApiBase()}/api/events`);
+      const evtSource = new EventSource(`${getApiBase()}/api/events?token=${encodeURIComponent(getAuthToken() || '')}`);
       evtSource.onmessage = (e) => {
         try {
           const d = JSON.parse(e.data);
