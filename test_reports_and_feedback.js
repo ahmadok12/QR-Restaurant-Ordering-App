@@ -81,7 +81,19 @@ async function runTests() {
     assert('Feedback report has an average', typeof fbReport.data.report.averageRating === 'number');
     assert('Waiters cannot read feedback', (await api('GET', '/api/reports/feedback', null, waiter)).status === 403);
 
-    // 5. Waiter app can be installed
+    // 5. Online orders can be re-read only by the phone that placed them
+    const online = await api('POST', '/api/broadcast', {
+      type: 'NEW_ORDER', senderDeviceId: 'rf-online-1',
+      order: { restaurantId: 'REST-001', table: 'Online Order', guest: 'Online Guest', newItemsOnly: true, items: [{ dishId: 'dish-5', title: 'Peshawari Beef Chapli Kabab', qty: 1 }] }
+    });
+    const onlineId = online.data.order && online.data.order.ticketId;
+    const own = await api('GET', `/api/public/online-ticket?ticketId=${encodeURIComponent(onlineId)}&deviceId=rf-online-1`);
+    assert('Online guest can re-read their order', own.status === 200 && own.data.ticket.ticketId === onlineId);
+    assert('Another phone cannot read it',
+      (await api('GET', `/api/public/online-ticket?ticketId=${encodeURIComponent(onlineId)}&deviceId=someone-else`)).status === 404);
+    await api('POST', '/api/orders/reject', { ticketId: onlineId, reason: 'test cleanup' }, waiter);
+
+    // 6. Waiter app can be installed
     const manifest = await api('GET', '/waiter.webmanifest');
     assert('Waiter app manifest is served', manifest.status === 200 && manifest.data.start_url === '/waiter.html');
 

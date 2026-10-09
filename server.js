@@ -4341,6 +4341,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Public: an online order, readable only by the phone that placed it
+  if (pathname === '/api/public/online-ticket' && req.method === 'GET') {
+    const db = readDb();
+    const ticket = findTicket(db, String(parsedUrl.query.ticketId || ''));
+    if (!ticket || !ticket.isOnline || !parsedUrl.query.deviceId || ticket.ownerDeviceId !== parsedUrl.query.deviceId) {
+      sendJson(res, 404, { error: 'Order not found.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, ticket: guestTicketView(ticket) });
+    return;
+  }
+
   // Public: the open ticket for one table, so a guest's phone can restore its order
   if (pathname === '/api/public/table-ticket' && req.method === 'GET') {
     const db = readDb();
