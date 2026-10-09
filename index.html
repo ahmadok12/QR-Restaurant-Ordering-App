@@ -6,7 +6,7 @@
   <title>Dera Gourmet - Authentic Pakistani Cuisine • QR Table Ordering</title>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Outfit:wght@400..700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Outfit:wght@400..700&family=Noto+Naskh+Arabic:wght@400..700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   
   <style>
@@ -63,6 +63,38 @@
     .text-primary { color: rgb(var(--color-primary-rgb, 172 45 0) / var(--tw-text-opacity, 1)) !important; }
     .border-primary { border-color: rgb(var(--color-primary-rgb, 172 45 0) / var(--tw-border-opacity, 1)) !important; }
     .bg-primary-container { background-color: var(--color-primary-container, #d53e0b) !important; }
+
+    /* Keyboard focus is always visible */
+    button:focus-visible, a:focus-visible, [role="button"]:focus-visible, summary:focus-visible, input[type="checkbox"]:focus-visible {
+      outline: 3px solid rgb(var(--color-primary-rgb, 172 45 0));
+      outline-offset: 2px;
+    }
+    /* At least a 44px touch target without changing how small controls look */
+    .tap44 { position: relative; }
+    .tap44::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      transform: translate(-50%, -50%);
+    }
+    /* Urdu: a font with Urdu glyphs; icons keep their icon font */
+    html[lang="ur"] body, html[lang="ur"] .font-body, html[lang="ur"] .font-headline {
+      font-family: 'Noto Naskh Arabic', 'DM Sans', sans-serif;
+    }
+    html[lang="ur"] .material-symbols-outlined { font-family: 'Material Symbols Outlined' !important; }
+    .diet-chip[aria-pressed="true"] {
+      background-color: rgb(var(--color-primary-rgb, 172 45 0));
+      border-color: rgb(var(--color-primary-rgb, 172 45 0));
+      color: #fff;
+    }
+    .feedback-tag[aria-pressed="true"] {
+      background-color: rgb(var(--color-primary-rgb, 172 45 0) / 0.12);
+      border-color: rgb(var(--color-primary-rgb, 172 45 0));
+      color: rgb(var(--color-primary-rgb, 172 45 0));
+    }
   </style>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -157,13 +189,17 @@
 
       <!-- Quick Action Buttons -->
       <div class="flex items-center gap-1.5 flex-shrink-0">
+        <!-- Language: English / Urdu -->
+        <button id="lang-toggle-btn" onclick="toggleLanguage()" type="button" class="h-11 min-w-[44px] px-2.5 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center gap-1 text-[11.5px] font-bold text-secondary hover:text-primary transition-colors active:scale-95" aria-label="اردو میں دیکھیں / View in English" lang="ur">
+          <span id="lang-opt-ur" class="font-bold">اردو</span><span class="text-secondary/40">/</span><span id="lang-opt-en" lang="en">EN</span>
+        </button>
         <!-- Call Waiter Bell -->
-        <button onclick="openWaiterModal()" aria-label="Call Waiter" class="w-10 h-10 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center text-secondary hover:text-primary transition-colors active:scale-95" type="button">
+        <button onclick="openWaiterModal()" aria-label="Call Waiter" data-i18n-aria="callWaiter" class="w-11 h-11 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center text-secondary hover:text-primary transition-colors active:scale-95" type="button">
           <span class="material-symbols-outlined text-[20px]">notifications_active</span>
         </button>
 
         <!-- Cart Quick Peek -->
-        <button onclick="switchView('cart')" aria-label="View Cart" class="relative w-10 h-10 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center text-on-surface hover:text-primary transition-colors active:scale-95" type="button">
+        <button onclick="switchView('cart')" aria-label="View Cart" data-i18n-aria="viewCart" class="relative w-11 h-11 rounded-full bg-surface-container-lowest border border-surface-container shadow-sm flex items-center justify-center text-on-surface hover:text-primary transition-colors active:scale-95" type="button">
           <span class="material-symbols-outlined text-[20px]">shopping_bag</span>
           <span id="cart-badge-count" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-on-primary font-bold text-[10px] flex items-center justify-center leading-none shadow-sm">0</span>
         </button>
@@ -208,7 +244,7 @@
               <span>Reset</span>
             </button>
             <button onclick="switchView('confirmation')" class="flex items-center gap-1 text-[12px] font-bold text-emerald-800 bg-emerald-200/70 hover:bg-emerald-200 px-2.5 py-1 rounded-xl transition-all active:scale-95">
-              <span>View Tab</span>
+              <span data-i18n="viewTab">View Tab</span>
               <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
             </button>
           </div>
@@ -274,7 +310,7 @@
 
             <!-- Slide 2: Duo Pizza & Wings Feast -->
             <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
-              <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80" alt="Duo Pizza & Wings Feast" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80" alt="Duo Pizza & Wings Feast" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
               <div class="relative z-10 flex items-center justify-between mb-0.5">
@@ -301,7 +337,7 @@
 
             <!-- Slide 3: Solo Crunch Fiesta -->
             <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
-              <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" alt="Solo Crunch Fiesta" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" alt="Solo Crunch Fiesta" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
               <div class="relative z-10 flex items-center justify-between mb-0.5">
@@ -328,7 +364,7 @@
 
             <!-- Slide 4: Molten Lava Cake -->
             <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
-              <img src="https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80" alt="Molten Lava Cake" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
+              <img src="https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80" alt="Molten Lava Cake" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
               <div class="relative z-10 flex items-center justify-between mb-0.5">
@@ -372,36 +408,36 @@
         <aside class="w-[66px] sm:w-[76px] shrink-0 sticky top-16 bg-surface-container-low/70 border-r border-surface-container/70 py-2 flex flex-col items-center gap-1 z-10 select-none">
           <button onclick="selectCategory('all', this)" class="cat-rail-btn active w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all bg-surface border-l-4 border-primary text-primary font-bold shadow-2xs">
             <span class="material-symbols-outlined text-[20px]">restaurant_menu</span>
-            <span class="text-[10px] font-bold leading-tight">All</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.all">All</span>
           </button>
           <button onclick="selectCategory('deals', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent relative group">
             <span class="material-symbols-outlined text-[20px] text-amber-500 group-hover:scale-110 transition-transform">local_offer</span>
-            <span class="text-[10px] font-bold leading-tight">Deals</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.deals">Deals</span>
             <span class="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
           </button>
           <button onclick="selectCategory('pizzas', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
             <span class="material-symbols-outlined text-[20px]">local_pizza</span>
-            <span class="text-[10px] font-bold leading-tight">Pizzas</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.pizzas">Pizzas</span>
           </button>
           <button onclick="selectCategory('burgers', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
             <span class="material-symbols-outlined text-[20px]">lunch_dining</span>
-            <span class="text-[10px] font-bold leading-tight">Burgers</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.burgers">Burgers</span>
           </button>
           <button onclick="selectCategory('sandwiches', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
             <span class="material-symbols-outlined text-[20px]">breakfast_dining</span>
-            <span class="text-[10px] font-bold leading-tight">Sandwiches</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.sandwiches">Sandwiches</span>
           </button>
           <button onclick="selectCategory('wraps', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
             <span class="material-symbols-outlined text-[20px]">restaurant</span>
-            <span class="text-[10px] font-bold leading-tight">Wraps</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.wraps">Wraps</span>
           </button>
           <button onclick="selectCategory('drinks', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
             <span class="material-symbols-outlined text-[20px]">local_cafe</span>
-            <span class="text-[10px] font-bold leading-tight">Drinks</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.drinks">Drinks</span>
           </button>
           <button onclick="selectCategory('desserts', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
             <span class="material-symbols-outlined text-[20px]">icecream</span>
-            <span class="text-[10px] font-bold leading-tight">Desserts</span>
+            <span class="text-[10px] font-bold leading-tight" data-i18n="nav.desserts">Desserts</span>
           </button>
         </aside>
 
@@ -431,7 +467,7 @@
             <div id="inline-search-box" class="hidden absolute inset-0 bg-surface items-center gap-1.5 z-20 animate-fade-in">
               <div class="relative flex-1 flex items-center bg-surface-container-lowest rounded-full border border-primary/50 px-2.5 py-1 shadow-xs">
                 <span class="material-symbols-outlined text-primary text-[17px] mr-1 shrink-0">search</span>
-                <input id="search-input" oninput="handleSearch()" class="w-full bg-transparent text-[12.5px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search pizza, burger, wrap..." type="text" autocomplete="off"/>
+                <input id="search-input" oninput="handleSearch()" class="w-full bg-transparent text-[12.5px] text-on-surface placeholder:text-secondary focus:outline-none" placeholder="Search pizza, burger, wrap..." data-i18n-ph="searchPh" aria-label="Search dishes" data-i18n-aria="searchDishes" type="text" autocomplete="off"/>
                 <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-secondary hover:text-on-surface p-0.5 shrink-0" type="button" aria-label="Clear search text">
                   <span class="material-symbols-outlined text-[15px]">close</span>
                 </button>
@@ -441,6 +477,10 @@
               </button>
             </div>
           </div>
+
+          <!-- Dietary filter chips (built from the dish data; hidden when the menu has none) -->
+          <div id="diet-filter-row" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 -mt-1" role="group" aria-label="Filter dishes" data-i18n-aria="filterDishes"></div>
+          <p id="diet-filter-note" class="hidden text-[10.5px] text-secondary -mt-1 mb-2 leading-snug" data-i18n="nutsNote">Nut info is based on menu descriptions. Please tell staff about allergies.</p>
 
           <!-- Dynamic Dish Cards Container -->
           <div id="dish-grid-container" class="w-full">
@@ -459,17 +499,17 @@
       <!-- Cart Header Bar -->
       <div class="px-margin pt-1 pb-3 flex items-center justify-between border-b border-surface-container">
         <div class="flex items-center gap-2">
-          <button onclick="switchView('menu')" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-on-surface active:scale-95 transition-all" type="button">
+          <button onclick="switchView('menu')" aria-label="Back to menu" data-i18n-aria="backToMenu" class="w-11 h-11 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-on-surface active:scale-95 transition-all" type="button">
             <span class="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>
           <div>
-            <h1 class="font-headline font-bold text-[20px] text-on-surface leading-tight">Your Order</h1>
+            <h1 class="font-headline font-bold text-[20px] text-on-surface leading-tight" data-i18n="yourOrder">Your Order</h1>
             <span class="text-[12px] text-secondary" id="cart-table-subtitle">Ordering for Table 04</span>
           </div>
         </div>
         <button onclick="clearEntireCart()" class="text-[12px] text-secondary hover:text-error flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest border border-surface-container transition-colors" type="button">
           <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
-          <span>Clear</span>
+          <span data-i18n="clear">Clear</span>
         </button>
       </div>
 
@@ -483,9 +523,9 @@
         <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
           <span class="material-symbols-outlined text-[32px]">dinner_dining</span>
         </div>
-        <h3 class="font-headline font-bold text-[18px] text-on-surface">Your order is currently empty</h3>
-        <p class="text-[13px] text-secondary max-w-xs mt-1">Explore our chef-curated dishes and add items to your table order.</p>
-        <button onclick="switchView('menu')" class="mt-4 px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
+        <h3 class="font-headline font-bold text-[18px] text-on-surface" data-i18n="cartEmptyTitle">Your order is currently empty</h3>
+        <p class="text-[13px] text-secondary max-w-xs mt-1" data-i18n="cartEmptyText">Explore our chef-curated dishes and add items to your table order.</p>
+        <button onclick="switchView('menu')" class="mt-4 px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all" data-i18n="browseMenu">
           Browse Menu
         </button>
       </div>
@@ -508,7 +548,7 @@
         <!-- Price Breakdown Card -->
         <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-4 shadow-sm space-y-2">
           <div class="flex items-center justify-between text-[13px] text-secondary">
-            <span>Subtotal (<span id="cart-total-qty">0</span> items)</span>
+            <span><span data-i18n="subtotal">Subtotal</span> (<span id="cart-total-qty">0</span> <span data-i18n="items">items</span>)</span>
             <span class="font-semibold text-on-surface" id="cart-subtotal-display">$0.00</span>
           </div>
           <div id="cart-charges-breakdown" class="space-y-1.5 border-t border-dashed border-surface-container pt-1.5">
@@ -518,16 +558,18 @@
             </div>
           </div>
           <div class="pt-2 border-t border-surface-container flex items-center justify-between">
-            <span class="font-headline font-bold text-[16px] text-on-surface">Total Amount</span>
+            <span class="font-headline font-bold text-[16px] text-on-surface" data-i18n="totalAmount">Total Amount</span>
             <span class="font-headline font-bold text-[20px] text-primary" id="cart-grandtotal-display">$0.00</span>
           </div>
         </div>
 
         <!-- Kitchen Note Input -->
         <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 shadow-sm">
-          <label class="block text-[12px] font-semibold text-secondary mb-1">Kitchen Note for Chef (Optional)</label>
-          <input id="general-order-notes" type="text" placeholder="e.g. Serve drinks first, less spice/salt" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
+          <label class="block text-[12px] font-semibold text-secondary mb-1" data-i18n="kitchenNote">Kitchen Note for Chef (Optional)</label>
+          <input id="general-order-notes" type="text" placeholder="e.g. Serve drinks first, less spice/salt" data-i18n-ph="kitchenNotePh" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
         </div>
+
+        <div id="cart-soldout-notice" class="hidden rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-[12.5px] font-semibold px-3 py-2" role="status" aria-live="polite"></div>
 
         <div id="cart-send-error" class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-[12.5px] font-semibold px-3 py-2" role="alert"></div>
 
@@ -555,7 +597,7 @@
       <div class="px-margin pt-1 pb-2 flex items-center justify-between gap-2 border-b border-surface-container">
         <button onclick="orderMoreItems()" class="flex items-center gap-1 text-[12px] sm:text-[13px] font-bold text-secondary hover:text-primary transition-colors py-1.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container active:scale-95 shrink-0">
           <span class="material-symbols-outlined text-[17px]">restaurant_menu</span>
-          <span>Full Menu</span>
+          <span data-i18n="fullMenu">Full Menu</span>
         </button>
         <button onclick="resetOrderForTesting()" class="hidden flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
           <span class="material-symbols-outlined text-[16px]">restart_alt</span>
@@ -563,7 +605,7 @@
         </button>
         <div class="flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full shrink-0">
           <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-          <span>Live Tracking</span>
+          <span data-i18n="liveTracking">Live Tracking</span>
         </div>
       </div>
 
@@ -575,7 +617,10 @@
             <span class="font-headline font-bold text-[16px]" id="ticket-final-title">Order closed</span>
           </div>
           <p class="text-[12.5px] leading-snug" id="ticket-final-text"></p>
-          <button onclick="startNewOrder()" id="btn-start-new-order" class="mt-1 w-full py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
+          <button onclick="openSettledModal()" id="btn-final-rate" type="button" class="hidden w-full py-2.5 px-4 rounded-full bg-surface-container-lowest border border-emerald-300 text-emerald-900 font-headline font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[17px]">star</span><span data-i18n="rateVisit">Rate your visit</span>
+          </button>
+          <button onclick="startNewOrder()" id="btn-start-new-order" class="mt-1 w-full py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all" data-i18n="startNewOrder">
             Start a new order
           </button>
         </div>
@@ -585,7 +630,7 @@
       <div id="ticket-notices-wrap" class="hidden px-margin mt-3">
         <div class="bg-surface-container-lowest border border-surface-container rounded-2xl p-3 shadow-sm">
           <span class="text-[11px] uppercase tracking-wider text-secondary font-bold flex items-center gap-1 mb-1.5">
-            <span class="material-symbols-outlined text-[15px] text-primary">campaign</span> Updates on your order
+            <span class="material-symbols-outlined text-[15px] text-primary">campaign</span> <span data-i18n="updatesOnOrder">Updates on your order</span>
           </span>
           <div id="ticket-notices" class="flex flex-col gap-1.5"></div>
         </div>
@@ -618,7 +663,7 @@
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-[22px]">timer</span>
               <div>
-                <span class="font-headline font-bold text-[15px] text-on-surface block leading-tight">Kitchen Cooking Status</span>
+                <span class="font-headline font-bold text-[15px] text-on-surface block leading-tight" data-i18n="kitchenStatus">Kitchen Cooking Status</span>
                 <span class="text-[11px] text-secondary">Table #<span class="font-bold text-on-surface" id="conf-table-badge">04</span> &bull; <span id="ticket-number-display" class="font-mono">#TKT-0000</span></span>
               </div>
             </div>
@@ -635,7 +680,7 @@
               <div id="step-recv-dot" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">done</span>
               </div>
-              <span class="text-[11px] font-bold text-on-surface mt-1.5">Received</span>
+              <span class="text-[11px] font-bold text-on-surface mt-1.5" data-i18n="stepReceived">Received</span>
             </div>
 
             <!-- Step 2: In Prep -->
@@ -643,7 +688,7 @@
               <div id="step-prep-dot" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors">
                 <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
               </div>
-              <span class="text-[11px] font-bold text-primary mt-1.5">In Kitchen</span>
+              <span class="text-[11px] font-bold text-primary mt-1.5" data-i18n="stepInKitchen">In Kitchen</span>
             </div>
 
             <!-- Step 3: Plating/Serving -->
@@ -653,6 +698,12 @@
               </div>
               <span class="text-[11px] text-secondary mt-1.5" id="step-served-label">Serving</span>
             </div>
+          </div>
+
+          <!-- Estimated ready time from the server (New / In Kitchen only) -->
+          <div id="eta-line" class="hidden mt-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-2 flex items-center gap-2 text-[12.5px] font-semibold text-on-surface" role="status" aria-live="polite">
+            <span class="material-symbols-outlined text-[18px] text-primary">schedule</span>
+            <span id="eta-text"></span>
           </div>
 
           <!-- Time info & demo status advance + Reset button -->
@@ -695,9 +746,9 @@
           <div>
             <h3 class="font-headline font-bold text-[15px] text-on-surface flex items-center gap-1.5">
               <span class="material-symbols-outlined text-primary text-[18px]">room_service</span>
-              <span>Calling Service &amp; Table Care</span>
+              <span data-i18n="callingService">Calling Service &amp; Table Care</span>
             </h3>
-            <p class="text-[11px] text-secondary">Instant notification sent to your assigned floor server</p>
+            <p class="text-[11px] text-secondary" data-i18n="callingServiceSub">Instant notification sent to your assigned floor server</p>
           </div>
         </div>
 
@@ -705,37 +756,37 @@
           <!-- Service 1: Cold Water Refill -->
           <button onclick="sendWaiterRequest('💧 Cold Water Refill')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
             <span class="text-[20px] mb-1">💧</span>
-            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Water Refill</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight" data-i18n="svcWater">Water Refill</span>
           </button>
 
           <!-- Service 2: Extra Cutlery & Plates -->
           <button onclick="sendWaiterRequest('🥢 Extra Cutlery & Plates')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
             <span class="text-[20px] mb-1">🥢</span>
-            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Extra Cutlery</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight" data-i18n="svcCutlery">Extra Cutlery</span>
           </button>
 
           <!-- Service 3: Tissue & Napkins -->
           <button onclick="sendWaiterRequest('🧻 Napkins / Tissue')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
             <span class="text-[20px] mb-1">🧻</span>
-            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Napkins</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight" data-i18n="svcNapkins">Napkins</span>
           </button>
 
           <!-- Service 4: Clean & Wipe Table -->
           <button onclick="sendWaiterRequest('🧹 Clean / Wipe Table')" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
             <span class="text-[20px] mb-1">🧹</span>
-            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Clean Table</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight" data-i18n="svcClean">Clean Table</span>
           </button>
 
           <!-- Service 5: Call Waiter -->
           <button onclick="openWaiterModal()" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
             <span class="text-[20px] mb-1">🔔</span>
-            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight">Call Waiter</span>
+            <span class="font-bold text-[11px] text-on-surface group-hover:text-primary leading-tight" data-i18n="callWaiter">Call Waiter</span>
           </button>
 
           <!-- Service 6: Request Physical Bill -->
           <button onclick="requestPhysicalBill()" id="btn-quick-bring-bill" class="bg-amber-50 border border-amber-300 hover:border-amber-400 p-2.5 rounded-xl flex flex-col items-center text-center shadow-2xs active:scale-95 transition-all group">
             <span class="text-[20px] mb-1">🧾</span>
-            <span class="font-bold text-[11px] text-amber-900 group-hover:text-amber-950 leading-tight">Bring Bill</span>
+            <span id="btn-quick-bring-bill-label" class="font-bold text-[11px] text-amber-900 group-hover:text-amber-950 leading-tight">Bring Bill</span>
           </button>
         </div>
       </div>
@@ -745,13 +796,13 @@
         <!-- Order More Items Action Button -->
         <button onclick="orderMoreItems()" class="py-3.5 px-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-[14px] flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(172,45,0,0.28)] hover:brightness-105 active:scale-95 transition-all">
           <span class="material-symbols-outlined text-[20px]">add_circle</span>
-          <span>Order Full Dishes</span>
+          <span data-i18n="orderFullDishes">Order Full Dishes</span>
         </button>
 
         <!-- Call Waiter Button -->
         <button onclick="openWaiterModal()" class="py-3.5 px-3 rounded-2xl bg-surface-container-lowest border border-surface-container font-headline font-bold text-[14px] text-on-surface hover:text-primary hover:border-primary flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all">
           <span class="material-symbols-outlined text-[20px] text-primary">notifications_active</span>
-          <span>Call Waiter</span>
+          <span data-i18n="callWaiter">Call Waiter</span>
         </button>
       </div>
 
@@ -761,9 +812,9 @@
           <div class="flex items-center justify-between pb-3 border-b border-surface-container">
             <div>
               <div class="flex items-center gap-1.5">
-                <span class="text-[11px] uppercase tracking-wider text-secondary font-bold block">Current Table Tab</span>
+                <span class="text-[11px] uppercase tracking-wider text-secondary font-bold block" data-i18n="currentTab">Current Table Tab</span>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> Open Tab
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> <span data-i18n="openTab">Open Tab</span>
                 </span>
               </div>
               <span class="font-headline font-bold text-[16px] text-on-surface" id="ticket-table-val">Table 04 (Main Hall)</span>
@@ -782,19 +833,19 @@
           <!-- Totals from the server: confirmed items only -->
           <div id="ticket-totals-breakdown" class="pt-2 border-t border-dashed border-surface-container space-y-1"></div>
           <div class="pt-2 mt-1 border-t border-surface-container flex items-center justify-between">
-            <span class="font-headline font-bold text-[15px] text-on-surface" id="ticket-total-label">Total (confirmed items)</span>
+            <span class="font-headline font-bold text-[15px] text-on-surface" id="ticket-total-label" data-i18n="totalConfirmed">Total (confirmed items)</span>
             <span class="font-headline font-bold text-[18px] text-primary" id="ticket-total-val">Rs. 0</span>
           </div>
           <div id="ticket-pending-total-row" class="hidden mt-1 flex items-center justify-between text-[12px] text-amber-800">
-            <span>Awaiting confirmation</span>
+            <span data-i18n="awaitingConfirmation">Awaiting confirmation</span>
             <span class="font-semibold" id="ticket-pending-total-val">Rs. 0</span>
           </div>
 
           <div class="mt-3 pt-2.5 border-t border-surface-container flex items-center justify-between text-[11px] text-secondary">
-            <span>Diner: <strong class="text-on-surface" id="ticket-guest-val">Guest</strong></span>
+            <span><span data-i18n="diner">Diner:</span> <strong class="text-on-surface" id="ticket-guest-val">Guest</strong></span>
             <button onclick="openBillView()" id="btn-view-bill" class="text-primary font-bold hover:underline flex items-center gap-1">
               <span class="material-symbols-outlined text-[15px]">receipt</span>
-              <span>View bill</span>
+              <span data-i18n="viewBill">View bill</span>
             </button>
           </div>
 
@@ -802,10 +853,10 @@
             <span class="material-symbols-outlined text-[17px]">receipt_long</span>
             <span id="btn-request-bill-tab-label">Request bill</span>
           </button>
-          <p id="bill-request-status" class="hidden mt-1.5 text-center text-[11.5px] font-semibold text-emerald-700">Your waiter has been asked to bring the bill.</p>
+          <p id="bill-request-status" class="hidden mt-1.5 text-center text-[11.5px] font-semibold text-emerald-700" data-i18n="billRequestedStatus">Your waiter has been asked to bring the bill.</p>
 
           <div class="mt-2.5 p-2 rounded-xl bg-surface-container-low border border-surface-container text-center text-[10px] text-secondary">
-            🔒 Table tab remains open. You can add extra rounds or services until cleared by Cashier.
+            <span data-i18n="tabOpenNote">🔒 Table tab remains open. You can add extra rounds or services until cleared by Cashier.</span>
           </div>
         </div>
       </div>
@@ -818,13 +869,13 @@
   <!-- ================= FLOATING ACTION CART BAR ================= -->
   <div id="floating-cart-bar" class="fixed bottom-4 inset-x-0 z-40 px-margin pointer-events-none transition-all duration-300 transform translate-y-24 opacity-0 pb-safe">
     <div class="max-w-xl mx-auto pointer-events-auto">
-      <button onclick="switchView('cart')" class="w-full bg-primary text-on-primary py-3.5 px-4 rounded-2xl shadow-[0_8px_30px_rgba(172,45,0,0.45)] flex items-center justify-between border border-white/20 active:scale-[0.98] transition-transform">
+      <button onclick="switchView('cart')" type="button" class="w-full min-h-[44px] bg-primary text-on-primary py-3.5 px-4 rounded-2xl shadow-[0_8px_30px_rgba(172,45,0,0.45)] flex items-center justify-between border border-white/20 active:scale-[0.98] transition-transform">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-[14px]">
             <span id="float-cart-qty">0</span>
           </div>
           <div class="text-left leading-tight">
-            <span class="block text-[11px] uppercase tracking-wider text-white/80 font-medium">Table <span id="float-cart-table">04</span> Order</span>
+            <span class="block text-[11px] uppercase tracking-wider text-white/80 font-medium"><span data-i18n="tableWord">Table</span> <span id="float-cart-table">04</span> <span data-i18n="orderWord">Order</span></span>
             <span class="font-headline font-bold text-[15px]" id="float-cart-total">Rs. 0</span>
           </div>
         </div>
@@ -843,8 +894,8 @@
       
       <!-- Modal Header Bar -->
       <div class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md px-margin py-3 flex items-center justify-between border-b border-surface-container">
-        <span class="font-headline font-bold text-[16px] text-on-surface">Dish Customization</span>
-        <button onclick="closeDishDetail()" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface transition-colors" type="button">
+        <span class="font-headline font-bold text-[16px] text-on-surface" data-i18n="dishCustomization">Dish Customization</span>
+        <button onclick="closeDishDetail()" aria-label="Close" data-i18n-aria="close" class="w-11 h-11 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface transition-colors" type="button">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
@@ -855,7 +906,7 @@
         <!-- Circular Hero Plate Stage -->
         <div class="relative w-56 h-56 sm:w-64 sm:h-64 my-1 flex items-center justify-center">
           <div class="relative w-52 h-52 sm:w-60 sm:h-60 rounded-full overflow-hidden shadow-xl ring-4 ring-surface-container-lowest">
-            <img id="modal-dish-img" class="w-full h-full object-cover" alt="Dish photo" src=""/>
+            <img id="modal-dish-img" class="w-full h-full object-cover" alt="Dish photo" src="" loading="lazy" decoding="async"/>
           </div>
           <div class="absolute -bottom-1 right-2 bg-surface-container-lowest px-3 py-1 rounded-full shadow-md text-on-surface font-semibold text-[11px] flex items-center gap-1">
             <span class="material-symbols-outlined text-tertiary text-[14px]">schedule</span>
@@ -875,22 +926,22 @@
         <!-- Nutrition Glance Badges -->
         <div class="w-full mt-3 grid grid-cols-3 gap-2">
           <div class="bg-surface-container-lowest p-2 rounded-xl text-center shadow-sm">
-            <span class="text-[10px] text-secondary block font-medium">Calories</span>
+            <span class="text-[10px] text-secondary block font-medium" data-i18n="calories">Calories</span>
             <span class="font-headline font-bold text-[13px] text-on-surface" id="modal-dish-cals">520 kcal</span>
           </div>
           <div class="bg-surface-container-lowest p-2 rounded-xl text-center shadow-sm">
-            <span class="text-[10px] text-secondary block font-medium">Protein</span>
+            <span class="text-[10px] text-secondary block font-medium" data-i18n="protein">Protein</span>
             <span class="font-headline font-bold text-[13px] text-on-surface" id="modal-dish-protein">34g</span>
           </div>
           <div class="bg-surface-container-lowest p-2 rounded-xl text-center shadow-sm">
-            <span class="text-[10px] text-secondary block font-medium">Dietary</span>
+            <span class="text-[10px] text-secondary block font-medium" data-i18n="dietary">Dietary</span>
             <span class="font-headline font-bold text-[13px] text-primary" id="modal-dish-diet">Fresh</span>
           </div>
         </div>
 
         <!-- Portion Size Options -->
         <div class="w-full mt-4">
-          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2 text-center">Choose Serving Size</label>
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2 text-center" data-i18n="chooseSize">Choose Serving Size</label>
           <div class="grid grid-cols-2 gap-2.5" id="modal-size-container">
             <!-- Dynamically populated per dish (e.g. Half kg vs Full kg) -->
           </div>
@@ -898,7 +949,7 @@
 
         <!-- Desi Mirch / Spice Preference -->
         <div class="w-full mt-4">
-          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2 text-center">Desi Mirch &amp; Spice Level</label>
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2 text-center" data-i18n="spiceLevel">Desi Mirch &amp; Spice Level</label>
           <div class="grid grid-cols-3 gap-2">
             <button onclick="selectSpice('Normal 🍃', this)" type="button" class="spice-btn py-2 px-2 rounded-xl border border-surface-container bg-surface-container-lowest text-[12px] font-semibold text-secondary hover:text-on-surface text-center">
               Normal 🍃
@@ -914,7 +965,7 @@
 
         <!-- Add-Ons & Extras (Upsells) -->
         <div class="w-full mt-4 hidden" id="modal-addons-section">
-          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1.5">Add-Ons &amp; Extras</label>
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1.5" data-i18n="addonsExtras">Add-Ons &amp; Extras</label>
           <div class="space-y-1.5" id="modal-addons-container">
             <!-- Dynamically populated from dish.addons -->
           </div>
@@ -922,26 +973,26 @@
 
         <!-- Special Item Note -->
         <div class="w-full mt-4" id="modal-note-section">
-          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1">Special Cooking Instructions</label>
-          <input id="modal-dish-note" type="text" placeholder="e.g. No onions, sauce on side, extra crispy" class="w-full bg-surface-container-lowest border border-surface-container rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-1" data-i18n="specialInstructions">Special Cooking Instructions</label>
+          <input id="modal-dish-note" type="text" placeholder="e.g. No onions, sauce on side, extra crispy" data-i18n-ph="specialInstructionsPh" class="w-full bg-surface-container-lowest border border-surface-container rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
         </div>
 
         <!-- Stepper & Add to Order Bar -->
         <div class="w-full mt-5 pt-3 border-t border-surface-container flex items-center gap-3">
           <!-- Stepper -->
           <div class="flex items-center bg-surface-container-low rounded-full p-1 border border-surface-container">
-            <button onclick="adjustModalQty(-1)" class="w-9 h-9 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center text-on-surface active:scale-90 transition-transform">
+            <button onclick="adjustModalQty(-1)" type="button" aria-label="One less" data-i18n-aria="oneLess" class="tap44 w-9 h-9 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center text-on-surface active:scale-90 transition-transform">
               <span class="material-symbols-outlined text-[18px]">remove</span>
             </button>
-            <span id="modal-qty-val" class="w-8 text-center font-bold text-[15px]">1</span>
-            <button onclick="adjustModalQty(1)" class="w-9 h-9 rounded-full bg-primary text-on-primary shadow-sm flex items-center justify-center active:scale-90 transition-transform">
+            <span id="modal-qty-val" aria-live="polite" class="w-8 text-center font-bold text-[15px]">1</span>
+            <button onclick="adjustModalQty(1)" type="button" aria-label="One more" data-i18n-aria="oneMore" class="tap44 w-9 h-9 rounded-full bg-primary text-on-primary shadow-sm flex items-center justify-center active:scale-90 transition-transform">
               <span class="material-symbols-outlined text-[18px]">add</span>
             </button>
           </div>
 
           <!-- Add Button -->
-          <button id="modal-add-btn" onclick="commitModalToCart()" class="flex-1 py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-between shadow-[0_4px_16px_rgba(172,45,0,0.28)] hover:brightness-105 active:scale-95 transition-all">
-            <span>Add to Table Order</span>
+          <button id="modal-add-btn" onclick="commitModalToCart()" type="button" class="flex-1 min-h-[44px] py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-between shadow-[0_4px_16px_rgba(172,45,0,0.28)] hover:brightness-105 active:scale-95 transition-all">
+            <span data-i18n="addToTableOrder">Add to Table Order</span>
             <span id="modal-add-total">$0.00</span>
           </button>
         </div>
@@ -958,9 +1009,9 @@
       <div class="flex items-center justify-between pb-2 border-b border-surface-container">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-[22px]">table_restaurant</span>
-          <h3 class="font-headline font-bold text-[16px] text-on-surface">Select Dining Table</h3>
+          <h3 class="font-headline font-bold text-[16px] text-on-surface" data-i18n="selectTable">Select Dining Table</h3>
         </div>
-        <button onclick="closeTableModal()" class="text-secondary hover:text-on-surface">
+        <button onclick="closeTableModal()" type="button" aria-label="Close" data-i18n-aria="close" class="w-11 h-11 -mr-2 flex items-center justify-center text-secondary hover:text-on-surface">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
@@ -993,48 +1044,82 @@
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-[22px]">notifications_active</span>
           <div>
-            <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight">Call Server to Table</h3>
-            <span class="text-[11px] text-secondary">Table <span id="waiter-modal-table" class="font-bold text-on-surface">04</span></span>
+            <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight" data-i18n="callServerTitle">Call Server to Table</h3>
+            <span class="text-[11px] text-secondary"><span data-i18n="tableWord">Table</span> <span id="waiter-modal-table" class="font-bold text-on-surface">04</span></span>
           </div>
         </div>
-        <button onclick="closeWaiterModal()" class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface">
+        <button onclick="closeWaiterModal()" type="button" aria-label="Close" data-i18n-aria="close" class="w-11 h-11 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface">
           <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
       </div>
 
-      <p class="text-[12px] text-secondary mt-2 mb-1">Tap any service to alert staff immediately:</p>
+      <p class="text-[12px] text-secondary mt-2 mb-1" data-i18n="tapService">Tap any service to alert staff immediately:</p>
 
       <div id="waiter-modal-services-grid" class="grid grid-cols-2 gap-2 my-2">
         <!-- Dynamically populated via renderCustomerWaiterServices() from /api/waiter-services -->
       </div>
     </div>
   </div>
-  <!-- ================= BILL SETTLED & THANK YOU MODAL ================= -->
-  <div id="bill-settled-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-margin">
-    <div class="w-full max-w-sm bg-surface rounded-3xl p-6 shadow-2xl animate-fade-in flex flex-col items-center text-center">
+  <!-- ================= BILL SETTLED & FEEDBACK MODAL ================= -->
+  <div id="bill-settled-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-margin" role="dialog" aria-modal="true" aria-labelledby="settled-title">
+    <div class="w-full max-w-sm bg-surface rounded-3xl p-6 shadow-2xl animate-fade-in flex flex-col items-center text-center max-h-[92vh] overflow-y-auto no-scrollbar">
       <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
         <span class="material-symbols-outlined text-[36px]">verified</span>
       </div>
-      <span class="text-[11px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full mb-1">Payment Confirmed</span>
-      <h3 class="font-headline font-bold text-[20px] text-on-surface">Bill Settled by Server!</h3>
-      <p class="text-[12px] text-secondary mt-1">Your cash payment for <span id="settled-table-name" class="font-bold text-on-surface">Table 04</span> has been confirmed by staff.</p>
+      <span class="text-[11px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full mb-1" data-i18n="paymentConfirmed">Payment Confirmed</span>
+      <h3 class="font-headline font-bold text-[20px] text-on-surface" id="settled-title" data-i18n="billSettledTitle">Bill settled – thank you!</h3>
+      <p class="text-[12px] text-secondary mt-1" id="settled-text">Your payment for <span id="settled-table-name" class="font-bold text-on-surface">Table 04</span> has been confirmed by staff.</p>
 
-      <!-- 5-Star Feedback Form -->
-      <div class="w-full bg-surface-container-low rounded-2xl p-4 my-4">
-        <p class="text-[12px] font-semibold text-on-surface mb-2">How was your culinary experience?</p>
-        <div class="flex items-center justify-center gap-1.5 text-tertiary">
-          <button onclick="rateDining(1)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(2)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(3)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(4)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(5)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+      <!-- Feedback: stars, quick tags, optional comment -->
+      <div id="feedback-form" class="w-full bg-surface-container-low rounded-2xl p-4 my-4 text-left">
+        <p class="text-[13px] font-semibold text-on-surface mb-2 text-center" id="feedback-question" data-i18n="howWasIt">How was your meal?</p>
+        <div class="flex items-center justify-center gap-0.5 text-tertiary" role="radiogroup" aria-labelledby="feedback-question">
+          <button type="button" onclick="rateDining(1)" role="radio" aria-checked="false" aria-label="1 star" data-i18n-aria="star1" class="star-btn tap44 w-11 h-11 flex items-center justify-center text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button type="button" onclick="rateDining(2)" role="radio" aria-checked="false" aria-label="2 stars" data-i18n-aria="star2" class="star-btn tap44 w-11 h-11 flex items-center justify-center text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button type="button" onclick="rateDining(3)" role="radio" aria-checked="false" aria-label="3 stars" data-i18n-aria="star3" class="star-btn tap44 w-11 h-11 flex items-center justify-center text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button type="button" onclick="rateDining(4)" role="radio" aria-checked="false" aria-label="4 stars" data-i18n-aria="star4" class="star-btn tap44 w-11 h-11 flex items-center justify-center text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+          <button type="button" onclick="rateDining(5)" role="radio" aria-checked="false" aria-label="5 stars" data-i18n-aria="star5" class="star-btn tap44 w-11 h-11 flex items-center justify-center text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
         </div>
-        <span id="rating-feedback-label" class="text-[11px] text-secondary mt-1 block">Tap stars to rate</span>
+        <span id="rating-feedback-label" class="text-[11px] text-secondary mt-1 block text-center" data-i18n="tapStars">Tap stars to rate</span>
+
+        <div id="feedback-tags" class="flex flex-wrap justify-center gap-1.5 mt-3"></div>
+
+        <label for="feedback-comment" class="sr-only" data-i18n="commentLabel">Comment</label>
+        <textarea id="feedback-comment" rows="2" maxlength="500" placeholder="Anything else? (optional)" data-i18n-ph="commentPh" class="mt-3 w-full bg-surface-container-lowest border border-surface-container rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-2 focus:ring-primary resize-none select-text"></textarea>
+
+        <div id="feedback-error" class="hidden mt-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-[12px] font-semibold px-3 py-2" role="alert"></div>
+        <button type="button" id="feedback-send-btn" onclick="submitFeedback()" disabled class="mt-3 w-full min-h-[44px] py-2.5 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed" data-i18n="sendFeedback">Send feedback</button>
+      </div>
+      <div id="feedback-thanks" class="hidden w-full rounded-2xl p-4 my-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-[13px] font-semibold flex items-center gap-2" role="status" aria-live="polite">
+        <span class="material-symbols-outlined text-[20px] text-emerald-600">favorite</span>
+        <span data-i18n="feedbackThanks">Thank you! Your feedback was sent to the restaurant.</span>
       </div>
 
-      <button onclick="closeSettledModalAndReset()" class="w-full py-3.5 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
-        Start New Dining Order
-      </button>
+      <button type="button" onclick="closeSettledModalAndReset()" class="w-full min-h-[44px] py-3.5 px-4 rounded-full bg-surface-container-lowest border border-surface-container text-on-surface font-headline font-bold text-[14px] shadow-sm hover:brightness-105 active:scale-95 transition-all" data-i18n="startNewDining">Start New Dining Order</button>
+    </div>
+  </div>
+
+  <!-- ================= BILL REQUEST: HOW WILL YOU PAY? ================= -->
+  <div id="pay-intent-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-margin" role="dialog" aria-modal="true" aria-labelledby="pay-intent-title">
+    <div class="w-full max-w-xs bg-surface rounded-2xl p-5 shadow-2xl animate-fade-in flex flex-col items-center text-center border border-surface-container">
+      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
+        <span class="material-symbols-outlined text-[26px]">receipt_long</span>
+      </div>
+      <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight" id="pay-intent-title" data-i18n="payHow">How will you pay?</h3>
+      <p class="text-[12.5px] text-secondary mt-1.5 leading-snug" id="pay-intent-sub"></p>
+      <div class="w-full flex flex-col gap-2 mt-4">
+        <button type="button" onclick="chooseBillPayment('Cash')" class="w-full min-h-[44px] py-2.5 px-3 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary font-headline font-bold text-[14px] text-on-surface flex items-center gap-2 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[20px] text-emerald-600">payments</span><span data-i18n="pay.cash">Cash</span>
+        </button>
+        <button type="button" onclick="chooseBillPayment('Card')" class="w-full min-h-[44px] py-2.5 px-3 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary font-headline font-bold text-[14px] text-on-surface flex items-center gap-2 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[20px] text-sky-600">credit_card</span><span data-i18n="pay.card">Card</span>
+        </button>
+        <button type="button" onclick="chooseBillPayment('Bank transfer')" class="w-full min-h-[44px] py-2.5 px-3 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary font-headline font-bold text-[14px] text-on-surface flex items-center gap-2 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[20px] text-violet-600">account_balance</span><span data-i18n="pay.bank">Bank transfer</span>
+        </button>
+      </div>
+      <div id="pay-intent-error" class="hidden w-full mt-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-[12px] font-semibold px-3 py-2" role="alert"></div>
+      <button type="button" onclick="closePayIntentModal()" class="mt-3 w-full min-h-[44px] py-2 px-3 rounded-xl font-headline font-bold text-[13px] text-secondary hover:text-on-surface" data-i18n="cancel">Cancel</button>
     </div>
   </div>
 
@@ -1043,25 +1128,25 @@
     <div class="w-full max-w-xl mx-auto bg-surface rounded-t-3xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl animate-slide-up flex flex-col">
       <div class="sticky top-0 z-10 bg-surface/95 backdrop-blur-md px-margin py-3 flex items-center justify-between border-b border-surface-container">
         <div>
-          <span class="font-headline font-bold text-[17px] text-on-surface block leading-tight" id="order-review-title">Check your order</span>
+          <span class="font-headline font-bold text-[17px] text-on-surface block leading-tight" id="order-review-title" data-i18n="checkOrder">Check your order</span>
           <span class="text-[11.5px] text-secondary" id="order-review-subtitle">Make sure everything is right before sending.</span>
         </div>
-        <button onclick="closeOrderReview()" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface" type="button" aria-label="Close">
+        <button onclick="cancelSendCountdown(); closeOrderReview()" class="w-11 h-11 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface" type="button" aria-label="Close" data-i18n-aria="close">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
-      <div class="px-margin py-3 flex flex-col gap-2" id="order-review-list"></div>
+      <div class="px-margin py-3 flex flex-col gap-2 transition-opacity" id="order-review-list"></div>
       <div class="px-margin pb-2">
         <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 flex items-center justify-between">
-          <span class="text-[13px] text-secondary">Estimated total <span class="text-[11px]">(incl. charges)</span></span>
+          <span class="text-[13px] text-secondary"><span data-i18n="estimatedTotal">Estimated total</span> <span class="text-[11px]" data-i18n="inclCharges">(incl. charges)</span></span>
           <span class="font-headline font-bold text-[18px] text-primary" id="order-review-total">Rs. 0</span>
         </div>
         <p class="text-[11.5px] text-secondary mt-2 leading-snug" id="order-review-note">Your waiter will confirm this order before it goes to the kitchen. Final prices come from the restaurant.</p>
         <div id="order-review-error" class="hidden mt-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-[12.5px] font-semibold px-3 py-2" role="alert"></div>
       </div>
       <div class="px-margin pt-1 pb-5 grid grid-cols-[1fr_2fr] gap-2.5">
-        <button onclick="closeOrderReview()" type="button" class="py-3.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container font-headline font-bold text-[14px] text-on-surface active:scale-95 transition-all">Edit</button>
-        <button onclick="submitOrderToKitchen()" id="order-review-send-btn" type="button" class="py-3.5 px-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-center gap-1.5 shadow-[0_6px_22px_rgba(172,45,0,0.32)] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+        <button onclick="handleReviewSecondaryAction()" id="order-review-edit-btn" type="button" class="py-3.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container font-headline font-bold text-[14px] text-on-surface active:scale-95 transition-all">Edit</button>
+        <button onclick="startSendCountdown()" id="order-review-send-btn" type="button" class="py-3.5 px-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-center gap-1.5 shadow-[0_6px_22px_rgba(172,45,0,0.32)] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
           <span class="material-symbols-outlined text-[19px]">send</span>
           <span id="order-review-send-label">Send to waiter</span>
         </button>
@@ -1076,18 +1161,18 @@
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-[22px]">receipt_long</span>
           <div>
-            <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight" id="bill-view-title">Your bill</h3>
+            <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight" id="bill-view-title" data-i18n="yourBill">Your bill</h3>
             <span class="text-[11px] text-secondary" id="bill-view-sub"></span>
           </div>
         </div>
-        <button onclick="closeBillView()" class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface" type="button" aria-label="Close">
+        <button onclick="closeBillView()" class="w-11 h-11 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface" type="button" aria-label="Close" data-i18n-aria="close">
           <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
       </div>
       <div id="bill-view-body" class="py-2 flex flex-col gap-1.5 text-[12.5px]"></div>
       <div class="grid grid-cols-2 gap-2 mt-2">
-        <button onclick="closeBillView()" type="button" class="py-2.5 rounded-xl bg-surface-container-lowest border border-surface-container font-bold text-[13px] text-on-surface">Close</button>
-        <button onclick="closeBillView(); requestPhysicalBill();" type="button" class="py-2.5 rounded-xl bg-amber-600 text-white font-bold text-[13px]">Request bill</button>
+        <button onclick="closeBillView()" type="button" class="py-2.5 rounded-xl bg-surface-container-lowest border border-surface-container font-bold text-[13px] text-on-surface" data-i18n="close">Close</button>
+        <button onclick="closeBillView(); requestPhysicalBill();" type="button" class="py-2.5 rounded-xl bg-amber-600 text-white font-bold text-[13px]" data-i18n="requestBill">Request bill</button>
       </div>
     </div>
   </div>
@@ -1095,7 +1180,7 @@
   <!-- Live updates connection lost -->
   <div id="sse-reconnect-banner" class="hidden fixed top-[4.25rem] inset-x-0 z-50 justify-center pointer-events-none" role="status" aria-live="polite">
     <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11.5px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
-      <span class="material-symbols-outlined text-[14px] animate-spin">sync</span> Reconnecting…
+      <span class="material-symbols-outlined text-[14px] animate-spin">sync</span> <span data-i18n="reconnecting">Reconnecting…</span>
     </span>
   </div>
 
@@ -2273,7 +2358,11 @@
             const wasDown = sseReconnecting;
             setReconnectingBanner(false);
             // Catch up on anything missed while the connection was down
-            if (wasDown) { try { pollTableSession(); } catch (err) {} }
+            if (wasDown) {
+              try { pollTableSession(); } catch (err) {}
+              // Sold-out list and ordering settings may have changed while we were away
+              try { refreshOrderingSettings(); } catch (err) {}
+            }
           };
           this.eventSource.onerror = () => {
             // The browser retries on its own; tell the guest updates may be late
@@ -2371,6 +2460,242 @@
         .replace(/'/g, '&#039;');
     }
 
+
+    // --- LANGUAGE (English / Urdu) ---
+    // Fixed UI text only; dish names and descriptions stay as the restaurant entered them.
+    const I18N = {
+      en: {
+        'nav.all': 'All', 'nav.deals': 'Deals', 'nav.pizzas': 'Pizzas', 'nav.burgers': 'Burgers', 'nav.sandwiches': 'Sandwiches',
+        'nav.wraps': 'Wraps', 'nav.drinks': 'Drinks', 'nav.desserts': 'Desserts',
+        viewTab: 'View Tab', yourOrder: 'Your Order', clear: 'Clear',
+        cartEmptyTitle: 'Your order is currently empty',
+        cartEmptyText: 'Explore our chef-curated dishes and add items to your table order.',
+        browseMenu: 'Browse Menu', subtotal: 'Subtotal', items: 'items', totalAmount: 'Total Amount',
+        kitchenNote: 'Kitchen Note for Chef (Optional)', kitchenNotePh: 'e.g. Serve drinks first, less spice/salt',
+        fullMenu: 'Full Menu', liveTracking: 'Live Tracking', startNewOrder: 'Start a new order',
+        updatesOnOrder: 'Updates on your order', kitchenStatus: 'Kitchen Cooking Status',
+        stepReceived: 'Received', stepInKitchen: 'In Kitchen', stepServing: 'Serving', stepServed: 'Served',
+        callingService: 'Calling Service & Table Care', callingServiceSub: 'Instant notification sent to your assigned floor server',
+        svcWater: 'Water Refill', svcCutlery: 'Extra Cutlery', svcNapkins: 'Napkins', svcClean: 'Clean Table',
+        callWaiter: 'Call Waiter', viewCart: 'View Cart', bringBill: 'Bring Bill', billRequestedShort: 'Requested ✓',
+        orderFullDishes: 'Order Full Dishes', currentTab: 'Current Table Tab', openTab: 'Open Tab',
+        totalConfirmed: 'Total (confirmed items)', awaitingConfirmation: 'Awaiting confirmation', diner: 'Diner:',
+        viewBill: 'View bill', requestBill: 'Request bill', billRequested: 'Bill requested ✓',
+        billRequestedWith: 'Bill requested ✓ ({method})',
+        billRequestedStatus: 'Your waiter has been asked to bring the bill.',
+        tabOpenNote: '🔒 Table tab remains open. You can add extra rounds or services until cleared by Cashier.',
+        tableWord: 'Table', orderWord: 'Order', viewOrder: 'View Order', addToOrder: 'Add to Order',
+        dishCustomization: 'Dish Customization', calories: 'Calories', protein: 'Protein', dietary: 'Dietary',
+        chooseSize: 'Choose Serving Size', spiceLevel: 'Desi Mirch & Spice Level', addonsExtras: 'Add-Ons & Extras',
+        specialInstructions: 'Special Cooking Instructions', specialInstructionsPh: 'e.g. No onions, sauce on side, extra crispy',
+        addToTableOrder: 'Add to Table Order', callServerTitle: 'Call Server to Table',
+        tapService: 'Tap any service to alert staff immediately:', selectTable: 'Select Dining Table',
+        checkOrder: 'Check your order', checkOrderSub: 'Make sure everything is right before sending.',
+        reviewSubtitle: '{n} item(s) for {where}', yourOnlineOrder: 'your online order',
+        estimatedTotal: 'Estimated total', inclCharges: '(incl. charges)', edit: 'Edit', sendToWaiter: 'Send to waiter',
+        sendToKitchen: 'Send to kitchen',
+        reviewNoteConfirm: 'Your waiter will confirm this order before it goes to the kitchen. Final prices come from the restaurant.',
+        reviewNoteDirect: 'This order goes straight to the kitchen. Final prices come from the restaurant.',
+        yourBill: 'Your bill', close: 'Close', cancel: 'Cancel', reconnecting: 'Reconnecting…',
+        searchPh: 'Search pizza, burger, wrap...', searchDishes: 'Search dishes', filterDishes: 'Filter dishes',
+        backToMenu: 'Back to menu', oneLess: 'One less', oneMore: 'One more', removeItem: 'Remove item',
+        soldOut: 'Sold out', soldOutToast: 'Sorry, this dish is sold out right now.',
+        soldOutRemoved: 'Sold out, removed from your order: {items}',
+        soldOutLine: 'Sold out – please remove',
+        add: 'Add', dishesCount: '{n} dishes', noMatch: 'No dishes match your search', resetFilters: 'Reset filters',
+        allMenu: 'All Menu', viewAll: 'View All',
+        'filter.veg': 'Vegetarian', 'filter.spicy': 'Spicy', 'filter.nuts': 'Contains nuts', 'filter.chef': "Chef's special",
+        nutsNote: 'Nut info is based on menu descriptions. Please tell staff about allergies.',
+        eta: 'Ready around {time} (about {min} min)', etaSoon: 'Should be ready any minute now',
+        'status.pending': 'Waiting for waiter ⏳', 'status.new': 'Order Received 👨‍🍳', 'status.kitchen': 'Cooking In Kitchen 🔥',
+        'status.ready': 'Plated & Serving 🍽️', 'status.served': 'Dishes Served! 🍽️', 'status.settled': 'Bill paid ✓',
+        'status.voided': 'Order cancelled', 'status.rejected': 'Order not accepted',
+        'sub.pending': 'Your waiter will confirm your order shortly', 'sub.new': 'Tap to track status or call waiter',
+        'sub.kitchen': 'Tap to track status, add items or call waiter', 'sub.served': 'Tap to view table tab, add items or request bill',
+        'sub.settled': 'Thank you! Tap to see your order.', 'sub.closed': 'Tap to see details or start a new order',
+        pendingWaiting: 'Waiting for your waiter to confirm', pendingNotOnBill: '{amount} awaiting confirmation (not on your bill yet)',
+        confirmedHeading: 'Confirmed', noDishes: 'No dishes on this order.',
+        'final.rejected': 'Your order was not accepted', 'final.voided': 'This order was cancelled', 'final.settled': 'Bill paid – thank you!',
+        payHow: 'How will you pay?', payHowSub: 'Your waiter will bring the bill to {where}.',
+        'pay.cash': 'Cash', 'pay.card': 'Card', 'pay.bank': 'Bank transfer',
+        billAlready: 'The bill is already on its way.', noOrderYet: 'No order yet.',
+        sendingIn: 'Sending in {n}…', undo: 'Undo', sendCancelled: 'Not sent. Your order is still in the cart.', sending: 'Sending…',
+        reviewOrder: 'Review order', reviewAddOrder: 'Review & add to order', orderingPaused: 'Ordering paused',
+        onlineOff: 'Online ordering is off', hostWillSubmit: 'Host ({name}) Will Submit Order',
+        'role.host': 'Table Host', 'role.guest': 'Co-Diner',
+        paymentConfirmed: 'Payment Confirmed', billSettledTitle: 'Bill settled – thank you!',
+        billSettledText: 'Your payment for {where} has been confirmed by staff.',
+        howWasIt: 'How was your meal?', tapStars: 'Tap stars to rate', commentLabel: 'Comment',
+        star1: '1 star', star2: '2 stars', star3: '3 stars', star4: '4 stars', star5: '5 stars',
+        'rating.1': 'Needs improvement', 'rating.2': 'Fair', 'rating.3': 'Good', 'rating.4': 'Very good', 'rating.5': 'Excellent! 🌟',
+        ratedLabel: 'Rated {n}/5: {label}',
+        'tag.tasty': 'Tasty', 'tag.fast': 'Fast service', 'tag.friendly': 'Friendly staff', 'tag.slow': 'Too slow', 'tag.cold': 'Cold food',
+        commentPh: 'Anything else? (optional)', sendFeedback: 'Send feedback',
+        feedbackThanks: 'Thank you! Your feedback was sent to the restaurant.',
+        feedbackError: 'Could not send your feedback. Please try again.', feedbackPickStars: 'Please choose 1 to 5 stars first.',
+        startNewDining: 'Start New Dining Order', rateVisit: 'Rate your visit',
+        'err.connection': 'Could not send. Check your connection and try again.',
+        'err.wait': 'Please wait a few seconds and try again.',
+        'err.waiter': 'Could not reach your waiter. Please try again.',
+        'err.tableClosed': 'Please ask your waiter to open the table.',
+        'err.generic': 'Could not send. Please try again or ask your waiter.',
+        'err.empty': 'Your order is empty!', 'err.onlyHost': 'Only the Table Host ({name}) can send the first order.',
+        'toast.sentWaiting': 'Sent! Waiting for your waiter to confirm.', 'toast.sentKitchen': 'Order sent to the kitchen!',
+        'toast.extraSent': 'Extra dishes sent to the kitchen!', 'toast.already': 'Those dishes are already on your order.',
+        'toast.added': 'Added {title} to your order!', 'toast.removed': 'Item removed from order',
+        'toast.notified': 'Your waiter has been told: {request}'
+      },
+      ur: {
+        'nav.all': 'سب', 'nav.deals': 'ڈیلز', 'nav.pizzas': 'پیزا', 'nav.burgers': 'برگر', 'nav.sandwiches': 'سینڈوچ',
+        'nav.wraps': 'ریپس', 'nav.drinks': 'مشروبات', 'nav.desserts': 'میٹھا',
+        viewTab: 'آرڈر دیکھیں', yourOrder: 'آپ کا آرڈر', clear: 'صاف کریں',
+        cartEmptyTitle: 'آپ کا آرڈر ابھی خالی ہے',
+        cartEmptyText: 'ہمارے پکوان دیکھیں اور اپنی میز کے آرڈر میں شامل کریں۔',
+        browseMenu: 'مینو دیکھیں', subtotal: 'ذیلی کل', items: 'اشیاء', totalAmount: 'کل رقم',
+        kitchenNote: 'شیف کے لیے ہدایت (اختیاری)', kitchenNotePh: 'مثلاً پہلے مشروبات، کم مرچ یا نمک',
+        fullMenu: 'مکمل مینو', liveTracking: 'لائیو ٹریکنگ', startNewOrder: 'نیا آرڈر شروع کریں',
+        updatesOnOrder: 'آپ کے آرڈر کی تازہ معلومات', kitchenStatus: 'کچن کی صورتحال',
+        stepReceived: 'موصول', stepInKitchen: 'کچن میں', stepServing: 'پیش ہو رہا ہے', stepServed: 'پیش کر دیا گیا',
+        callingService: 'سروس اور میز کی دیکھ بھال', callingServiceSub: 'آپ کے ویٹر کو فوراً اطلاع جائے گی',
+        svcWater: 'پانی', svcCutlery: 'اضافی برتن', svcNapkins: 'ٹشو', svcClean: 'میز صاف کریں',
+        callWaiter: 'ویٹر کو بلائیں', viewCart: 'کارٹ دیکھیں', bringBill: 'بل لائیں', billRequestedShort: 'منگوا لیا ✓',
+        orderFullDishes: 'مزید پکوان منگوائیں', currentTab: 'میز کا موجودہ بل', openTab: 'کھلا بل',
+        totalConfirmed: 'کل (تصدیق شدہ اشیاء)', awaitingConfirmation: 'تصدیق کا انتظار', diner: 'مہمان:',
+        viewBill: 'بل دیکھیں', requestBill: 'بل منگوائیں', billRequested: 'بل منگوا لیا گیا ✓',
+        billRequestedWith: 'بل منگوا لیا گیا ✓ ({method})',
+        billRequestedStatus: 'ویٹر کو بل لانے کا کہہ دیا گیا ہے۔',
+        tabOpenNote: '🔒 میز کا بل کھلا ہے۔ کیشیئر کے بند کرنے تک آپ مزید اشیاء یا سروس منگوا سکتے ہیں۔',
+        tableWord: 'میز', orderWord: 'آرڈر', viewOrder: 'آرڈر دیکھیں', addToOrder: 'آرڈر میں شامل کریں',
+        dishCustomization: 'پکوان کی تفصیل', calories: 'کیلوریز', protein: 'پروٹین', dietary: 'غذائی',
+        chooseSize: 'مقدار منتخب کریں', spiceLevel: 'مرچ کی مقدار', addonsExtras: 'اضافی اشیاء',
+        specialInstructions: 'خاص ہدایات', specialInstructionsPh: 'مثلاً پیاز کے بغیر، چٹنی الگ',
+        addToTableOrder: 'آرڈر میں شامل کریں', callServerTitle: 'ویٹر کو میز پر بلائیں',
+        tapService: 'عملے کو اطلاع دینے کے لیے کوئی سروس منتخب کریں:', selectTable: 'میز منتخب کریں',
+        checkOrder: 'اپنا آرڈر چیک کریں', checkOrderSub: 'بھیجنے سے پہلے تسلی کر لیں۔',
+        reviewSubtitle: '{where} کے لیے {n} اشیاء', yourOnlineOrder: 'آپ کا آن لائن آرڈر',
+        estimatedTotal: 'اندازاً کل', inclCharges: '(چارجز سمیت)', edit: 'تبدیل کریں', sendToWaiter: 'ویٹر کو بھیجیں',
+        sendToKitchen: 'کچن کو بھیجیں',
+        reviewNoteConfirm: 'کچن جانے سے پہلے ویٹر اس آرڈر کی تصدیق کرے گا۔ حتمی قیمتیں ریسٹورنٹ طے کرے گا۔',
+        reviewNoteDirect: 'یہ آرڈر سیدھا کچن جائے گا۔ حتمی قیمتیں ریسٹورنٹ طے کرے گا۔',
+        yourBill: 'آپ کا بل', close: 'بند کریں', cancel: 'منسوخ', reconnecting: 'دوبارہ جڑ رہا ہے…',
+        searchPh: 'پیزا، برگر، ریپ تلاش کریں...', searchDishes: 'پکوان تلاش کریں', filterDishes: 'پکوان فلٹر کریں',
+        backToMenu: 'مینو پر واپس', oneLess: 'ایک کم', oneMore: 'ایک اور', removeItem: 'نکال دیں',
+        soldOut: 'ختم', soldOutToast: 'معذرت، یہ ڈش ابھی ختم ہے۔',
+        soldOutRemoved: 'ختم ہو گیا، آرڈر سے نکال دیا گیا: {items}',
+        soldOutLine: 'ختم ہو گیا – براہ کرم نکال دیں',
+        add: 'شامل کریں', dishesCount: '{n} پکوان', noMatch: 'کوئی پکوان نہیں ملا', resetFilters: 'فلٹر ہٹائیں',
+        allMenu: 'مکمل مینو', viewAll: 'سب دیکھیں',
+        'filter.veg': 'سبزی', 'filter.spicy': 'مرچ والا', 'filter.nuts': 'میوہ جات شامل', 'filter.chef': 'شیف اسپیشل',
+        nutsNote: 'میوہ جات کی معلومات مینو کی تفصیل سے لی گئی ہے۔ الرجی ہو تو عملے کو بتائیں۔',
+        eta: 'تقریباً {time} تک تیار (تقریباً {min} منٹ)', etaSoon: 'بس تیار ہونے والا ہے',
+        'status.pending': 'ویٹر کا انتظار ⏳', 'status.new': 'آرڈر موصول 👨‍🍳', 'status.kitchen': 'کچن میں تیار ہو رہا ہے 🔥',
+        'status.ready': 'پیش کیا جا رہا ہے 🍽️', 'status.served': 'کھانا پیش کر دیا گیا! 🍽️', 'status.settled': 'بل ادا ہو گیا ✓',
+        'status.voided': 'آرڈر منسوخ', 'status.rejected': 'آرڈر قبول نہیں ہوا',
+        'sub.pending': 'ویٹر جلد آپ کے آرڈر کی تصدیق کرے گا', 'sub.new': 'صورتحال دیکھنے یا ویٹر بلانے کے لیے دبائیں',
+        'sub.kitchen': 'صورتحال دیکھنے، مزید منگوانے یا ویٹر بلانے کے لیے دبائیں', 'sub.served': 'بل دیکھنے، مزید منگوانے یا بل منگوانے کے لیے دبائیں',
+        'sub.settled': 'شکریہ! اپنا آرڈر دیکھنے کے لیے دبائیں۔', 'sub.closed': 'تفصیل دیکھنے یا نیا آرڈر شروع کرنے کے لیے دبائیں',
+        pendingWaiting: 'ویٹر کی تصدیق کا انتظار', pendingNotOnBill: '{amount} تصدیق کے منتظر (ابھی بل میں شامل نہیں)',
+        confirmedHeading: 'تصدیق شدہ', noDishes: 'اس آرڈر میں کوئی پکوان نہیں۔',
+        'final.rejected': 'آپ کا آرڈر قبول نہیں ہوا', 'final.voided': 'یہ آرڈر منسوخ کر دیا گیا', 'final.settled': 'بل ادا ہو گیا – شکریہ!',
+        payHow: 'آپ کیسے ادائیگی کریں گے؟', payHowSub: 'ویٹر {where} پر بل لائے گا۔',
+        'pay.cash': 'نقد', 'pay.card': 'کارڈ', 'pay.bank': 'بینک ٹرانسفر',
+        billAlready: 'بل پہلے ہی منگوایا جا چکا ہے۔', noOrderYet: 'ابھی کوئی آرڈر نہیں۔',
+        sendingIn: '{n} سیکنڈ میں بھیجا جائے گا…', undo: 'واپس لیں', sendCancelled: 'نہیں بھیجا گیا۔ آپ کا آرڈر کارٹ میں موجود ہے۔', sending: 'بھیجا جا رہا ہے…',
+        reviewOrder: 'آرڈر دیکھیں', reviewAddOrder: 'دیکھیں اور آرڈر میں شامل کریں', orderingPaused: 'آرڈر عارضی طور پر بند',
+        onlineOff: 'آن لائن آرڈر بند ہے', hostWillSubmit: 'میزبان ({name}) آرڈر بھیجیں گے',
+        'role.host': 'میزبان', 'role.guest': 'ساتھی مہمان',
+        paymentConfirmed: 'ادائیگی کی تصدیق', billSettledTitle: 'بل ادا ہو گیا – شکریہ!',
+        billSettledText: '{where} کی ادائیگی کی تصدیق ہو گئی ہے۔',
+        howWasIt: 'آپ کا کھانا کیسا رہا؟', tapStars: 'ستارے دبا کر درجہ دیں', commentLabel: 'تبصرہ',
+        star1: '1 ستارہ', star2: '2 ستارے', star3: '3 ستارے', star4: '4 ستارے', star5: '5 ستارے',
+        'rating.1': 'بہتری کی ضرورت', 'rating.2': 'ٹھیک', 'rating.3': 'اچھا', 'rating.4': 'بہت اچھا', 'rating.5': 'زبردست! 🌟',
+        ratedLabel: '{n}/5: {label}',
+        'tag.tasty': 'مزیدار', 'tag.fast': 'تیز سروس', 'tag.friendly': 'خوش اخلاق عملہ', 'tag.slow': 'بہت دیر لگی', 'tag.cold': 'کھانا ٹھنڈا تھا',
+        commentPh: 'کچھ اور کہنا چاہیں گے؟ (اختیاری)', sendFeedback: 'رائے بھیجیں',
+        feedbackThanks: 'شکریہ! آپ کی رائے ریسٹورنٹ کو بھیج دی گئی۔',
+        feedbackError: 'رائے نہیں بھیجی جا سکی۔ دوبارہ کوشش کریں۔', feedbackPickStars: 'پہلے 1 سے 5 ستارے منتخب کریں۔',
+        startNewDining: 'نیا آرڈر شروع کریں', rateVisit: 'اپنی رائے دیں',
+        'err.connection': 'نہیں بھیجا جا سکا۔ انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔',
+        'err.wait': 'چند سیکنڈ انتظار کر کے دوبارہ کوشش کریں۔',
+        'err.waiter': 'ویٹر تک اطلاع نہیں پہنچی۔ دوبارہ کوشش کریں۔',
+        'err.tableClosed': 'براہ کرم ویٹر سے میز کھولنے کا کہیں۔',
+        'err.generic': 'نہیں بھیجا جا سکا۔ دوبارہ کوشش کریں یا ویٹر سے پوچھیں۔',
+        'err.empty': 'آپ کا آرڈر خالی ہے!', 'err.onlyHost': 'پہلا آرڈر صرف میزبان ({name}) بھیج سکتے ہیں۔',
+        'toast.sentWaiting': 'بھیج دیا گیا! ویٹر کی تصدیق کا انتظار ہے۔', 'toast.sentKitchen': 'آرڈر کچن کو بھیج دیا گیا!',
+        'toast.extraSent': 'اضافی پکوان کچن کو بھیج دیے گئے!', 'toast.already': 'یہ پکوان پہلے سے آپ کے آرڈر میں ہیں۔',
+        'toast.added': '{title} آرڈر میں شامل کر دیا گیا!', 'toast.removed': 'آرڈر سے نکال دیا گیا',
+        'toast.notified': 'ویٹر کو اطلاع دے دی گئی: {request}'
+      }
+    };
+
+    let currentLang = 'en';
+    try { if (localStorage.getItem('gourmet_lang') === 'ur') currentLang = 'ur'; } catch (e) {}
+
+    // Looks up a fixed UI string; {name} placeholders are filled from vars
+    function t(key, vars) {
+      const dict = I18N[currentLang] || I18N.en;
+      let str = (dict[key] !== undefined) ? dict[key] : (I18N.en[key] !== undefined ? I18N.en[key] : key);
+      if (vars) str = str.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null) ? String(vars[k]) : m);
+      return str;
+    }
+
+    // Translates static elements marked with data-i18n / data-i18n-ph / data-i18n-aria
+    function applyI18n() {
+      const root = document.documentElement;
+      root.setAttribute('lang', currentLang === 'ur' ? 'ur' : 'en');
+      root.setAttribute('dir', currentLang === 'ur' ? 'rtl' : 'ltr');
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        if (el.dataset.i18nEn === undefined) el.dataset.i18nEn = el.textContent.trim();
+        const key = el.dataset.i18n;
+        const val = (currentLang === 'en' && I18N.en[key] === undefined) ? el.dataset.i18nEn : t(key);
+        if (el.textContent !== val) el.textContent = val;
+      });
+      document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.setAttribute('placeholder', t(el.dataset.i18nPh)); });
+      document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+      const ur = document.getElementById('lang-opt-ur');
+      const en = document.getElementById('lang-opt-en');
+      if (ur) ur.className = currentLang === 'ur' ? 'font-black text-primary' : 'font-semibold';
+      if (en) en.className = currentLang === 'en' ? 'font-black text-primary' : 'font-semibold';
+      const btn = document.getElementById('lang-toggle-btn');
+      if (btn) {
+        btn.setAttribute('aria-pressed', currentLang === 'ur' ? 'true' : 'false');
+        btn.setAttribute('aria-label', currentLang === 'ur' ? 'View in English' : 'اردو میں دیکھیں');
+      }
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang === 'ur' ? 'ur' : 'en';
+      try { localStorage.setItem('gourmet_lang', currentLang); } catch (e) {}
+      applyI18n();
+      rerenderTranslatedUI();
+    }
+
+    function toggleLanguage() {
+      setLanguage(currentLang === 'ur' ? 'en' : 'ur');
+    }
+
+    // Redraws the parts of the page whose text is built in script
+    function rerenderTranslatedUI() {
+      try {
+        applyTableLabels();
+        renderDietFilters();
+        renderDishGrid();
+        renderCartItems();
+        updateCartUI();
+        applyOrderingSettings(appState.lastOrdering);
+        if (appState.currentTicket) {
+          applyTicketStatusUI(appState.currentTicket.status);
+          renderTicketDetails();
+        } else {
+          resetBillRequestUI();
+        }
+        renderEta();
+        renderFeedbackTags();
+        if (isOrderReviewOpen()) renderOrderReview();
+        updateSendCountdownUI();
+      } catch (e) { console.warn('Language refresh skipped:', e); }
+    }
+
     let pendingActionConfirm = null;
 
     function promptUserConfirmation({ title, message, icon, confirmText, cancelText, confirmColorClass, onConfirm }) {
@@ -2423,7 +2748,8 @@
       }
     }
 
-    let soldOutSet = new Set(JSON.parse(localStorage.getItem('gourmet_86_items') || '[]'));
+    // Sold-out dishes from the server (/api/public/info soldOut, SSE ITEM_86_UPDATE): ids or titles
+    let soldOutSet = new Set();
 
     let appState = {
       tableNumber: "04",
@@ -2450,8 +2776,409 @@
       orderingPaused: false,
       pausedMessage: '',
       onlineOrderingOff: false,
-      waiterConfirms: true
+      waiterConfirms: true,
+      lastOrdering: null,      // last ordering settings from the server (for redraws)
+      dietFilters: [],         // active dietary chip ids
+      billRequestedFor: '',    // ticket this phone asked the bill for
+      billPayMethod: '',       // how the guest said they will pay
+      billRequestInFlight: false,
+      feedback: { ticketId: '', rating: 0, tags: [], sent: false, sending: false }
     };
+
+    // --- SOLD OUT: the server's list (dish ids or titles) is the source of truth ---
+    function isDishSoldOut(dish) {
+      if (!dish) return false;
+      if (dish.isAvailable === false) return true;
+      return soldOutSet.has(String(dish.id)) || Boolean(dish.title && soldOutSet.has(String(dish.title)));
+    }
+
+    function isCartItemSoldOut(item) {
+      if (!item) return false;
+      const dish = findDishById(item.dishId);
+      if (dish) return isDishSoldOut(dish);
+      return soldOutSet.has(String(item.dishId)) || Boolean(item.title && soldOutSet.has(String(item.title)));
+    }
+
+    function applySoldOutList(list) {
+      soldOutSet = new Set((Array.isArray(list) ? list : []).map(x => String(x)));
+      renderDishGrid();
+      pruneSoldOutFromCart();
+      if (isOrderReviewOpen()) renderOrderReview();
+    }
+
+    // Takes dishes that sold out out of the cart and says which ones went
+    function pruneSoldOutFromCart() {
+      if (!Array.isArray(appState.cart) || appState.cart.length === 0) return;
+      const removed = appState.cart.filter(isCartItemSoldOut);
+      if (removed.length === 0) return;
+      appState.cart = appState.cart.filter(i => !isCartItemSoldOut(i));
+      saveCartToStorage();
+      updateCartUI();
+      renderCartItems();
+      renderDishGrid();
+      // A full sync is safe when several phones at the table prune at once
+      syncCartAction('sync', { cart: appState.cart });
+      const names = Array.from(new Set(removed.map(i => String(i.title || '')).filter(Boolean))).join(', ');
+      const msg = t('soldOutRemoved', { items: names });
+      const notice = document.getElementById('cart-soldout-notice');
+      if (notice) { notice.textContent = msg; notice.classList.remove('hidden'); }
+      showToast(msg);
+    }
+
+    function hideSoldOutNotice() {
+      const notice = document.getElementById('cart-soldout-notice');
+      if (notice) { notice.classList.add('hidden'); notice.textContent = ''; }
+    }
+
+    // --- DIETARY FILTER CHIPS (only for what the dish data actually has) ---
+    const NUT_WORDS = /\b(nuts?|walnuts?|almonds?|pistachios?|cashews?|peanuts?|hazelnuts?|pecans?|nutella|praline)\b/i;
+
+    function dishTagList(dish) {
+      if (!dish || !Array.isArray(dish.tags)) return [];
+      return dish.tags.map(x => String(typeof x === 'string' ? x : ((x && (x.name || x.id)) || ''))).filter(Boolean);
+    }
+
+    const DIET_FILTERS = [
+      { id: 'veg', key: 'filter.veg', icon: 'eco',
+        test: d => d.isVeg === true || d.isVegetarian === true || dishTagList(d).some(x => /\bveg(etarian|an)?\b/i.test(x) && !/non[-\s]?veg/i.test(x)) },
+      { id: 'spicy', key: 'filter.spicy', icon: 'local_fire_department',
+        test: d => d.isSpicy === true || dishTagList(d).some(x => /spic/i.test(x)) },
+      { id: 'nuts', key: 'filter.nuts', icon: 'warning',
+        test: d => d.containsNuts === true ||
+          (Array.isArray(d.allergens) && d.allergens.some(a => NUT_WORDS.test(String(a)))) ||
+          dishTagList(d).some(x => NUT_WORDS.test(x)) ||
+          NUT_WORDS.test([d.title, d.desc, d.dietary].filter(Boolean).join(' ')) },
+      { id: 'chef', key: 'filter.chef', icon: 'hotel_class',
+        test: d => d.isChef === true || dishTagList(d).some(x => /chef/i.test(x)) }
+    ];
+
+    function safeTest(f, d) { try { return Boolean(f.test(d)); } catch (e) { return false; } }
+
+    function availableDietFilters() {
+      const list = DIET_FILTERS.filter(f => DISH_CATALOG.some(d => safeTest(f, d)));
+      // Other tags the restaurant attached to dishes (e.g. "Best Seller")
+      const extra = new Map();
+      DISH_CATALOG.forEach(d => dishTagList(d).forEach(tag => {
+        const low = tag.trim().toLowerCase();
+        if (!low || /veg|spic|chef/.test(low) || NUT_WORDS.test(low) || extra.has(low)) return;
+        extra.set(low, tag.trim());
+      }));
+      Array.from(extra.entries()).slice(0, 4).forEach(([low, label]) => {
+        list.push({ id: 'tag:' + low, label, icon: 'sell', test: d => dishTagList(d).some(x => x.trim().toLowerCase() === low) });
+      });
+      return list;
+    }
+
+    function renderDietFilters() {
+      const row = document.getElementById('diet-filter-row');
+      const note = document.getElementById('diet-filter-note');
+      if (!row) return;
+      const filters = availableDietFilters();
+      appState.dietFilters = (appState.dietFilters || []).filter(id => filters.some(f => f.id === id));
+      row.classList.toggle('hidden', filters.length === 0);
+      row.innerHTML = filters.map(f => {
+        const on = appState.dietFilters.includes(f.id);
+        const label = f.key ? t(f.key) : f.label;
+        return `<button type="button" class="diet-chip shrink-0 min-h-[36px] px-3 rounded-full border border-surface-container bg-surface-container-lowest text-[11.5px] font-bold text-secondary flex items-center gap-1 active:scale-95 transition-all" aria-pressed="${on}" data-filter-id="${escapeHtml(f.id)}" onclick="toggleDietFilter(this.dataset.filterId)">
+            <span class="material-symbols-outlined text-[15px]" aria-hidden="true">${escapeHtml(f.icon)}</span><span>${escapeHtml(label)}</span>
+          </button>`;
+      }).join('');
+      if (note) note.classList.toggle('hidden', !appState.dietFilters.includes('nuts'));
+    }
+
+    function toggleDietFilter(id) {
+      const list = appState.dietFilters || [];
+      appState.dietFilters = list.includes(id) ? list.filter(x => x !== id) : list.concat(id);
+      renderDietFilters();
+      renderDishGrid();
+    }
+
+    function resetMenuFilters() {
+      appState.dietFilters = [];
+      renderDietFilters();
+      clearSearch();
+      selectCategory('all', document.querySelector('.cat-rail-btn'));
+    }
+
+    function dishMatchesDietFilters(dish) {
+      const active = appState.dietFilters || [];
+      if (active.length === 0) return true;
+      const filters = availableDietFilters().filter(f => active.includes(f.id));
+      return filters.every(f => safeTest(f, dish));
+    }
+
+    // --- ESTIMATED READY TIME (from the server, New / In Kitchen only) ---
+    function etaText(tkt) {
+      const at = tkt ? Number(tkt.estimatedReadyAt) : 0;
+      if (!at || !['New', 'In Kitchen'].includes(tkt.status)) return '';
+      const mins = Math.round((at - Date.now()) / 60000);
+      if (mins < 1) return t('etaSoon');
+      let time = '';
+      try { time = new Date(at).toLocaleTimeString(currentLang === 'ur' ? 'ur-PK' : [], { hour: 'numeric', minute: '2-digit' }); } catch (e) { time = new Date(at).toLocaleTimeString(); }
+      return t('eta', { time, min: mins });
+    }
+
+    function renderEta() {
+      const line = document.getElementById('eta-line');
+      const text = document.getElementById('eta-text');
+      if (!line || !text) return;
+      const msg = etaText(appState.currentTicket);
+      line.classList.toggle('hidden', !msg);
+      line.classList.toggle('flex', Boolean(msg));
+      if (text.textContent !== msg) text.textContent = msg;
+      const bannerSub = document.getElementById('banner-status-sub');
+      if (msg && bannerSub) bannerSub.textContent = msg;
+    }
+    setInterval(renderEta, 30000);
+
+    // --- BILL REQUEST WITH PAYMENT INTENT ---
+    const PAY_METHOD_KEYS = { 'Cash': 'pay.cash', 'Card': 'pay.card', 'Bank transfer': 'pay.bank' };
+
+    function isBillRequested(tkt) {
+      return Boolean(tkt && (tkt.billRequested || (appState.billRequestedFor && appState.billRequestedFor === tkt.ticketId)));
+    }
+
+    function closePayIntentModal() {
+      const m = document.getElementById('pay-intent-modal');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+    }
+
+    async function chooseBillPayment(method) {
+      if (appState.billRequestInFlight) return;
+      const errEl = document.getElementById('pay-intent-error');
+      if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+      const btns = document.querySelectorAll('#pay-intent-modal button');
+      appState.billRequestInFlight = true;
+      btns.forEach(b => { b.disabled = true; });
+      const result = await sendServiceBell(`Bill please (${method})`);
+      appState.billRequestInFlight = false;
+      btns.forEach(b => { b.disabled = false; });
+      if (!result.ok) {
+        if (errEl) { errEl.textContent = result.message; errEl.classList.remove('hidden'); }
+        return;
+      }
+      closePayIntentModal();
+      const tkt = appState.currentTicket;
+      if (tkt) {
+        appState.billRequestedFor = tkt.ticketId;
+        appState.billPayMethod = method;
+        tkt.billRequested = true;
+      }
+      markBillRequestedUI();
+      showToast(t('billRequestedStatus'));
+      refreshTicketFromServer();
+    }
+
+    // --- UNDO WINDOW BEFORE AN ORDER IS SENT ---
+    const SEND_UNDO_SECONDS = 5;
+    let sendCountdown = null; // { remaining, timer }
+
+    function startSendCountdown() {
+      if (sendCountdown || appState.isSending) return;
+      if (appState.cart.length === 0) {
+        closeOrderReview();
+        showToast(t('err.empty'));
+        switchView('menu');
+        return;
+      }
+      const blocked = orderingBlockedMessage();
+      if (blocked) { showOrderError(blocked); return; }
+      if (!hasOpenTicket() && !appState.isHost && !appState.isOnlineOrder) {
+        showOrderError(t('err.onlyHost', { name: appState.hostName || 'Table Lead' }));
+        return;
+      }
+      setOrderError('');
+      sendCountdown = { remaining: SEND_UNDO_SECONDS, timer: null };
+      sendCountdown.timer = setInterval(() => {
+        if (!sendCountdown) return;
+        sendCountdown.remaining -= 1;
+        if (sendCountdown.remaining <= 0) {
+          clearSendCountdownState();
+          updateSendCountdownUI();
+          submitOrderToKitchen();
+        } else {
+          updateSendCountdownUI();
+        }
+      }, 1000);
+      updateSendCountdownUI();
+    }
+
+    function clearSendCountdownState() {
+      if (sendCountdown && sendCountdown.timer) clearInterval(sendCountdown.timer);
+      sendCountdown = null;
+    }
+
+    // Stops a pending send; true when there was one
+    function cancelSendCountdown() {
+      if (!sendCountdown) return false;
+      clearSendCountdownState();
+      updateSendCountdownUI();
+      return true;
+    }
+
+    function undoSend() {
+      if (!cancelSendCountdown()) return;
+      closeOrderReview();
+      switchView('cart');
+      showToast(t('sendCancelled'));
+    }
+
+    function handleReviewSecondaryAction() {
+      if (sendCountdown) undoSend(); else closeOrderReview();
+    }
+
+    function updateSendCountdownUI() {
+      const sendBtn = document.getElementById('order-review-send-btn');
+      const label = document.getElementById('order-review-send-label');
+      const editBtn = document.getElementById('order-review-edit-btn');
+      const list = document.getElementById('order-review-list');
+      const counting = Boolean(sendCountdown);
+      if (label) label.textContent = counting ? t('sendingIn', { n: sendCountdown.remaining }) : (appState.isSending ? t('sending') : t('sendToWaiter'));
+      if (sendBtn) sendBtn.disabled = counting || appState.isSending;
+      if (editBtn) {
+        editBtn.textContent = counting ? t('undo') : t('edit');
+        editBtn.classList.toggle('border-primary', counting);
+        editBtn.classList.toggle('text-primary', counting);
+        editBtn.setAttribute('aria-live', 'polite');
+      }
+      if (list) {
+        list.classList.toggle('opacity-60', counting);
+        list.classList.toggle('pointer-events-none', counting);
+        if (counting) list.setAttribute('aria-disabled', 'true'); else list.removeAttribute('aria-disabled');
+      }
+    }
+
+    // --- FEEDBACK AFTER PAYMENT ---
+    const FEEDBACK_TAGS = [
+      ['Tasty', 'tag.tasty'], ['Fast service', 'tag.fast'], ['Friendly staff', 'tag.friendly'],
+      ['Too slow', 'tag.slow'], ['Cold food', 'tag.cold']
+    ];
+
+    function resetFeedbackForm(ticketId) {
+      appState.feedback = { ticketId: ticketId || '', rating: 0, tags: [], sent: false, sending: false };
+      const comment = document.getElementById('feedback-comment');
+      if (comment) comment.value = '';
+      showFeedbackError('');
+      renderFeedbackStars();
+      renderFeedbackTags();
+    }
+
+    function renderFeedbackTags() {
+      const box = document.getElementById('feedback-tags');
+      if (!box) return;
+      const chosen = (appState.feedback && appState.feedback.tags) || [];
+      box.innerHTML = FEEDBACK_TAGS.map(([value, key]) => `
+        <button type="button" class="feedback-tag min-h-[36px] px-3 py-1.5 rounded-full border border-surface-container bg-surface-container-lowest text-[12px] font-semibold text-on-surface active:scale-95 transition-all" aria-pressed="${chosen.includes(value)}" data-tag="${escapeHtml(value)}" onclick="toggleFeedbackTag(this.dataset.tag)">${escapeHtml(t(key))}</button>
+      `).join('');
+    }
+
+    function toggleFeedbackTag(value) {
+      const fb = appState.feedback;
+      if (!fb || fb.sent) return;
+      fb.tags = fb.tags.includes(value) ? fb.tags.filter(x => x !== value) : fb.tags.concat(value);
+      renderFeedbackTags();
+    }
+
+    function renderFeedbackStars() {
+      const stars = (appState.feedback && appState.feedback.rating) || 0;
+      document.querySelectorAll('.star-btn').forEach((btn, idx) => {
+        const on = idx < stars;
+        btn.style.fontVariationSettings = on ? "'FILL' 1" : "'FILL' 0";
+        btn.classList.toggle('text-amber-400', on);
+        btn.setAttribute('aria-checked', idx === stars - 1 ? 'true' : 'false');
+      });
+      const label = document.getElementById('rating-feedback-label');
+      if (label) {
+        label.textContent = stars ? t('ratedLabel', { n: stars, label: t('rating.' + stars) }) : t('tapStars');
+      }
+      const sendBtn = document.getElementById('feedback-send-btn');
+      if (sendBtn) sendBtn.disabled = !stars || Boolean(appState.feedback && appState.feedback.sending);
+    }
+
+    function showFeedbackError(msg) {
+      const el = document.getElementById('feedback-error');
+      if (!el) return;
+      el.textContent = msg || '';
+      el.classList.toggle('hidden', !msg);
+    }
+
+    function openSettledModal(ticketId) {
+      const id = ticketId || (appState.currentTicket && appState.currentTicket.ticketId) || (appState.feedback && appState.feedback.ticketId) || '';
+      if (!appState.feedback || appState.feedback.ticketId !== id) resetFeedbackForm(id);
+      const text = document.getElementById('settled-text');
+      if (text) {
+        const where = appState.isOnlineOrder ? t('yourOnlineOrder') : `${t('tableWord')} ${appState.tableNumber}`;
+        text.textContent = t('billSettledText', { where });
+      }
+      const sent = Boolean(appState.feedback && appState.feedback.sent);
+      const form = document.getElementById('feedback-form');
+      const thanks = document.getElementById('feedback-thanks');
+      if (form) form.classList.toggle('hidden', sent);
+      if (thanks) { thanks.classList.toggle('hidden', !sent); thanks.classList.toggle('flex', sent); }
+      renderFeedbackStars();
+      renderFeedbackTags();
+      const modal = document.getElementById('bill-settled-modal');
+      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    }
+
+    async function submitFeedback() {
+      const fb = appState.feedback;
+      if (!fb || fb.sending || fb.sent) return;
+      if (!(fb.rating >= 1 && fb.rating <= 5)) { showFeedbackError(t('feedbackPickStars')); return; }
+      if (!fb.ticketId) { showFeedbackError(t('feedbackError')); return; }
+      const sendBtn = document.getElementById('feedback-send-btn');
+      fb.sending = true;
+      showFeedbackError('');
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = t('sending'); }
+      const body = {
+        ticketId: fb.ticketId,
+        rating: fb.rating,
+        comment: (document.getElementById('feedback-comment')?.value || '').trim().slice(0, 500),
+        tags: fb.tags.slice(),
+        deviceId: getDeviceId()
+      };
+      if (!appState.isOnlineOrder) body.tableToken = appState.tableToken;
+      let ok = false;
+      let status = 0;
+      try {
+        const res = await fetch(`${getApiBase()}/api/public/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        status = res.status;
+        const data = await readJsonSafe(res);
+        ok = res.ok && data && data.ok === true;
+      } catch (e) { ok = false; }
+      fb.sending = false;
+      if (sendBtn) sendBtn.textContent = t('sendFeedback');
+      if (!ok) {
+        showFeedbackError(status === 429 ? t('err.wait') : t('feedbackError'));
+        renderFeedbackStars();
+        return;
+      }
+      fb.sent = true;
+      const form = document.getElementById('feedback-form');
+      const thanks = document.getElementById('feedback-thanks');
+      if (form) form.classList.add('hidden');
+      if (thanks) { thanks.classList.remove('hidden'); thanks.classList.add('flex'); }
+    }
+
+    // --- ONLINE ORDERS: this phone's own ticket ---
+    async function refreshOnlineTicket() {
+      const cur = appState.currentTicket;
+      if (!appState.isOnlineOrder || !cur || !cur.ticketId) return;
+      try {
+        const res = await fetch(`${getApiBase()}/api/public/online-ticket?ticketId=${encodeURIComponent(cur.ticketId)}&deviceId=${encodeURIComponent(getDeviceId())}`);
+        if (!res.ok) return;
+        const data = await readJsonSafe(res);
+        const view = data && data.ok ? data.ticket : null;
+        if (!view || view.ticketId !== cur.ticketId) return;
+        if (ticketSignature(cur) !== ticketSignature(view)) adoptTicket(view);
+      } catch (e) {
+        // Network hiccup: the next poll tries again
+      }
+    }
 
     const CLOSED_TICKET_STATUSES = ['Settled', 'Voided', 'Rejected'];
     let sseReconnecting = false;
@@ -2678,8 +3405,9 @@
     function startTableSessionPolling() {
       if (tablePollInterval) clearInterval(tablePollInterval);
       tablePollInterval = null;
-      if (appState.isOnlineOrder || appState.tableInvalid) return;
-      tablePollInterval = setInterval(pollTableSession, 2000);
+      if (appState.tableInvalid) return;
+      // Online orders have no table session; the poll just follows this phone's ticket
+      tablePollInterval = setInterval(pollTableSession, appState.isOnlineOrder ? 5000 : 2000);
     }
 
     // Compact fingerprint of what the guest sees, to skip needless re-renders
@@ -2687,13 +3415,17 @@
       if (!t) return '';
       return JSON.stringify([
         t.ticketId, t.status, t.items, t.pendingItems, t.total, t.pendingTotal,
-        (t.notices || []).length, t.billRequested, t.invoiceNumber
+        (t.notices || []).length, t.billRequested, t.invoiceNumber, t.estimatedReadyAt
       ]);
     }
 
     async function pollTableSession() {
       try {
-        if (!appState.tableNumber || appState.isOnlineOrder || appState.tableInvalid) return;
+        if (appState.isOnlineOrder) {
+          if (hasOpenTicket()) await refreshOnlineTicket();
+          return;
+        }
+        if (!appState.tableNumber || appState.tableInvalid) return;
         const devId = getDeviceId();
         const res = await fetch(`${getApiBase()}/api/table-session/poll?table=${encodeURIComponent(appState.tableNumber)}&deviceId=${encodeURIComponent(devId)}${tokenQuery()}`);
         const data = await readJsonSafe(res);
@@ -2748,7 +3480,8 @@
 
     // Re-reads this table's ticket (open one, or how our last one ended)
     async function refreshTicketFromServer() {
-      if (appState.isOnlineOrder || appState.tableInvalid || !appState.tableNumber) return;
+      if (appState.isOnlineOrder) { await refreshOnlineTicket(); return; }
+      if (appState.tableInvalid || !appState.tableNumber) return;
       try {
         const tNum = appState.tableNumber.toString().padStart(2, '0');
         const ourId = appState.currentTicket && appState.currentTicket.ticketId;
@@ -2838,10 +3571,10 @@
       if (roleBadge && roleText) {
         if (appState.isHost) {
           roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs";
-          roleBadge.innerHTML = '<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: \'FILL\' 1;">star</span><span id="table-role-text">Table Host</span>';
+          roleBadge.innerHTML = '<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: \'FILL\' 1;">star</span><span id="table-role-text">' + escapeHtml(t('role.host')) + '</span>';
         } else {
           roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs";
-          roleBadge.innerHTML = '<span class="material-symbols-outlined text-[12px]">person</span><span id="table-role-text">Co-Diner</span>';
+          roleBadge.innerHTML = '<span class="material-symbols-outlined text-[12px]">person</span><span id="table-role-text">' + escapeHtml(t('role.guest')) + '</span>';
         }
       }
 
@@ -2911,13 +3644,13 @@
             checkoutBtn.disabled = true;
             checkoutBtn.className = "w-full py-4 px-5 rounded-full bg-surface-container text-secondary font-headline font-bold text-[15px] flex items-center justify-between shadow-none opacity-80 cursor-not-allowed";
           }
-          if (checkoutLabel) checkoutLabel.textContent = `Host (${appState.hostName || 'Lead'}) Will Submit Order`;
+          if (checkoutLabel) checkoutLabel.textContent = t('hostWillSubmit', { name: appState.hostName || 'Lead' });
           if (checkoutIcon) checkoutIcon.textContent = "lock";
         }
       }
 
       if (checkoutLabel && checkoutBtn && !checkoutBtn.disabled) {
-        checkoutLabel.textContent = isPostOrder ? "Review & add to order" : "Review order";
+        checkoutLabel.textContent = isPostOrder ? t('reviewAddOrder') : t('reviewOrder');
       }
 
       // Paused ordering / online ordering off / bad QR / sending: no sending at all
@@ -2925,7 +3658,7 @@
       if (checkoutBtn && (blocked || appState.isSending)) {
         checkoutBtn.disabled = true;
         checkoutBtn.className = "w-full py-4 px-5 rounded-full bg-surface-container text-secondary font-headline font-bold text-[15px] flex items-center justify-between shadow-none opacity-80 cursor-not-allowed";
-        if (checkoutLabel) checkoutLabel.textContent = appState.isSending ? "Sending…" : (appState.onlineOrderingOff ? "Online ordering is off" : "Ordering paused");
+        if (checkoutLabel) checkoutLabel.textContent = appState.isSending ? t('sending') : (appState.onlineOrderingOff ? t('onlineOff') : t('orderingPaused'));
         if (checkoutIcon) checkoutIcon.textContent = appState.isSending ? "hourglass_top" : "pause_circle";
       }
     }
@@ -2939,7 +3672,8 @@
     }
 
     function applyOrderingSettings(ordering) {
-      const o = ordering || {};
+      if (ordering) appState.lastOrdering = ordering;
+      const o = ordering || appState.lastOrdering || {};
       appState.orderingPaused = o.paused === true;
       appState.pausedMessage = o.message ? String(o.message) : '';
       appState.onlineOrderingOff = Boolean(appState.isOnlineOrder && o.online === false);
@@ -2950,11 +3684,11 @@
       const text = document.getElementById('ordering-status-text');
       if (banner) {
         if (appState.onlineOrderingOff) {
-          if (title) title.textContent = 'Online ordering is off';
+          if (title) title.textContent = t('onlineOff');
           if (text) text.textContent = 'This restaurant is not taking online orders right now. You can still browse the menu.';
           banner.classList.remove('hidden');
         } else if (appState.orderingPaused) {
-          if (title) title.textContent = 'Ordering is paused';
+          if (title) title.textContent = t('orderingPaused');
           if (text) text.textContent = appState.pausedMessage || 'Please ask a member of staff.';
           banner.classList.remove('hidden');
         } else {
@@ -2963,9 +3697,7 @@
       }
       const note = document.getElementById('order-review-note');
       if (note) {
-        note.textContent = appState.waiterConfirms
-          ? 'Your waiter will confirm this order before it goes to the kitchen. Final prices come from the restaurant.'
-          : 'This order goes straight to the kitchen. Final prices come from the restaurant.';
+        note.textContent = appState.waiterConfirms ? t('reviewNoteConfirm') : t('reviewNoteDirect');
       }
       updateRoleUI();
     }
@@ -2975,6 +3707,7 @@
         const res = await fetch(`${getApiBase()}/api/public/info?restaurantId=${encodeURIComponent(appState.restaurantId || 'REST-001')}`);
         const data = await readJsonSafe(res);
         if (data && data.restaurant) applyOrderingSettings(data.restaurant.ordering);
+        if (data && Array.isArray(data.soldOut)) applySoldOutList(data.soldOut);
       } catch (e) {}
     }
 
@@ -3001,9 +3734,9 @@
 
       if (CLOSED_TICKET_STATUSES.includes(curStatus)) {
         const closedLabels = {
-          Settled: ['Bill paid ✓', 'text-emerald-800 bg-emerald-100', 'Thank you! Tap to see your order.'],
-          Voided: ['Order cancelled', 'text-slate-700 bg-slate-200', 'Tap to see details or start a new order'],
-          Rejected: ['Order not accepted', 'text-rose-800 bg-rose-100', 'Tap to see why or start a new order']
+          Settled: [t('status.settled'), 'text-emerald-800 bg-emerald-100', t('sub.settled')],
+          Voided: [t('status.voided'), 'text-slate-700 bg-slate-200', t('sub.closed')],
+          Rejected: [t('status.rejected'), 'text-rose-800 bg-rose-100', t('sub.closed')]
         };
         const [label, cls, sub] = closedLabels[curStatus];
         if (chip) {
@@ -3017,7 +3750,7 @@
         if (bannerSub) bannerSub.textContent = sub;
       } else if (curStatus === 'Pending') {
         if (chip) {
-          chip.textContent = "Waiting for waiter ⏳";
+          chip.textContent = t('status.pending');
           chip.className = "text-[12px] font-bold text-amber-900 px-2.5 py-1 rounded-full bg-amber-100 transition-colors";
         }
         if (bar) bar.style.width = '8%';
@@ -3031,11 +3764,11 @@
         }
         if (celebrationBanner) celebrationBanner.classList.add('hidden');
         if (prepTimeText) prepTimeText.textContent = "Your waiter will confirm your order shortly.";
-        if (bannerStatus) bannerStatus.textContent = "Waiting for waiter ⏳";
-        if (bannerSub) bannerSub.textContent = "Your waiter will confirm your order shortly";
+        if (bannerStatus) bannerStatus.textContent = t('status.pending');
+        if (bannerSub) bannerSub.textContent = t('sub.pending');
       } else if (curStatus === 'Served' || curStatus === 'Plated & Ready') {
         if (chip) {
-          chip.textContent = (curStatus === 'Served') ? "Dishes Served! 🍽️" : "Plated & Serving 🍽️";
+          chip.textContent = (curStatus === 'Served') ? t('status.served') : t('status.ready');
           chip.className = "text-[12px] font-bold text-emerald-800 px-2.5 py-1 rounded-full bg-emerald-100 transition-colors";
         }
         if (bar) bar.style.width = '100%';
@@ -3048,18 +3781,18 @@
           servedDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span>';
         }
         if (servedLabel) {
-          servedLabel.textContent = "Served";
+          servedLabel.textContent = t('stepServed');
           servedLabel.className = "text-[11px] font-bold text-emerald-700 mt-1.5";
         }
         if (celebrationBanner) celebrationBanner.classList.remove('hidden');
         if (prepTimeText) prepTimeText.textContent = "Dishes served hot at table. Tab remains open.";
         if (addonTitle) addonTitle.textContent = "Dining Add-Ons & Extra Rounds";
         if (addonSub) addonSub.textContent = "Hot rotis, cold drinks, raita, meetha & chai — 1 tap appends to your table tab";
-        if (bannerStatus) bannerStatus.textContent = "Dishes Served! 🍽️";
-        if (bannerSub) bannerSub.textContent = "Tap to view table tab, add items or request bill";
+        if (bannerStatus) bannerStatus.textContent = t('status.served');
+        if (bannerSub) bannerSub.textContent = t('sub.served');
       } else if (curStatus === 'In Kitchen' || curStatus === 'Cooking') {
         if (chip) {
-          chip.textContent = "Cooking In Kitchen 🔥";
+          chip.textContent = t('status.kitchen');
           chip.className = "text-[12px] font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed transition-colors";
         }
         if (bar) bar.style.width = '50%';
@@ -3072,27 +3805,28 @@
           servedDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">dinner_dining</span>';
         }
         if (servedLabel) {
-          servedLabel.textContent = "Serving";
+          servedLabel.textContent = t('stepServing');
           servedLabel.className = "text-[11px] text-secondary mt-1.5";
         }
         if (celebrationBanner) celebrationBanner.classList.add('hidden');
-        if (prepTimeText) prepTimeText.textContent = "Estimated prep: ~15-20 mins";
+        if (prepTimeText) prepTimeText.textContent = '';
         if (addonTitle) addonTitle.textContent = "Need Extra Items While Waiting?";
         if (addonSub) addonSub.textContent = "Tap any item to add directly to your kitchen order";
-        if (bannerStatus) bannerStatus.textContent = "Cooking In Kitchen 🔥";
-        if (bannerSub) bannerSub.textContent = "Tap to track status, add items or call waiter";
+        if (bannerStatus) bannerStatus.textContent = t('status.kitchen');
+        if (bannerSub) bannerSub.textContent = t('sub.kitchen');
       } else {
         // New / Received
         if (chip) {
-          chip.textContent = "Order Received 👨‍🍳";
+          chip.textContent = t('status.new');
           chip.className = "text-[12px] font-bold text-sky-800 px-2.5 py-1 rounded-full bg-sky-100 transition-colors";
         }
         if (bar) bar.style.width = '20%';
         if (celebrationBanner) celebrationBanner.classList.add('hidden');
         if (prepTimeText) prepTimeText.textContent = "Order received by kitchen station.";
-        if (bannerStatus) bannerStatus.textContent = "Received by Kitchen 👨‍🍳";
-        if (bannerSub) bannerSub.textContent = "Tap to track status or call waiter";
+        if (bannerStatus) bannerStatus.textContent = t('status.new');
+        if (bannerSub) bannerSub.textContent = t('sub.new');
       }
+      renderEta();
     }
 
     // Is a broadcast about this phone's table (or, for online orders, this phone's ticket)?
@@ -3129,26 +3863,15 @@
       } else if (data.type === 'ORDER_UPDATED') {
         // Waiter confirmed / rejected a round or removed a line
         if (isOurTicketEvent(data.table, data.ticketId)) {
-          if (appState.isOnlineOrder) {
-            if (appState.currentTicket && data.status) {
-              appState.currentTicket.status = data.status;
-              applyTicketStatusUI(data.status);
-              renderTicketDetails();
-            }
-          } else {
-            refreshTicketFromServer();
-          }
+          // Table orders re-read the table's ticket; online orders re-read this phone's ticket
+          refreshTicketFromServer();
         }
       } else if (data.type === 'BILL_SETTLED') {
         if (isOurTicketEvent(data.table, data.ticketId)) {
+          // Remember which ticket was paid so the guest can still rate it after it closes
+          const settledId = data.ticketId || (appState.currentTicket && appState.currentTicket.ticketId) || '';
           refreshTicketFromServer();
-          const tableNameEl = document.getElementById('settled-table-name');
-          if (tableNameEl) tableNameEl.textContent = `Table ${appState.tableNumber}`;
-          const modal = document.getElementById('bill-settled-modal');
-          if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-          }
+          openSettledModal(settledId);
         }
       } else if ((data.type === 'NEW_ORDER' || data.type === 'TABLE_ORDER_UPDATED') && data.order) {
         if (isOurTicketEvent(data.order.table || data.table, data.order.ticketId)) {
@@ -3206,8 +3929,7 @@
           }
         }
       } else if (data.type === 'ITEM_86_UPDATE') {
-        soldOutSet = new Set(data.soldOutList || []);
-        renderDishGrid();
+        applySoldOutList(data.soldOutList || []);
       } else if (data.type === 'MENU_UPDATE') {
         loadMenuFromBackend();
       } else if (data.type === 'EXTRAS_UPDATE') {
@@ -3272,19 +3994,17 @@
               { name: "Standard Portion", extra: 0, desc: "Standard serving" }
             ],
             addons: d.addons || [],
-            isAvailable: d.isAvailable !== false
+            isAvailable: d.isAvailable !== false,
+            isVeg: d.isVeg === true || d.isVegetarian === true,
+            tags: Array.isArray(d.tags) ? d.tags : [],
+            allergens: Array.isArray(d.allergens) ? d.allergens : [],
+            containsNuts: d.containsNuts === true
           }));
 
-          dishes.forEach(d => {
-            if (d.isAvailable === false) {
-              soldOutSet.add(d.id);
-            } else {
-              soldOutSet.delete(d.id);
-            }
-          });
-
+          renderDietFilters();
           renderDishGrid();
           updateCartUI();
+          pruneSoldOutFromCart();
         }
       } catch (e) {
         console.warn('Backend menu fetch skipped:', e);
@@ -3293,6 +4013,7 @@
 
     // Load persisted state or URL table param on startup
     window.addEventListener('DOMContentLoaded', async () => {
+      applyI18n();
       initTableFromUrl();
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('reset') === '1' || urlParams.get('resetOrder') === '1') {
@@ -3303,6 +4024,7 @@
       }
       await syncTableSession();
       startTableSessionPolling();
+      pruneSoldOutFromCart();
       if (!appState.isOnlineOrder && !appState.tableToken && !appState.tableInvalid) {
         console.warn('No table QR token (t) in the URL; table calls will be refused if this table has a QR secret.');
       }
@@ -3311,9 +4033,11 @@
       loadCustomerWaiterServices();
       loadRestaurantBillingCharges();
       initFeaturedDealsSlider();
+      renderDietFilters();
       renderDishGrid();
       updateCartUI();
       updateRoleUI();
+      renderFeedbackTags();
 
       // Ensure user always starts on the default home screen (menu)
       const viewParam = urlParams.get('view');
@@ -3373,6 +4097,7 @@
         if (data) {
           appState.availableTables = data.tables || [];
           appState.availableSections = data.sections || [];
+          if (Array.isArray(data.soldOut)) applySoldOutList(data.soldOut);
         }
         const r = data && data.restaurant;
         if (r) {
@@ -3478,7 +4203,7 @@
     }
 
     function applyTableLabels() {
-      const lbl = `Table ${appState.tableNumber}`;
+      const lbl = `${t('tableWord')} ${appState.tableNumber}`;
       const hTable = document.getElementById('header-table-label');
       if (hTable) hTable.textContent = lbl;
       const bTitle = document.getElementById('banner-table-title');
@@ -3522,7 +4247,7 @@
                 // Paid while this phone was away
                 localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
                 savedTicket = null;
-                PosSync.dispatch({ type: 'BILL_SETTLED', table: ourTableStr });
+                PosSync.dispatch({ type: 'BILL_SETTLED', table: ourTableStr, ticketId: earlier.ticketId });
               } else if (earlier && isTicketClosed(earlier)) {
                 savedTicket = earlier; // show how it ended (rejected / voided)
               } else {
@@ -3548,6 +4273,8 @@
           } else {
             switchView('menu');
           }
+          // Online orders: catch up on confirmations, notices and ready time
+          if (appState.isOnlineOrder) refreshOnlineTicket();
         } else {
           appState.currentTicket = null;
           switchView('menu');
@@ -3652,10 +4379,17 @@
       };
       const heading = document.getElementById('menu-section-heading');
       if (heading) {
-        heading.textContent = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+        heading.textContent = categoryHeading(cat, catLabels);
       }
 
       renderDishGrid();
+    }
+
+    // Category title in the current language (Urdu uses the rail names)
+    function categoryHeading(cat, catLabels) {
+      if (cat === 'all') return t('allMenu');
+      if (currentLang === 'ur' && I18N.ur['nav.' + (cat === 'meetha' ? 'desserts' : cat)]) return t('nav.' + (cat === 'meetha' ? 'desserts' : cat));
+      return catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
     }
 
     function selectCategoryById(catId) {
@@ -3758,22 +4492,35 @@
       return Boolean(hasMultipleSizes || hasAddons);
     }
 
+    // Click on a dish: sold out -> notice, options -> detail sheet, else add one
+    function dishClickAction(dish, escapedId, hasCustom) {
+      if (isDishSoldOut(dish)) return "showToast(t('soldOutToast'))";
+      return hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`;
+    }
+
+    function dishJsId(dish) {
+      // Safe inside a single-quoted JS string inside a double-quoted HTML attribute
+      return escapeHtml(String(dish.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+    }
+
     // Card View 1: Standard List View (Enlarged thumbnail on right, Add button placed next to price)
     function renderDishCardHtml(dish) {
-      const isSoldOut = soldOutSet.has(dish.id);
+      const isSoldOut = isDishSoldOut(dish);
       const cartQty = getDishCartQty(dish.id);
-      const escapedId = String(dish.id).replace(/'/g, "\\'");
+      const escapedId = dishJsId(dish);
       const hasCustom = dishHasCustomization(dish);
+      const title = escapeHtml(dish.title);
+      const clickAction = dishClickAction(dish, escapedId, hasCustom);
       return `
-      <div class="bg-surface-container-lowest rounded-2xl p-2.5 sm:p-3 border border-surface-container shadow-xs flex items-center justify-between gap-3 group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}">
+      <div class="bg-surface-container-lowest rounded-2xl p-2.5 sm:p-3 border border-surface-container shadow-xs flex items-center justify-between gap-3 group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}" data-dish-id="${escapeHtml(dish.id)}" data-sold-out="${isSoldOut}">
         <!-- Left info: title, desc/dietary, price, star rating and ADD button next to price -->
         <div class="flex-1 min-w-0 pr-1 flex flex-col justify-between self-stretch">
-          <div class="cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : (hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`)}">
+          <div class="cursor-pointer" onclick="${clickAction}">
             <div class="flex items-center gap-1.5 mb-1">
-              ${dish.isSpicy ? `<span class="material-symbols-outlined text-[13px] text-red-500 shrink-0" title="Spicy">local_fire_department</span>` : ''}
-              <h3 class="font-headline font-bold text-[13.5px] sm:text-[14.5px] text-on-surface leading-snug truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${dish.title}</h3>
+              ${dish.isSpicy ? `<span class="material-symbols-outlined text-[13px] text-red-500 shrink-0" title="${escapeHtml(t('filter.spicy'))}" aria-label="${escapeHtml(t('filter.spicy'))}">local_fire_department</span>` : ''}
+              <h3 class="font-headline font-bold text-[13.5px] sm:text-[14.5px] text-on-surface leading-snug truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${title}</h3>
             </div>
-            <p class="text-[11px] text-secondary line-clamp-2 mb-2 leading-snug">${dish.desc || dish.dietary}</p>
+            <p class="text-[11px] text-secondary line-clamp-2 mb-2 leading-snug">${escapeHtml(dish.desc || dish.dietary)}</p>
           </div>
 
           <!-- Price & Rating on left, ADD button next to price -->
@@ -3785,33 +4532,28 @@
               </div>
               <div class="flex items-center gap-0.5 text-secondary text-[10px]">
                 <span class="material-symbols-outlined text-tertiary text-[11px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                <span class="font-bold text-on-surface">${dish.rating || '4.8'}</span>
+                <span class="font-bold text-on-surface">${escapeHtml(dish.rating || '4.8')}</span>
               </div>
             </div>
 
             <!-- Action button moved next to where price is written (Renamed to Add) -->
             <div onclick="event.stopPropagation()">
               ${isSoldOut ? `
-                <span class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">86'd</span>
+                <span class="sold-out-badge text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">${escapeHtml(t('soldOut'))}</span>
               ` : cartQty > 0 ? `
-                <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-full p-0.5 shadow-xs">
-                  <button onclick="decrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 hover:bg-primary/20 transition-all" title="Remove one">
-                    <span class="material-symbols-outlined text-[13px] font-bold">remove</span>
+                <div class="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 rounded-full p-0.5 shadow-xs">
+                  <button type="button" onclick="decrementDish('${escapedId}')" class="tap44 w-7 h-7 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 hover:bg-primary/20 transition-all" aria-label="${escapeHtml(t('oneLess'))}: ${title}">
+                    <span class="material-symbols-outlined text-[14px] font-bold">remove</span>
                   </button>
-                  <span class="font-headline font-bold text-primary text-[11px] px-2 text-center leading-none">${cartQty}</span>
-                  <button onclick="incrementDish('${escapedId}')" class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center active:scale-90 hover:brightness-110 transition-all" title="Add another">
-                    <span class="material-symbols-outlined text-[13px] font-bold">add</span>
+                  <span class="font-headline font-bold text-primary text-[11px] px-2 text-center leading-none" aria-live="polite">${cartQty}</span>
+                  <button type="button" onclick="incrementDish('${escapedId}')" class="tap44 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center active:scale-90 hover:brightness-110 transition-all" aria-label="${escapeHtml(t('oneMore'))}: ${title}">
+                    <span class="material-symbols-outlined text-[14px] font-bold">add</span>
                   </button>
                 </div>
-              ` : hasCustom ? `
-                <button onclick="openDishDetail('${escapedId}')" class="py-1 px-3 rounded-lg bg-primary hover:bg-primary/90 text-white font-headline font-bold text-[11px] flex items-center justify-center gap-0.5 shadow-2xs active:scale-95 transition-all" title="Add dish with options">
-                  <span class="material-symbols-outlined text-[13px]">add</span>
-                  <span>Add</span>
-                </button>
               ` : `
-                <button onclick="quickAddToCart('${escapedId}')" class="py-1 px-3 rounded-lg bg-primary hover:bg-primary/90 text-white font-headline font-bold text-[11px] flex items-center justify-center gap-0.5 shadow-2xs active:scale-95 transition-all" title="Add to table order">
+                <button type="button" onclick="${hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`}" class="tap44 min-h-[32px] py-1 px-3 rounded-lg bg-primary hover:bg-primary/90 text-white font-headline font-bold text-[11px] flex items-center justify-center gap-0.5 shadow-2xs active:scale-95 transition-all" aria-label="${escapeHtml(t('add'))}: ${title}">
                   <span class="material-symbols-outlined text-[13px]">add</span>
-                  <span>Add</span>
+                  <span>${escapeHtml(t('add'))}</span>
                 </button>
               `}
             </div>
@@ -3820,11 +4562,11 @@
 
         <!-- Right: Image thumbnail (Bigger size utilizing saved space from moving button) -->
         <div class="shrink-0">
-          <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-surface-container shadow-2xs cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : (hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`)}">
-            <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${dish.image}" alt="${dish.title}" />
+          <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-surface-container shadow-2xs cursor-pointer" onclick="${clickAction}">
+            <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${escapeHtml(dish.image)}" alt="${title}" loading="lazy" decoding="async" />
             ${isSoldOut ? `
               <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <span class="text-[9px] font-black uppercase text-white tracking-wider">Sold Out</span>
+                <span class="text-[9px] font-black uppercase text-white tracking-wider">${escapeHtml(t('soldOut'))}</span>
               </div>
             ` : ''}
           </div>
@@ -3835,30 +4577,32 @@
 
     // Card View 2: 2 Cards in a Row Grid View (Large top thumbnail, subtitles, price & Add button below)
     function renderDishGridCardHtml(dish) {
-      const isSoldOut = soldOutSet.has(dish.id);
+      const isSoldOut = isDishSoldOut(dish);
       const cartQty = getDishCartQty(dish.id);
-      const escapedId = String(dish.id).replace(/'/g, "\\'");
+      const escapedId = dishJsId(dish);
       const hasCustom = dishHasCustomization(dish);
+      const title = escapeHtml(dish.title);
+      const clickAction = dishClickAction(dish, escapedId, hasCustom);
 
       return `
-      <div class="bg-surface-container-lowest rounded-2xl p-2 sm:p-2.5 border border-surface-container shadow-xs flex flex-col justify-between group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}">
+      <div class="bg-surface-container-lowest rounded-2xl p-2 sm:p-2.5 border border-surface-container shadow-xs flex flex-col justify-between group transition-all ${isSoldOut ? 'opacity-70' : 'hover:border-primary/40 hover:shadow-sm'}" data-dish-id="${escapeHtml(dish.id)}" data-sold-out="${isSoldOut}">
         <!-- Top: Large Thumbnail -->
-        <div class="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-surface-container shadow-2xs cursor-pointer mb-2" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : (hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`)}">
-          <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${dish.image}" alt="${dish.title}" />
-          ${dish.isSpicy ? `<span class="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-xs text-red-400 p-0.5 rounded-full material-symbols-outlined text-[12px]">local_fire_department</span>` : ''}
+        <div class="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-surface-container shadow-2xs cursor-pointer mb-2" onclick="${clickAction}">
+          <img class="w-full h-full object-cover ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105 transition-transform duration-300'}" src="${escapeHtml(dish.image)}" alt="${title}" loading="lazy" decoding="async" />
+          ${dish.isSpicy ? `<span class="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-xs text-red-400 p-0.5 rounded-full material-symbols-outlined text-[12px]" aria-label="${escapeHtml(t('filter.spicy'))}">local_fire_department</span>` : ''}
           ${dish.regularPrice ? `<span class="absolute top-1.5 right-1.5 bg-primary text-white text-[8.5px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">Offer</span>` : ''}
           ${isSoldOut ? `
             <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <span class="text-[9px] font-black uppercase text-white tracking-wider">Sold Out</span>
+              <span class="text-[9px] font-black uppercase text-white tracking-wider">${escapeHtml(t('soldOut'))}</span>
             </div>
           ` : ''}
         </div>
 
         <!-- Middle Info: Title, Subtitle, Price & Rating -->
-        <div class="flex-1 flex flex-col justify-between cursor-pointer" onclick="${isSoldOut ? "showToast('Dish is currently sold out!')" : (hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`)}">
+        <div class="flex-1 flex flex-col justify-between cursor-pointer" onclick="${clickAction}">
           <div>
-            <h3 class="font-headline font-bold text-[12.5px] sm:text-[13.5px] text-on-surface leading-tight truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${dish.title}</h3>
-            <p class="text-[10.5px] text-secondary line-clamp-2 mt-0.5 mb-1 leading-snug min-h-[28px]">${dish.desc || dish.dietary}</p>
+            <h3 class="font-headline font-bold text-[12.5px] sm:text-[13.5px] text-on-surface leading-tight truncate ${isSoldOut ? 'line-through text-secondary' : 'group-hover:text-primary transition-colors'}">${title}</h3>
+            <p class="text-[10.5px] text-secondary line-clamp-2 mt-0.5 mb-1 leading-snug min-h-[28px]">${escapeHtml(dish.desc || dish.dietary)}</p>
           </div>
           <div class="flex items-center justify-between mt-1 mb-1.5">
             <div class="flex items-center gap-1">
@@ -3867,7 +4611,7 @@
             </div>
             <div class="flex items-center gap-0.5 text-secondary text-[10px]">
               <span class="material-symbols-outlined text-tertiary text-[11px]" style="font-variation-settings: 'FILL' 1;">star</span>
-              <span class="font-bold text-on-surface">${dish.rating || '4.8'}</span>
+              <span class="font-bold text-on-surface">${escapeHtml(dish.rating || '4.8')}</span>
             </div>
           </div>
         </div>
@@ -3875,26 +4619,21 @@
         <!-- Bottom: Add Button below thumbnail & info -->
         <div class="w-full pt-1 border-t border-surface-container/30" onclick="event.stopPropagation()">
           ${isSoldOut ? `
-            <span class="block w-full py-1 text-center text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg">Sold Out</span>
+            <span class="sold-out-badge block w-full py-1 text-center text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg">${escapeHtml(t('soldOut'))}</span>
           ` : cartQty > 0 ? `
             <div class="inline-flex items-center bg-primary/10 border border-primary/30 rounded-lg p-0.5 shadow-xs w-full justify-between">
-              <button onclick="decrementDish('${escapedId}')" class="w-6 h-6 rounded-md bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 hover:bg-primary/20 transition-all">
-                <span class="material-symbols-outlined text-[13px] font-bold">remove</span>
+              <button type="button" onclick="decrementDish('${escapedId}')" class="tap44 w-8 h-8 rounded-md bg-surface-container-lowest text-primary flex items-center justify-center active:scale-90 hover:bg-primary/20 transition-all" aria-label="${escapeHtml(t('oneLess'))}: ${title}">
+                <span class="material-symbols-outlined text-[14px] font-bold">remove</span>
               </button>
-              <span class="font-headline font-bold text-primary text-[11px] px-1 text-center leading-none">${cartQty}</span>
-              <button onclick="incrementDish('${escapedId}')" class="w-6 h-6 rounded-md bg-primary text-white flex items-center justify-center active:scale-90 hover:brightness-110 transition-all">
-                <span class="material-symbols-outlined text-[13px] font-bold">add</span>
+              <span class="font-headline font-bold text-primary text-[11px] px-1 text-center leading-none" aria-live="polite">${cartQty}</span>
+              <button type="button" onclick="incrementDish('${escapedId}')" class="tap44 w-8 h-8 rounded-md bg-primary text-white flex items-center justify-center active:scale-90 hover:brightness-110 transition-all" aria-label="${escapeHtml(t('oneMore'))}: ${title}">
+                <span class="material-symbols-outlined text-[14px] font-bold">add</span>
               </button>
             </div>
-          ` : hasCustom ? `
-            <button onclick="openDishDetail('${escapedId}')" class="w-full py-1.5 px-2 rounded-lg bg-primary text-white hover:brightness-105 font-headline font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs active:scale-95 transition-all">
-              <span class="material-symbols-outlined text-[13px]">add</span>
-              <span>Add</span>
-            </button>
           ` : `
-            <button onclick="quickAddToCart('${escapedId}')" class="w-full py-1.5 px-2 rounded-lg bg-primary text-white hover:brightness-105 font-headline font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs active:scale-95 transition-all">
+            <button type="button" onclick="${hasCustom ? `openDishDetail('${escapedId}')` : `quickAddToCart('${escapedId}')`}" class="tap44 w-full min-h-[36px] py-1.5 px-2 rounded-lg bg-primary text-white hover:brightness-105 font-headline font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs active:scale-95 transition-all" aria-label="${escapeHtml(t('add'))}: ${title}">
               <span class="material-symbols-outlined text-[13px]">add</span>
-              <span>Add</span>
+              <span>${escapeHtml(t('add'))}</span>
             </button>
           `}
         </div>
@@ -3913,7 +4652,7 @@
         const matchesCategory = Boolean(appState.searchQuery) || (appState.activeCategory === 'all') || 
           (dish.category === appState.activeCategory) || 
           ((appState.activeCategory === 'meetha' || appState.activeCategory === 'desserts') && (dish.category === 'meetha' || dish.category === 'desserts'));
-        const matchesSpicy = !appState.filterSpicyOnly || dish.isSpicy;
+        const matchesSpicy = (!appState.filterSpicyOnly || dish.isSpicy) && dishMatchesDietFilters(dish);
         const matchesQuery = !appState.searchQuery || 
           dish.title.toLowerCase().includes(appState.searchQuery) ||
           dish.desc.toLowerCase().includes(appState.searchQuery) ||
@@ -3923,13 +4662,13 @@
 
       const countInd = document.getElementById('items-count-indicator');
       if (countInd) {
-        countInd.textContent = `${filtered.length} dishes`;
+        countInd.textContent = t('dishesCount', { n: filtered.length });
       }
 
       const heading = document.getElementById('menu-section-heading');
       if (heading) {
         if (appState.searchQuery) {
-          heading.textContent = `Search results for "${appState.searchQuery}"`;
+          heading.textContent = `"${appState.searchQuery}"`;
         } else {
           const catLabels = {
             all: 'All Menu',
@@ -3946,7 +4685,7 @@
             naan: 'Breads & Naan',
             meetha: 'Desserts & Sweets'
           };
-          heading.textContent = catLabels[appState.activeCategory] || (appState.activeCategory.charAt(0).toUpperCase() + appState.activeCategory.slice(1));
+          heading.textContent = categoryHeading(appState.activeCategory, catLabels);
         }
       }
 
@@ -3954,8 +4693,8 @@
         grid.innerHTML = `
           <div class="py-10 text-center text-secondary">
             <span class="material-symbols-outlined text-[32px] text-secondary/60">search_off</span>
-            <p class="mt-1 font-semibold text-[14px]">No dishes match your search</p>
-            <button onclick="clearSearch(); selectCategory('all', document.querySelector('.cat-rail-btn'))" class="mt-2 text-[12px] text-primary underline">Reset filters</button>
+            <p class="mt-1 font-semibold text-[14px]">${escapeHtml(t('noMatch'))}</p>
+            <button type="button" onclick="resetMenuFilters()" class="mt-2 min-h-[44px] px-3 text-[12px] text-primary underline">${escapeHtml(t('resetFilters'))}</button>
           </div>
         `;
         return;
@@ -3990,12 +4729,12 @@
                 <div class="pt-4 pb-2 sticky top-16 bg-surface/95 backdrop-blur-md z-10 -mx-1 px-1.5 flex items-center justify-between border-b-2 border-primary/20 mb-3 mt-4">
                   <div class="flex items-center gap-2 min-w-0">
                     <span class="w-7 h-7 rounded-xl bg-primary/10 text-primary flex items-center justify-center material-symbols-outlined text-[16px] shrink-0 font-bold shadow-2xs">${sec.icon}</span>
-                    <h3 class="font-headline font-black text-[14px] sm:text-[15px] text-on-surface tracking-tight truncate">${sec.title}</h3>
+                    <h3 class="font-headline font-black text-[14px] sm:text-[15px] text-on-surface tracking-tight truncate">${escapeHtml(currentLang === 'ur' && I18N.ur['nav.' + sec.id] ? t('nav.' + sec.id) : sec.title)}</h3>
                     <span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded-full shrink-0">${secDishes.length}</span>
                     ${sec.badge ? `<span class="text-[8.5px] font-black uppercase text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.2 rounded shrink-0">${sec.badge}</span>` : ''}
                   </div>
                   <button onclick="selectCategoryById('${sec.id}')" class="text-[11px] font-bold text-primary hover:text-primary-dim flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-primary/5 hover:bg-primary/15 transition-all shrink-0">
-                    <span>View All</span>
+                    <span>${escapeHtml(t('viewAll'))}</span>
                     <span class="material-symbols-outlined text-[14px]">chevron_right</span>
                   </button>
                 </div>
@@ -4051,6 +4790,7 @@
     function openDishDetail(dishId) {
       const dish = findDishById(dishId);
       if (!dish) return;
+      if (isDishSoldOut(dish)) { showToast(t('soldOutToast')); return; }
 
       appState.activeModalDish = dish;
       appState.modalQty = 1;
@@ -4084,7 +4824,7 @@
           <label class="flex items-center justify-between p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest cursor-pointer hover:border-primary transition-all">
             <div class="flex items-center gap-2">
               <input type="checkbox" onchange="toggleModalAddon(${idx}, this.checked)" class="w-4 h-4 text-primary rounded border-surface-container focus:ring-primary"/>
-              <span class="text-[12px] font-bold text-on-surface">${addon.name}</span>
+              <span class="text-[12px] font-bold text-on-surface">${escapeHtml(addon.name)}</span>
             </div>
             <span class="text-[11px] font-bold text-primary">+ ${formatPrice(addon.price || 0)}</span>
           </label>
@@ -4262,6 +5002,12 @@
 
     function commitModalToCart() {
       if (!appState.activeModalDish) return;
+      if (isDishSoldOut(appState.activeModalDish)) {
+        closeDishDetail();
+        showToast(t('soldOutToast'));
+        renderDishGrid();
+        return;
+      }
       const note = document.getElementById('modal-dish-note').value.trim();
       const sizeName = appState.modalSelectedSizeName || "Standard Portion";
       const addonsTotal = (appState.modalSelectedAddons || []).reduce((sum, a) => sum + (a.price || 0), 0);
@@ -4426,6 +5172,7 @@
     function quickAddToCart(dishId) {
       const dish = findDishById(dishId);
       if (!dish) return;
+      if (isDishSoldOut(dish)) { showToast(t('soldOutToast')); renderDishGrid(); return; }
 
       const defaultSize = (dish.sizeOptions && dish.sizeOptions.length > 0) ? dish.sizeOptions[0].name : "Standard Portion";
       addItemToCart({
@@ -4441,11 +5188,13 @@
       });
 
       renderDishGrid();
-      showToast(`Added ${dish.title} to Your Order!`);
+      showToast(t('toast.added', { title: dish.title }));
     }
 
     // --- 6. CART MANAGEMENT ---
     function addItemToCart(item) {
+      if (isCartItemSoldOut(item)) { showToast(t('soldOutToast')); return; }
+      hideSoldOutNotice();
       // Find matching item with identical modifiers
       const existing = appState.cart.find(ci => 
         ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
@@ -4487,7 +5236,7 @@
       renderCartItems();
       renderDishGrid();
       syncCartAction('remove', { index: index, item: targetItem });
-      showToast("Item removed from order");
+      showToast(t('toast.removed'));
     }
 
     function clearEntireCart() {
@@ -4586,7 +5335,7 @@
       if (floatQty) floatQty.textContent = totalQty;
       if (floatTotal) floatTotal.textContent = formatPrice(grandTotal);
       if (floatCta) {
-        floatCta.textContent = hasOpenTicket() ? "Add to Order" : "View Order";
+        floatCta.textContent = hasOpenTicket() ? t('addToOrder') : t('viewOrder');
       }
 
       if (floatBar) {
@@ -4626,12 +5375,12 @@
 
       container.innerHTML = appState.cart.map((item, idx) => `
         <div class="bg-surface-container-lowest rounded-xl p-3 border border-surface-container shadow-sm flex items-center gap-3">
-          <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-surface-container"/>
+          <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-surface-container"/>
           
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between">
               <h4 class="font-headline font-bold text-[14px] text-on-surface truncate">${escapeHtml(item.title)}</h4>
-              <button onclick="removeCartItem(${idx})" class="text-secondary hover:text-error transition-colors p-1" title="Remove item">
+              <button type="button" onclick="removeCartItem(${idx})" class="tap44 w-8 h-8 -mt-1 -mr-1 flex items-center justify-center rounded-full text-secondary hover:text-error transition-colors" title="${escapeHtml(t('removeItem'))}" aria-label="${escapeHtml(t('removeItem'))}: ${escapeHtml(item.title)}">
                 <span class="material-symbols-outlined text-[16px]">close</span>
               </button>
             </div>
@@ -4644,12 +5393,12 @@
               <span class="font-headline font-bold text-primary text-[15px]">${formatPrice(item.price * item.qty)}</span>
 
               <!-- Quantity Stepper Pill -->
-              <div class="inline-flex items-center bg-surface-container rounded-full px-1 py-0.5">
-                <button onclick="adjustCartItemQty(${idx}, -1)" class="w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center active:scale-90 shadow-xs">
+              <div class="inline-flex items-center gap-1 bg-surface-container rounded-full px-1 py-0.5">
+                <button type="button" onclick="adjustCartItemQty(${idx}, -1)" aria-label="${escapeHtml(t('oneLess'))}: ${escapeHtml(item.title)}" class="tap44 w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center active:scale-90 shadow-xs">
                   <span class="material-symbols-outlined text-[14px]">remove</span>
                 </button>
-                <span class="font-bold text-[12px] px-2 min-w-[20px] text-center">${item.qty}</span>
-                <button onclick="adjustCartItemQty(${idx}, 1)" class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs">
+                <span class="font-bold text-[12px] px-2 min-w-[20px] text-center" aria-live="polite">${Number(item.qty) || 0}</span>
+                <button type="button" onclick="adjustCartItemQty(${idx}, 1)" aria-label="${escapeHtml(t('oneMore'))}: ${escapeHtml(item.title)}" class="tap44 w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90 shadow-xs">
                   <span class="material-symbols-outlined text-[14px]">add</span>
                 </button>
               </div>
@@ -4725,6 +5474,7 @@
     }
 
     function closeOrderReview() {
+      cancelSendCountdown();
       const m = document.getElementById('order-review-modal');
       if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
     }
@@ -4737,21 +5487,21 @@
         return;
       }
       list.innerHTML = appState.cart.map((item, idx) => {
-        const soldOut = soldOutSet.has(item.dishId) || soldOutSet.has(String(item.dishId));
+        const soldOut = isCartItemSoldOut(item);
         const details = [item.size, item.spice].filter(Boolean).map(escapeHtml).join(' • ');
         return `
           <div class="bg-surface-container-lowest rounded-xl p-2.5 border ${soldOut ? 'border-rose-300' : 'border-surface-container'} flex items-center gap-2.5" data-review-line="${idx}">
             <div class="flex-1 min-w-0">
               <span class="font-headline font-bold text-[14px] text-on-surface block truncate">${escapeHtml(item.title)}</span>
               <span class="text-[11px] text-secondary block">${details}${item.note ? ` • <span class="italic">"${escapeHtml(item.note)}"</span>` : ''}</span>
-              ${soldOut ? '<span class="text-[11px] font-bold text-rose-700">Sold out – please remove</span>' : `<span class="text-[12px] font-semibold text-primary">${formatPrice((Number(item.price) || 0) * item.qty)}</span>`}
+              ${soldOut ? `<span class="text-[11px] font-bold text-rose-700">${escapeHtml(t('soldOutLine'))}</span>` : `<span class="text-[12px] font-semibold text-primary">${formatPrice((Number(item.price) || 0) * item.qty)}</span>`}
             </div>
-            <div class="inline-flex items-center bg-surface-container rounded-full px-1 py-0.5 shrink-0">
-              <button type="button" onclick="adjustCartItemQty(${idx}, -1)" class="w-7 h-7 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center active:scale-90" aria-label="One less ${escapeHtml(item.title)}">
+            <div class="inline-flex items-center gap-1 bg-surface-container rounded-full px-1 py-0.5 shrink-0">
+              <button type="button" onclick="adjustCartItemQty(${idx}, -1)" class="tap44 w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center active:scale-90" aria-label="${escapeHtml(t('oneLess'))}: ${escapeHtml(item.title)}">
                 <span class="material-symbols-outlined text-[15px]">${item.qty <= 1 ? 'delete' : 'remove'}</span>
               </button>
               <span class="font-bold text-[13px] px-2 min-w-[22px] text-center">${Number(item.qty) || 0}</span>
-              <button type="button" onclick="adjustCartItemQty(${idx}, 1)" class="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90" aria-label="One more ${escapeHtml(item.title)}">
+              <button type="button" onclick="adjustCartItemQty(${idx}, 1)" class="tap44 w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90" aria-label="${escapeHtml(t('oneMore'))}: ${escapeHtml(item.title)}">
                 <span class="material-symbols-outlined text-[15px]">add</span>
               </button>
             </div>
@@ -4762,7 +5512,7 @@
       const subtitle = document.getElementById('order-review-subtitle');
       if (subtitle) {
         const qty = appState.cart.reduce((s, i) => s + (Number(i.qty) || 0), 0);
-        subtitle.textContent = `${qty} item${qty === 1 ? '' : 's'} for ${appState.isOnlineOrder ? 'your online order' : 'Table #' + appState.tableNumber}`;
+        subtitle.textContent = t('reviewSubtitle', { n: qty, where: appState.isOnlineOrder ? t('yourOnlineOrder') : `${t('tableWord')} #${appState.tableNumber}` });
       }
     }
 
@@ -4782,10 +5532,7 @@
 
     function setSendingState(sending) {
       appState.isSending = Boolean(sending);
-      const btn = document.getElementById('order-review-send-btn');
-      const label = document.getElementById('order-review-send-label');
-      if (btn) btn.disabled = appState.isSending;
-      if (label) label.textContent = appState.isSending ? 'Sending…' : 'Send to waiter';
+      updateSendCountdownUI();
       updateRoleUI();
     }
 
@@ -4839,16 +5586,16 @@
     // Turns a refused order into a message the guest can act on. The cart is left alone.
     function handleOrderFailure(result) {
       if (result.networkError) {
-        showOrderError('Could not send. Check your connection and try again.');
+        showOrderError(t('err.connection'));
         return;
       }
       const { status, data, res } = result;
       if (handleInvalidTableResponse(res, data)) { closeOrderReview(); return; }
       if (status === 409 && Array.isArray(data.soldOut)) {
         data.soldOut.forEach(id => {
-          soldOutSet.add(id);
+          soldOutSet.add(String(id));
           const dish = findDishById(id);
-          if (dish) { dish.isAvailable = false; soldOutSet.add(dish.id); }
+          if (dish) soldOutSet.add(String(dish.id));
         });
         renderDishGrid();
         renderCartItems();
@@ -4864,24 +5611,25 @@
         return;
       }
       if (status === 423 && data.tableClosed) {
-        showOrderError('Please ask your waiter to open the table.');
+        showOrderError(t('err.tableClosed'));
         return;
       }
       if (status === 429) {
-        showOrderError('Please wait a few seconds and try again.');
+        showOrderError(t('err.wait'));
         return;
       }
       if (status === 403 && data.isHost === false) {
         pollTableSession();
       }
-      showOrderError((data && data.error) ? String(data.error) : 'Could not send. Please try again or ask your waiter.');
+      showOrderError((data && data.error) ? String(data.error) : t('err.generic'));
     }
 
     async function submitOrderToKitchen() {
       if (appState.isSending) return;
+      cancelSendCountdown();
       if (appState.cart.length === 0) {
         closeOrderReview();
-        showToast("Your order is empty!");
+        showToast(t('err.empty'));
         switchView('menu');
         return;
       }
@@ -4891,7 +5639,7 @@
       // Only the Table Host may send the table's first order
       const isInitialOrder = !hasOpenTicket();
       if (isInitialOrder && !appState.isHost && !appState.isOnlineOrder) {
-        showOrderError(`Only the Table Host (${appState.hostName || 'Table Lead'}) can send the first order.`);
+        showOrderError(t('err.onlyHost', { name: appState.hostName || 'Table Lead' }));
         return;
       }
 
@@ -4930,11 +5678,11 @@
 
       const pendingCount = (result.data.order.pendingItems || []).length;
       if (result.data.nothingNew) {
-        showToast('Those dishes are already on your order.');
+        showToast(t('toast.already'));
       } else if (pendingCount > 0) {
-        showToast('Sent! Waiting for your waiter to confirm.');
+        showToast(t('toast.sentWaiting'));
       } else {
-        showToast(isInitialOrder ? 'Order sent to the kitchen!' : 'Extra dishes sent to the kitchen!');
+        showToast(isInitialOrder ? t('toast.sentKitchen') : t('toast.extraSent'));
       }
     }
 
@@ -5081,6 +5829,10 @@
       const closed = isTicketClosed(tkt);
       if (addons) addons.classList.toggle('hidden', closed);
       if (!panel) return;
+      if (!tkt) {
+        panel.classList.add('hidden');
+        return;
+      }
       panel.classList.toggle('hidden', !closed);
       if (!closed) return;
       const card = document.getElementById('ticket-final-card');
@@ -5089,15 +5841,21 @@
       const text = document.getElementById('ticket-final-text');
       const lastNotice = (tkt.notices || []).length ? tkt.notices[tkt.notices.length - 1].text : '';
       const states = {
-        Rejected: ['border-rose-200 bg-rose-50 text-rose-950', 'block', 'Your order was not accepted', lastNotice || 'The restaurant could not accept this order. Please ask your waiter.'],
-        Voided: ['border-slate-200 bg-slate-50 text-slate-900', 'cancel', 'This order was cancelled', lastNotice || 'The restaurant cancelled this order. Nothing is due for it.'],
-        Settled: ['border-emerald-200 bg-emerald-50 text-emerald-950', 'verified', 'Bill paid – thank you!', `Your bill${tkt.invoiceNumber ? ' (' + tkt.invoiceNumber + ')' : ''} has been settled.`]
+        Rejected: ['border-rose-200 bg-rose-50 text-rose-950', 'block', t('final.rejected'), lastNotice || 'The restaurant could not accept this order. Please ask your waiter.'],
+        Voided: ['border-slate-200 bg-slate-50 text-slate-900', 'cancel', t('final.voided'), lastNotice || 'The restaurant cancelled this order. Nothing is due for it.'],
+        Settled: ['border-emerald-200 bg-emerald-50 text-emerald-950', 'verified', t('final.settled'), `Your bill${tkt.invoiceNumber ? ' (' + tkt.invoiceNumber + ')' : ''} has been settled.`]
       };
       const [cls, iconName, heading, body] = states[tkt.status];
       if (card) card.className = `rounded-2xl border p-4 shadow-sm flex flex-col gap-2 ${cls}`;
       if (icon) icon.textContent = iconName;
       if (title) title.textContent = heading;
       if (text) text.textContent = body;
+      const rateBtn = document.getElementById('btn-final-rate');
+      if (rateBtn) {
+        const showRate = tkt.status === 'Settled' && !(appState.feedback && appState.feedback.sent && appState.feedback.ticketId === tkt.ticketId);
+        rateBtn.classList.toggle('hidden', !showRate);
+        rateBtn.classList.toggle('flex', showRate);
+      }
     }
 
     function renderTicketDetails() {
@@ -5138,28 +5896,29 @@
             <div id="ticket-pending-group" class="rounded-xl border border-amber-300 bg-amber-50 p-2.5 flex flex-col gap-1.5">
               <span class="flex items-center gap-1.5 text-[12px] font-bold text-amber-900">
                 <span class="material-symbols-outlined text-[16px] animate-pulse">hourglass_top</span>
-                Waiting for your waiter to confirm
+                ${escapeHtml(t('pendingWaiting'))}
               </span>
               ${pendingItems.map(ticketLineHtml).join('')}
-              <span class="text-[11px] text-amber-800">${formatPrice(pendingTotal)} awaiting confirmation (not on your bill yet)</span>
+              <span class="text-[11px] text-amber-800">${escapeHtml(t('pendingNotOnBill', { amount: formatPrice(pendingTotal) }))}</span>
             </div>`;
         }
         if (confirmed.length) {
           html += `
             <div id="ticket-confirmed-group" class="flex flex-col gap-1.5 ${pendingItems.length ? 'mt-1' : ''}">
-              ${pendingItems.length ? '<span class="text-[11px] uppercase tracking-wider text-emerald-700 font-bold">Confirmed</span>' : ''}
+              ${pendingItems.length ? `<span class="text-[11px] uppercase tracking-wider text-emerald-700 font-bold">${escapeHtml(t('confirmedHeading'))}</span>` : ''}
               ${confirmed.map(ticketLineHtml).join('')}
             </div>`;
         }
-        if (!html) html = '<span class="text-[12px] text-secondary">No dishes on this order.</span>';
+        if (!html) html = `<span class="text-[12px] text-secondary">${escapeHtml(t('noDishes'))}</span>`;
         ticketItemsContainer.innerHTML = html;
       }
 
       renderTicketNotices(tkt);
       renderFinalState(tkt);
 
-      if (tkt.billRequested) markBillRequestedUI();
+      if (isBillRequested(tkt) && !isTicketClosed(tkt)) markBillRequestedUI(); else resetBillRequestUI();
       if (isBillViewOpen()) renderBillView();
+      renderEta();
 
       // Ensure dining add-ons are up-to-date
       renderDiningAddons();
@@ -5195,7 +5954,7 @@
     }
 
     function openBillView() {
-      if (!appState.currentTicket) { showToast('No order yet.'); return; }
+      if (!appState.currentTicket) { showToast(t('noOrderYet')); return; }
       renderBillView();
       const m = document.getElementById('bill-view-modal');
       if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
@@ -5208,31 +5967,45 @@
     }
 
     function markBillRequestedUI() {
+      const tkt = appState.currentTicket;
+      const method = (tkt && appState.billRequestedFor === tkt.ticketId) ? appState.billPayMethod : '';
       const label = document.getElementById('btn-request-bill-tab-label');
-      if (label) label.textContent = "Bill requested ✓";
+      if (label) label.textContent = method ? t('billRequestedWith', { method: t(PAY_METHOD_KEYS[method] || method) }) : t('billRequested');
+      const tabBtn = document.getElementById('btn-request-bill-tab');
+      if (tabBtn) {
+        tabBtn.dataset.billRequested = 'true';
+        tabBtn.classList.remove('bg-amber-50', 'border-amber-300', 'text-amber-900');
+        tabBtn.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-900');
+      }
       const status = document.getElementById('bill-request-status');
       if (status) status.classList.remove('hidden');
       const quickBtn = document.getElementById('btn-quick-bring-bill');
       if (quickBtn) {
         quickBtn.classList.remove('bg-amber-50', 'border-amber-300');
         quickBtn.classList.add('bg-emerald-50', 'border-emerald-400');
-        const text = quickBtn.querySelector('span:last-child');
-        if (text) text.textContent = "Requested ✓";
       }
+      const quickLabel = document.getElementById('btn-quick-bring-bill-label');
+      if (quickLabel) quickLabel.textContent = t('billRequestedShort');
     }
 
     function resetBillRequestUI() {
       const label = document.getElementById('btn-request-bill-tab-label');
-      if (label) label.textContent = "Request bill";
+      if (label) label.textContent = t('requestBill');
+      const tabBtn = document.getElementById('btn-request-bill-tab');
+      if (tabBtn) {
+        tabBtn.dataset.billRequested = 'false';
+        tabBtn.classList.remove('bg-emerald-50', 'border-emerald-400', 'text-emerald-900');
+        tabBtn.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-900');
+      }
       const status = document.getElementById('bill-request-status');
       if (status) status.classList.add('hidden');
       const quickBtn = document.getElementById('btn-quick-bring-bill');
       if (quickBtn) {
         quickBtn.classList.remove('bg-emerald-50', 'border-emerald-400');
         quickBtn.classList.add('bg-amber-50', 'border-amber-300');
-        const text = quickBtn.querySelector('span:last-child');
-        if (text) text.textContent = "Bring Bill";
       }
+      const quickLabel = document.getElementById('btn-quick-bring-bill-label');
+      if (quickLabel) quickLabel.textContent = t('bringBill');
     }
 
     // Dining Add-ons (Extras) Management
@@ -5343,6 +6116,11 @@
 
     function sendServiceAction(actionName, price, station) {
       closeWaiterModal();
+      if (!(price > 0) && /bill|check/i.test(String(actionName || ''))) {
+        // Bill requests ask how the guest will pay
+        requestPhysicalBill();
+        return;
+      }
       if (price && price > 0) {
         promptUserConfirmation({
           title: 'Confirm Extra Add-on',
@@ -5360,24 +6138,23 @@
       }
     }
 
+    // Asks how the guest will pay, then rings for the bill ("Bill please (Card)")
     function requestPhysicalBill() {
-      promptUserConfirmation({
-        title: 'Request Bill?',
-        message: `Ask your waiter to bring the bill to <b>Table #${escapeHtml(appState.tableNumber || '04')}</b>?`,
-        icon: 'receipt_long',
-        confirmText: 'Yes, Bring Bill',
-        cancelText: 'Cancel',
-        confirmColorClass: 'bg-amber-600 hover:bg-amber-700',
-        onConfirm: async () => {
-          const result = await sendServiceBell('Bill please');
-          if (result.ok) {
-            markBillRequestedUI();
-            showToast("Your waiter has been asked to bring the bill.");
-          } else {
-            showToast(result.message);
-          }
-        }
-      });
+      if (!hasOpenTicket()) { showToast(t('noOrderYet')); return; }
+      if (isBillRequested(appState.currentTicket)) {
+        markBillRequestedUI();
+        showToast(t('billAlready'));
+        return;
+      }
+      const sub = document.getElementById('pay-intent-sub');
+      if (sub) {
+        const where = appState.isOnlineOrder ? t('yourOnlineOrder') : `${t('tableWord')} #${appState.tableNumber || '04'}`;
+        sub.textContent = t('payHowSub', { where });
+      }
+      const errEl = document.getElementById('pay-intent-error');
+      if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+      const m = document.getElementById('pay-intent-modal');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
     }
 
     // --- 9. TABLE SWITCHER & SERVICE MODAL ---
@@ -5448,8 +6225,8 @@
 
         let shortName = t.id ? `T-${t.id}` : t.name;
         btn.innerHTML = `
-          <span class="font-headline font-black">${shortName}</span>
-          <span class="text-[9px] text-secondary truncate max-w-[65px]">${t.zone}</span>
+          <span class="font-headline font-black">${escapeHtml(shortName)}</span>
+          <span class="text-[9px] text-secondary truncate max-w-[65px]">${escapeHtml(t.zone)}</span>
         `;
         grid.appendChild(btn);
       });
@@ -5527,15 +6304,14 @@
         const isPaid = Number(s.price) > 0;
         const isEmoji = s.icon && (s.icon.length <= 2 || /\p{Extended_Pictographic}/u.test(s.icon));
         const iconHtml = isEmoji
-          ? `<span class="text-[22px]">${s.icon}</span>`
+          ? `<span class="text-[22px]">${escapeHtml(s.icon)}</span>`
           : `<span class="material-symbols-outlined text-[24px] text-primary">${escapeHtml(s.icon || 'notifications_active')}</span>`;
         const priceLabel = isPaid ? `+ Rs. ${Number(s.price).toLocaleString()}` : (s.description || 'Free Service');
         const station = s.station || (isPaid ? 'rice_naan' : 'service');
-        const safeName = (s.name || '').replace(/'/g, "\\'");
-
         return `
-          <button onclick="sendServiceAction('${safeName}', ${Number(s.price)||0}, '${station}')" 
-            class="p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center group">
+          <button type="button" data-name="${escapeHtml(s.name || '')}" data-price="${Number(s.price) || 0}" data-station="${escapeHtml(station)}"
+            onclick="sendServiceAction(this.dataset.name, Number(this.dataset.price) || 0, this.dataset.station)"
+            class="min-h-[44px] p-2.5 rounded-xl border border-surface-container bg-surface-container-lowest hover:border-primary flex flex-col items-center gap-1 active:scale-95 transition-all text-center group">
             ${iconHtml}
             <span class="text-[12px] font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">${escapeHtml(s.name)}</span>
             <span class="text-[10px] ${isPaid ? 'text-primary font-mono font-bold' : 'text-secondary'}">${escapeHtml(priceLabel)}</span>
@@ -5575,11 +6351,11 @@
         const data = await readJsonSafe(res);
         if (handleInvalidTableResponse(res, data)) return { ok: false, message: orderingBlockedMessage() };
         if (!res.ok) {
-          return { ok: false, message: res.status === 429 ? 'Please wait a few seconds and try again.' : ((data && data.error) || 'Could not reach your waiter. Please try again.') };
+          return { ok: false, message: res.status === 429 ? t('err.wait') : ((data && data.error) ? String(data.error) : t('err.waiter')) };
         }
-        return { ok: true };
+        return { ok: true, duplicate: Boolean(data && data.duplicate) };
       } catch (e) {
-        return { ok: false, message: 'Could not send. Check your connection and try again.' };
+        return { ok: false, message: t('err.connection') };
       }
     }
 
@@ -5601,25 +6377,18 @@
 
       closeWaiterModal();
       sendServiceBell(actionName).then(result => {
-        showToast(result.ok ? `Notified staff: "${actionName}" for Table #${appState.tableNumber}` : result.message);
+        showToast(result.ok ? t('toast.notified', { request: actionName }) : result.message);
       });
     }
 
     // --- 10. BILL SETTLED FEEDBACK ---
     function rateDining(stars) {
-      const label = document.getElementById('rating-feedback-label');
-      const labels = ['Needs Improvement', 'Fair', 'Good', 'Very Good', 'Exceptional! 🌟'];
-      if (label) label.textContent = `Rated ${stars}/5 Stars: ${labels[stars - 1]}`;
-      const starBtns = document.querySelectorAll('.star-btn');
-      starBtns.forEach((btn, idx) => {
-        if (idx < stars) {
-          btn.style.fontVariationSettings = "'FILL' 1";
-          btn.classList.add('text-amber-400');
-        } else {
-          btn.style.fontVariationSettings = "'FILL' 0";
-          btn.classList.remove('text-amber-400');
-        }
-      });
+      const n = Math.max(1, Math.min(5, Number(stars) || 0));
+      if (!appState.feedback) resetFeedbackForm('');
+      if (appState.feedback.sent) return;
+      appState.feedback.rating = n;
+      showFeedbackError('');
+      renderFeedbackStars();
     }
 
     function closeSettledModalAndReset() {

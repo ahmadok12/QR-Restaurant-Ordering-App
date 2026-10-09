@@ -3096,11 +3096,8 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/menu' && req.method === 'GET') {
     const db = readDb();
     const restId = parsedUrl.query.restaurantId || 'REST-001';
-    let menuList = (db.menu || []).filter(m => 
-      !restId || 
-      m.restaurantId === restId || 
-      (restId === 'REST-001' && (m.restaurantId === 'REST-001' || m.restaurantId === 'rest-dera-01'))
-    );
+    const restKey = canonicalRestId(restId);
+    let menuList = (db.menu || []).filter(m => canonicalRestId(m.restaurantId) === restKey);
     if (menuList.length === 0 && (!db.menu || db.menu.length === 0)) {
       db.menu = DEFAULT_MENU;
       writeDb(db);

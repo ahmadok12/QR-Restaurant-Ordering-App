@@ -44,7 +44,7 @@ http://localhost:3000/hub.html
 ```bash
 node run_tests.js
 ```
-This starts the server against a throwaway database on port 3000 and runs every suite (fraud controls, table layouts, billing and deals, multi-person ordering, co-host sync, order controls, security). Your real `data/pos_db.json` is never touched.
+This starts the server against a throwaway database on port 3000 and runs every suite (fraud controls, table layouts, billing and deals, multi-person ordering, co-host sync, order controls, reports and feedback, security). Your real `data/pos_db.json` is never touched.
 
 ---
 
@@ -68,3 +68,8 @@ This starts the server against a throwaway database on port 3000 and runs every 
 - **Removing items**: removing a confirmed item needs a reason; once the kitchen has started, a waiter also needs the manager PIN. Removed items stay on the record, struck through.
 - **Exceptions report**: the admin portal lists voids, removed items, rejected rounds and failed PIN attempts per waiter, plus served-but-unpaid orders and tables reset without an invoice, with a CSV export.
 - **Pause ordering**: the owner can pause all ordering with a message, or switch off online orders.
+
+## ✨ Portal Features
+- **Customer menu**: review step with a 5-second undo, live "waiting for waiter / confirmed" status, estimated ready time, request the bill (cash, card or bank transfer) and an itemised bill, star rating with comments saved for the owner, server-synced sold-out dishes, dietary filter chips, Urdu / English toggle.
+- **Waiter app**: sound and vibration alerts for new orders and service calls (with mute), bill-requested badges, reconnect banner, larger text and touch targets, installable from the home screen.
+- **Restaurant admin**: Reports tab with sales by day, dish, payment method and waiter (CSV export) plus guest feedback; "Sold out today" toggle per dish; dish photos are resized and compressed in the browser before upload.
