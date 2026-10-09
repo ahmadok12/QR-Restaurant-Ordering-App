@@ -43,6 +43,20 @@
 </head>
 <body class="h-full flex justify-center items-center bg-slate-200/70 p-0 sm:p-4 text-slate-800">
 
+  <!-- Kitchen staff login (any staff or admin account) -->
+  <div id="kds-login-overlay" class="hidden fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
+    <form onsubmit="handleKdsLogin(event)" class="w-full max-w-sm bg-white rounded-2xl p-5 space-y-3 shadow-xl">
+      <h2 class="text-[16px] font-extrabold text-slate-900">Kitchen Screen Login</h2>
+      <p class="text-[11px] text-slate-500">Sign in with any staff or restaurant admin account to show live orders.</p>
+      <input id="kds-login-email" type="text" required placeholder="Email, username or phone" autocomplete="username"
+        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] focus:outline-none focus:border-amber-500"/>
+      <input id="kds-login-pass" type="password" required placeholder="Password" autocomplete="current-password"
+        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] focus:outline-none focus:border-amber-500"/>
+      <div id="kds-login-err" class="hidden p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold"></div>
+      <button type="submit" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-[13px]">Sign In</button>
+    </form>
+  </div>
+
   <!-- Mobile App Frame Shell -->
   <div class="w-full max-w-md h-full sm:h-[92vh] sm:max-h-[860px] bg-slate-50 sm:rounded-[36px] sm:shadow-2xl sm:border-[6px] sm:border-slate-300 flex flex-col overflow-hidden relative">
 
@@ -130,6 +144,71 @@
     let dbCache = null;
     let currentStation = 'all';
 
+    function getStaffToken() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('pos_kds_auth') || 'null');
+        return saved && saved.token ? saved.token : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function showKdsLogin(show) {
+      document.getElementById('kds-login-overlay').classList.toggle('hidden', !show);
+    }
+
+    async function handleKdsLogin(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('kds-login-err');
+      errBox.classList.add('hidden');
+      try {
+        const res = await fetch(`${getApiBase()}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('kds-login-email').value.trim(),
+            password: document.getElementById('kds-login-pass').value
+          })
+        });
+        const d = await res.json();
+        if (d.ok && d.token) {
+          localStorage.setItem('pos_kds_auth', JSON.stringify({ token: d.token, role: d.role }));
+          document.getElementById('kds-login-pass').value = '';
+          showKdsLogin(false);
+          refreshKds();
+        } else {
+          errBox.textContent = d.error || 'Invalid credentials';
+          errBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        errBox.textContent = 'Server connection error';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    // Escape guest-typed text before inserting it into the page.
+    function escapeHtml(str) {
+      return String(str === undefined || str === null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Attach this device's staff login token to every API call.
+    (function installAuthFetch() {
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        const target = typeof input === 'string' ? input : (input && input.url) || '';
+        const token = getStaffToken();
+        if (token && target.includes('/api/')) {
+          init = init || {};
+          const headers = new Headers(init.headers || {});
+          if (!headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + token);
+          init = Object.assign({}, init, { headers: headers });
+        }
+        return nativeFetch(input, init);
+      };
+    })();
+
     function getApiBase() {
       return (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
     }
@@ -154,7 +233,16 @@
     async function refreshKds() {
       let ticketsFromApi = [];
       try {
+        if (!getStaffToken()) {
+          showKdsLogin(true);
+          return;
+        }
         const res = await fetch(`${getApiBase()}/api/db`);
+        if (res.status === 401) {
+          localStorage.removeItem('pos_kds_auth');
+          showKdsLogin(true);
+          return;
+        }
         if (res.ok) {
           dbCache = await res.json();
           ticketsFromApi = dbCache.tickets || [];
@@ -214,8 +302,8 @@
           <div class="flex items-start justify-between">
             <div>
               <div class="flex items-center gap-2">
-                <strong class="text-[16px] font-black text-slate-900">${t.table}</strong>
-                <span class="text-[11px] font-mono font-bold text-slate-500">${t.ticketId}</span>
+                <strong class="text-[16px] font-black text-slate-900">${escapeHtml(t.table)}</strong>
+                <span class="text-[11px] font-mono font-bold text-slate-500">${escapeHtml(t.ticketId)}</span>
               </div>
               <!-- Assigned Waiter Display -->
               <p class="text-[11px] text-sky-700 font-bold mt-0.5 flex items-center gap-1">
@@ -236,11 +324,11 @@
             ${(t.items || []).map(item => `
               <div class="flex justify-between items-start border-b border-slate-200/60 pb-1 last:border-0 last:pb-0">
                 <div>
-                  <strong class="text-slate-900 text-[13px]">${item.qty}x</strong> ${item.title}
-                  <div class="text-[10px] text-slate-500">${item.size || 'Standard'}</div>
+                  <strong class="text-slate-900 text-[13px]">${item.qty}x</strong> ${escapeHtml(item.title)}
+                  <div class="text-[10px] text-slate-500">${escapeHtml(item.size || 'Standard')}</div>
                 </div>
                 <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[10px]">
-                  ${item.spice || 'Normal'}
+                  ${escapeHtml(item.spice || 'Normal')}
                 </span>
               </div>
             `).join('')}
@@ -248,7 +336,7 @@
 
           ${t.notes ? `
             <div class="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
-              <strong>Chef Note:</strong> ${t.notes}
+              <strong>Chef Note:</strong> ${escapeHtml(t.notes)}
             </div>
           ` : ''}
 

@@ -130,7 +130,7 @@ async function runTests() {
     });
     assert('Batch layout position update succeeds (200)', layoutRes.status === 200 && layoutRes.data.ok);
 
-    const getTablesRes = await request('/api/tables');
+    const getTablesRes = await request('/api/tables', { headers: adminHeaders });
     const updatedTable = (getTablesRes.data || []).find(t => t.id === testTableId);
     assert('Table coordinates updated to x=82, y=88', updatedTable && updatedTable.x === 82 && updatedTable.y === 88);
 
@@ -153,7 +153,7 @@ async function runTests() {
     });
     assert('Deleting vacant table succeeds with 200', deleteVacant.status === 200 && deleteVacant.data.ok);
 
-    const checkDeleted = await request('/api/tables');
+    const checkDeleted = await request('/api/tables', { headers: adminHeaders });
     const stillExists = (checkDeleted.data || []).some(t => t.id === testTableId);
     assert('Table 99 removed from database', !stillExists);
 

@@ -58,13 +58,7 @@ async function runTests() {
     assert('Public info does not leak passwords', !pubInfoRes.data.credentials && !pubInfoRes.data.superAdmin);
 
     const anonDbRes = await request('/api/db');
-    assert('Anonymous /api/db responds (200)', anonDbRes.status === 200);
-    assert('Anonymous /api/db hides superAdmin credentials', !anonDbRes.data.superAdmin);
-    assert('Anonymous /api/db hides managerPin', !anonDbRes.data.managerPin);
-    const restPassMasked = anonDbRes.data.restaurants.every(r => !r.credentials || r.credentials.password === '***');
-    assert('Anonymous /api/db masks restaurant passwords (***)', restPassMasked);
-    const staffPassMasked = anonDbRes.data.staff.every(s => s.password === '***');
-    assert('Anonymous /api/db masks staff passwords (***)', staffPassMasked);
+    assert('Anonymous /api/db is rejected (401)', anonDbRes.status === 401);
 
     // 2. AUTHENTICATION & RBAC
     console.log('\n--- 2. RBAC & JWT-style Token Authentication ---');
@@ -95,6 +89,13 @@ async function runTests() {
     assert('Super Admin login succeeds (200)', superLogin.status === 200);
     const superToken = superLogin.data.token;
     assert('Super admin receives signed Bearer token', !!superToken && superToken.includes('.'));
+
+    const staffDbRes = await request('/api/db', { headers: { 'Authorization': `Bearer ${superToken}` } });
+    assert('Authenticated /api/db responds (200)', staffDbRes.status === 200);
+    assert('/api/db hides superAdmin credentials', !staffDbRes.data.superAdmin);
+    assert('/api/db hides restaurant passwords and manager PINs',
+      staffDbRes.data.restaurants.every(r => !r.managerPin && (!r.credentials || r.credentials.password === undefined)));
+    assert('/api/db hides staff passwords', staffDbRes.data.staff.every(st => st.password === undefined));
 
     // 3. SERVER-AUTHORITATIVE PRICING TAMPERING TEST
     console.log('\n--- 3. Server-Authoritative Price Recalculation ---');
@@ -206,7 +207,7 @@ async function runTests() {
         restaurantId: 'rest-dera-01',
         guest: 'Walkout Customer',
         time: '01:00 PM',
-        items: [{ dishId: 'dish-02', title: 'Mutton Seekh Kabab', price: 950, qty: 1 }],
+        items: [{ dishId: 'dish-5', title: 'Peshawari Beef Chapli Kabab', price: 950, qty: 1 }],
         subtotal: 950,
         total: 998
       }
@@ -274,8 +275,10 @@ async function runTests() {
     console.log('\n====================================================');
     console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
     console.log('====================================================');
+    if (failed > 0) process.exit(1);
   } catch (err) {
     console.error('Test execution error:', err);
+    process.exit(1);
   }
 }
 

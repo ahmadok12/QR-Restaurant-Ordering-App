@@ -3,7 +3,7 @@ const http = require('http');
 
 const BASE_URL = 'http://127.0.0.1:3000';
 
-function request(method, path, body = null) {
+function request(method, path, body = null, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, BASE_URL);
     const req = http.request({
@@ -11,7 +11,7 @@ function request(method, path, body = null) {
       port: url.port,
       path: url.pathname + url.search,
       method: method,
-      headers: body ? { 'Content-Type': 'application/json' } : {}
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...extraHeaders }
     }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
@@ -27,6 +27,12 @@ function request(method, path, body = null) {
     if (body) req.write(JSON.stringify(body));
     req.end();
   });
+}
+
+// Table reset is admin-only, so log in as the demo restaurant admin for it.
+async function resetTable(table) {
+  const login = await request('POST', '/api/auth/login', { email: 'owner@deragourmet.com', password: 'DeraAdmin#2026' });
+  return request('POST', '/api/test/reset-table', { table }, { 'Authorization': `Bearer ${login.data.token}` });
 }
 
 async function runTest() {
@@ -45,7 +51,7 @@ async function runTest() {
   }
 
   // 1. Reset test table 98
-  await request('POST', '/api/test/reset-table', { table: '98' });
+  await resetTable('98');
 
   // 2. Host (Device A) and Cohost (Device B) join Table 98
   const hostJoin = await request('POST', '/api/table-session/join', {
@@ -119,7 +125,7 @@ async function runTest() {
   assert(hostPollAfter.data.activeTicket.total > fireOrderRes.data.order.total, 'Host receives updated grand total');
 
   // 7. Cleanup
-  await request('POST', '/api/test/reset-table', { table: '98' });
+  await resetTable('98');
 
   console.log(`\n========================================`);
   console.log(`RESULTS: Passed: ${passed}, Failed: ${failed}`);
