@@ -200,10 +200,10 @@ async function runTests() {
     console.log('\n--- 8. Manager PIN lockout ---');
     let lastStatus = 0;
     for (let i = 0; i < 5; i++) {
-      lastStatus = (await request('POST', '/api/orders/void', { ticketId: comboTicketId, reason: 'test', managerPin: '000000' })).status;
+      lastStatus = (await request('POST', '/api/orders/void', { ticketId: comboTicketId, reason: 'test', managerPin: '000000' }, bearer(waiterToken))).status;
     }
     assert('Wrong PINs are rejected (403)', lastStatus === 403);
-    const locked = await request('POST', '/api/orders/void', { ticketId: comboTicketId, reason: 'test', managerPin: '7788' });
+    const locked = await request('POST', '/api/orders/void', { ticketId: comboTicketId, reason: 'test', managerPin: '7788' }, bearer(waiterToken));
     assert('After 5 wrong PINs, even the right PIN is locked out (429)', locked.status === 429);
 
     // 9. Secrets at rest

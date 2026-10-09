@@ -16,6 +16,7 @@ const SUITES = [
   'test_waiter_app_toggle.js',
   'test_order_controls.js',
   'test_reports_and_feedback.js',
+  'test_review_regressions.js',
   'test_security.js' // last: it trips the manager PIN lockout
 ];
 

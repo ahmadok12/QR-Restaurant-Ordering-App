@@ -223,10 +223,24 @@ async function runTests() {
     assert('Server assigns its own ticket id', !!voidOrderRes.data.order && voidOrderRes.data.order.ticketId !== voidTestOrder.order.ticketId);
     voidTestOrder.order.ticketId = voidOrderRes.data.order.ticketId;
 
+    // Voids need a staff login plus the manager PIN
+    const waiterLogin = await request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { email: 'hamza@deragourmet.com', password: 'Waiter#101' }
+    });
+    const waiterToken = waiterLogin.data.token;
+    const anonVoid = await request('/api/orders/void', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { ticketId: voidTestOrder.order.ticketId, reason: 'x', managerPin: '0000' }
+    });
+    assert('Void without a staff login is rejected (401)', anonVoid.status === 401);
+
     // Try voiding with wrong PIN
     const badVoid = await request('/api/orders/void', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${waiterToken}` },
       body: {
         ticketId: voidTestOrder.order.ticketId,
         reason: 'Customer walked out',
@@ -238,7 +252,7 @@ async function runTests() {
     // Try voiding without reason
     const noReasonVoid = await request('/api/orders/void', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${waiterToken}` },
       body: {
         ticketId: voidTestOrder.order.ticketId,
         reason: '',
@@ -250,7 +264,7 @@ async function runTests() {
     // Authorized void with manager PIN 7788
     const goodVoid = await request('/api/orders/void', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${waiterToken}` },
       body: {
         ticketId: voidTestOrder.order.ticketId,
         reason: 'Customer cancelled before food entered tandoor',
