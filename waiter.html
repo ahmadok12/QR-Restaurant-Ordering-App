@@ -85,7 +85,7 @@
 
         <div>
           <label class="block text-slate-700 text-[11px] font-bold mb-1 uppercase tracking-wider">Password</label>
-          <input required id="w-login-pass" type="password" value="Waiter#101"
+          <input required id="w-login-pass" type="password"
             class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[13px] font-mono focus:outline-none focus:border-brand focus:bg-white"/>
         </div>
 
@@ -240,6 +240,38 @@
     let currentWaiter = null;
     let dbCache = null;
 
+    function getStaffToken() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('waiter_auth') || 'null');
+        return saved && saved.token ? saved.token : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Escape guest-typed text before inserting it into the page.
+    function escapeHtml(str) {
+      return String(str === undefined || str === null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Attach this device's staff login token to every API call.
+    (function installAuthFetch() {
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        const target = typeof input === 'string' ? input : (input && input.url) || '';
+        const token = getStaffToken();
+        if (token && target.includes('/api/')) {
+          init = init || {};
+          const headers = new Headers(init.headers || {});
+          if (!headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + token);
+          init = Object.assign({}, init, { headers: headers });
+        }
+        return nativeFetch(input, init);
+      };
+    })();
+
     function getApiBase() {
       return (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
     }
@@ -274,8 +306,8 @@
         const d = await res.json();
 
         if (d.ok && d.staff) {
-          currentWaiter = d.staff;
-          sessionStorage.setItem('waiter_auth', JSON.stringify(d.staff));
+          currentWaiter = Object.assign({}, d.staff, { token: d.token });
+          sessionStorage.setItem('waiter_auth', JSON.stringify(currentWaiter));
           initWaiterDashboard();
         } else {
           errBox.textContent = d.error || 'Invalid credentials';
@@ -308,6 +340,10 @@
     async function refreshWaiterData() {
       try {
         const res = await fetch(`${getApiBase()}/api/db`);
+        if (res.status === 401) {
+          handleWaiterLogout();
+          return;
+        }
         dbCache = await res.json();
         renderMyOrders();
         renderServiceBells();
@@ -380,32 +416,32 @@
         card.innerHTML = `
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <strong class="text-[15px] font-black text-slate-900">${t.table}</strong>
-              <span class="text-[11px] font-mono font-bold text-slate-500">${t.ticketId}</span>
+              <strong class="text-[15px] font-black text-slate-900">${escapeHtml(t.table)}</strong>
+              <span class="text-[11px] font-mono font-bold text-slate-500">${escapeHtml(t.ticketId)}</span>
             </div>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
               isReady ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse' : 'bg-amber-100 text-amber-800 border border-amber-300'
-            }">${t.status}</span>
+            }">${escapeHtml(t.status)}</span>
           </div>
 
           <div class="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 border border-slate-100 p-2 rounded-xl">
-            <span>Guest: <strong class="text-slate-800">${t.guest || 'Guest'}</strong></span>
-            <span>${t.time}</span>
+            <span>Guest: <strong class="text-slate-800">${escapeHtml(t.guest || 'Guest')}</strong></span>
+            <span>${escapeHtml(t.time)}</span>
           </div>
 
           <div class="space-y-1 text-[11px] text-slate-700">
             ${(t.items || []).map(i => `
               <div class="flex justify-between items-center py-0.5">
-                <span><strong>${i.qty}x</strong> ${i.title} <span class="text-slate-500">(${i.size || 'Standard'})</span></span>
-                <span class="text-orange-700 text-[10px] font-semibold">${i.spice || ''}</span>
+                <span><strong>${escapeHtml(i.qty)}x</strong> ${escapeHtml(i.title)} <span class="text-slate-500">(${escapeHtml(i.size || 'Standard')})</span></span>
+                <span class="text-orange-700 text-[10px] font-semibold">${escapeHtml(i.spice || '')}</span>
               </div>
             `).join('')}
           </div>
 
-          ${t.notes ? `<div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900"><strong>Note:</strong> ${t.notes}</div>` : ''}
+          ${t.notes ? `<div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900"><strong>Note:</strong> ${escapeHtml(t.notes)}</div>` : ''}
 
           <div class="pt-1 flex items-center justify-between border-t border-slate-100">
-            <span class="text-[11px] text-slate-500 font-semibold">${t.payment || 'Pay at Table'}</span>
+            <span class="text-[11px] text-slate-500 font-semibold">${escapeHtml(t.payment || 'Pay at Table')}</span>
             ${isReady ? `
               <button onclick="updateTicketStatus('${t.ticketId}', 'Served')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[12px] flex items-center gap-1 shadow-xs active:scale-95 transition-all">
                 <span class="material-symbols-outlined text-[16px]">check</span>
@@ -464,10 +500,10 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-              <strong class="text-slate-900 text-[13px]">${b.table}</strong>
-              <span class="text-[10px] text-slate-500">${b.time}</span>
+              <strong class="text-slate-900 text-[13px]">${escapeHtml(b.table)}</strong>
+              <span class="text-[10px] text-slate-500">${escapeHtml(b.time)}</span>
             </div>
-            <p class="text-[12px] text-rose-700 font-semibold mt-1">${b.request}</p>
+            <p class="text-[12px] text-rose-700 font-semibold mt-1">${escapeHtml(b.request)}</p>
           </div>
           <button onclick="dismissBell('${b.table}')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-all">
             <span class="material-symbols-outlined text-[14px]">done</span>
@@ -573,7 +609,7 @@
             ${hasBell ? `
               <span class="text-rose-700 font-black block animate-bounce">🔔 Calling Waiter!</span>
             ` : isOcc ? `
-              <span class="text-slate-700 block truncate font-medium">${t.order.ticketId} &bull; ${t.order.guest || 'Diner'}</span>
+              <span class="text-slate-700 block truncate font-medium">${escapeHtml(t.order.ticketId)} &bull; ${escapeHtml(t.order.guest || 'Diner')}</span>
               <span class="text-sky-900 font-black text-[12px]">Rs. ${(Number(t.order.total)||0).toLocaleString()}</span>
             ` : `
               <span class="text-emerald-700 font-bold">Vacant</span>

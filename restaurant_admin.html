@@ -135,7 +135,7 @@
           <label class="block text-slate-700 text-[11px] font-bold mb-1 uppercase tracking-wider">Password</label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">lock</span>
-            <input required id="login-password" type="password" placeholder="DeraAdmin#2026" value="DeraAdmin#2026"
+            <input required id="login-password" type="password" placeholder="Password"
               class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[13px] focus:outline-none focus:border-primary focus:bg-white font-mono"/>
             <button type="button" onclick="togglePasswordVisibility('login-password')" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700">
               <span class="material-symbols-outlined text-[18px]">visibility</span>
@@ -2936,7 +2936,7 @@
       try {
         const res = await fetch('/api/restaurant/billing-settings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAdminAuthHeaders(),
           body: JSON.stringify({
             restaurantId: restId,
             billingCharges: currentBillingCharges
@@ -3184,7 +3184,7 @@
       try {
         const res = await fetch('/api/menu', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAdminAuthHeaders(),
           body: JSON.stringify(payload)
         });
         if (res.ok) {
@@ -4514,7 +4514,7 @@
             </div>
             <div class="flex items-center gap-1 text-slate-500">
               <span>Pass: </span>
-              <span class="font-mono text-rose-700 font-bold">${escapeHtml(w.password || '')}</span>
+              <span class="font-mono text-rose-700 font-bold">••••••</span>
             </div>
           </div>
         `;
@@ -4708,7 +4708,7 @@
             </div>
             <div class="flex items-center gap-1 text-slate-500">
               <span>Pass: </span>
-              <span class="font-mono text-emerald-700 font-bold">${escapeHtml(c.password || '')}</span>
+              <span class="font-mono text-emerald-700 font-bold">••••••</span>
             </div>
           </div>
         `;

@@ -52,6 +52,11 @@ async function runTests() {
   }
 
   try {
+    // 0. Admin login (billing and menu changes require a restaurant admin token)
+    const loginRes = await request('POST', '/api/auth/login', { email: 'owner@deragourmet.com', password: 'DeraAdmin#2026' });
+    assert(loginRes.status === 200 && !!loginRes.data.token, 'Restaurant admin login succeeds');
+    const adminHeaders = { 'Authorization': `Bearer ${loginRes.data.token}` };
+
     // 1. Test GET /api/restaurant/billing-settings
     console.log('\n[Test 1] GET /api/restaurant/billing-settings');
     const getRes = await request('GET', '/api/restaurant/billing-settings?restaurantId=REST-001');
@@ -79,10 +84,16 @@ async function runTests() {
         category: 'service'
       }
     ];
+    const anonPost = await request('POST', '/api/restaurant/billing-settings', {
+      restaurantId: 'REST-001',
+      billingCharges: []
+    });
+    assert(anonPost.status === 401, 'Anonymous billing settings change is rejected (401)');
+
     const postRes = await request('POST', '/api/restaurant/billing-settings', {
       restaurantId: 'REST-001',
       billingCharges: testCharges
-    });
+    }, adminHeaders);
     assert(postRes.status === 200 && postRes.data.ok === true, 'Billing settings updated successfully');
     assert(postRes.data.taxRate === 16, 'Primary taxRate updated from tax category charge');
 
@@ -154,7 +165,7 @@ async function runTests() {
       prepTime: '20-25 mins'
     };
 
-    const dealCreateRes = await request('POST', '/api/menu', newDeal);
+    const dealCreateRes = await request('POST', '/api/menu', newDeal, adminHeaders);
     assert((dealCreateRes.status === 200 || dealCreateRes.status === 201) && dealCreateRes.data.ok === true, 'Deal created successfully');
     const createdDish = dealCreateRes.data.dish;
     assert(createdDish.category === 'deals', 'Dish category is deals');
@@ -180,7 +191,7 @@ async function runTests() {
     await request('POST', '/api/test/reset-table', {
       table: '04',
       restaurantId: 'REST-001'
-    });
+    }, adminHeaders);
 
     console.log(`\n========================================`);
     console.log(`RESULTS: Passed: ${passed}, Failed: ${failed}`);

@@ -2,7 +2,7 @@ const http = require('http');
 
 const BASE_URL = 'http://localhost:3000';
 
-function request(method, path, body) {
+function request(method, path, body, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, BASE_URL);
     const postData = body ? JSON.stringify(body) : '';
@@ -13,7 +13,8 @@ function request(method, path, body) {
       method: method,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
+        'Content-Length': Buffer.byteLength(postData),
+        ...extraHeaders
       }
     }, res => {
       let data = '';
@@ -33,6 +34,12 @@ function request(method, path, body) {
   });
 }
 
+// Table reset is admin-only, so log in as the demo restaurant admin for it.
+async function resetTable(table) {
+  const login = await request('POST', '/api/auth/login', { email: 'owner@deragourmet.com', password: 'DeraAdmin#2026' });
+  return request('POST', '/api/test/reset-table', { table }, { 'Authorization': `Bearer ${login.body.token}` });
+}
+
 async function runTests() {
   console.log('=== MULTI-PERSON TABLE HOST & GUEST ORDERING TEST ===\n');
 
@@ -42,7 +49,7 @@ async function runTests() {
 
   // 0. Reset table 99 first
   console.log('1. Resetting test table 99...');
-  await request('POST', '/api/test/reset-table', { table });
+  await resetTable(table);
 
   // 1. Device 1 (Host) scans first
   console.log('2. Device 1 (1st scanner) joins table 99...');
@@ -136,7 +143,7 @@ async function runTests() {
       restaurantId: 'REST-001',
       table: 'Table 99',
       guest: 'Bob (Guest)',
-      items: [{ title: 'Chicken Biryani', price: 650, qty: 1 }],
+      items: [{ title: 'Special Chicken Dum Biryani', price: 650, qty: 1 }],
       subtotal: 650,
       total: 683,
       status: 'New'
@@ -157,7 +164,7 @@ async function runTests() {
       restaurantId: 'REST-001',
       table: 'Table 99',
       guest: 'Alice (Host)',
-      items: [{ title: 'Chicken Karahi', price: 1450, qty: 1 }],
+      items: [{ title: 'Chicken Makhni Karahi', price: 1450, qty: 1 }],
       subtotal: 1450,
       total: 1523,
       status: 'In Kitchen'
@@ -179,8 +186,8 @@ async function runTests() {
       table: 'Table 99',
       guest: 'Bob (Guest)',
       items: [
-        { title: 'Chicken Karahi', price: 1450, qty: 1 },
-        { title: 'Garlic Naan', price: 120, qty: 2 }
+        { title: 'Chicken Makhni Karahi', price: 1450, qty: 1 },
+        { title: 'Sesame Roghni Naan', price: 120, qty: 2 }
       ],
       subtotal: 1690,
       total: 1775,
@@ -218,7 +225,7 @@ async function runTests() {
 
   // 8. Cleanup test table 99
   console.log('\n9. Cleaning up test table 99...');
-  await request('POST', '/api/test/reset-table', { table });
+  await resetTable(table);
   console.log('   PASS: Test table 99 cleaned up!');
 
   console.log('\n===========================================');

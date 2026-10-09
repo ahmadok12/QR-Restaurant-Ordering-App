@@ -332,7 +332,7 @@
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 mb-1">Password</label>
-            <input id="login-password" type="password" required value="Cashier#2026" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] font-medium text-slate-900 focus:outline-none focus:border-emerald-500"/>
+            <input id="login-password" type="password" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] font-medium text-slate-900 focus:outline-none focus:border-emerald-500"/>
           </div>
           <div id="login-error" class="hidden text-[11px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2 font-medium"></div>
           <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[13px] shadow-sm transition-all flex items-center justify-center gap-1.5">
@@ -459,6 +459,14 @@
     let currentSettleOrder = null;
     let selectedPayment = 'Cash';
     let currentActiveShift = null;
+
+    // Escape guest-typed text before inserting it into the page.
+    function escapeHtml(str) {
+      return String(str === undefined || str === null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
 
     function getApiBase() {
       return (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
@@ -729,25 +737,25 @@
           <div class="flex items-center justify-between" onclick="openSettleSheet(${JSON.stringify(t).replace(/"/g, '&quot;')})">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <strong class="text-[14px] font-black text-slate-900">${t.name}</strong>
-              <span class="text-[11px] font-mono text-slate-500 font-semibold">${order.ticketId}</span>
+              <strong class="text-[14px] font-black text-slate-900">${escapeHtml(t.name)}</strong>
+              <span class="text-[11px] font-mono text-slate-500 font-semibold">${escapeHtml(order.ticketId)}</span>
             </div>
             <span class="text-[14px] font-mono font-black text-emerald-700">Rs. ${total.toLocaleString()}</span>
           </div>
 
           <div class="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 border border-slate-100 p-2 rounded-xl" onclick="openSettleSheet(${JSON.stringify(t).replace(/"/g, '&quot;')})">
-            <span>Guest: <strong class="text-slate-800">${order.guest || 'Table Guest'}</strong></span>
-            <span>${order.time || '12:00 PM'}</span>
+            <span>Guest: <strong class="text-slate-800">${escapeHtml(order.guest || 'Table Guest')}</strong></span>
+            <span>${escapeHtml(order.time || '12:00 PM')}</span>
           </div>
 
           <div class="text-[11px] text-slate-600 truncate" onclick="openSettleSheet(${JSON.stringify(t).replace(/"/g, '&quot;')})">
-            ${items.map(i => `${i.qty}x ${i.title}`).join(', ')}
+            ${items.map(i => `${i.qty}x ${escapeHtml(i.title)}`).join(', ')}
           </div>
 
           <div class="pt-1 flex items-center justify-between">
             <span class="text-[10px] text-amber-700 font-bold flex items-center gap-1">
               <span class="material-symbols-outlined text-[13px]">payments</span>
-              <span>${order.payment || 'Pay Cash at Table'}</span>
+              <span>${escapeHtml(order.payment || 'Pay Cash at Table')}</span>
             </span>
             <div class="flex items-center gap-1.5">
               <button onclick="openSettleSheet(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] flex items-center gap-1">
@@ -778,11 +786,11 @@
         item.innerHTML = `
           <div>
             <div class="flex items-center gap-1.5 flex-wrap">
-              <strong class="text-slate-900">${s.table}</strong>
+              <strong class="text-slate-900">${escapeHtml(s.table)}</strong>
               <span class="text-[10px] font-mono text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">${s.invoiceNumber || s.ticketId}</span>
-              ${s.invoiceNumber ? `<span class="text-[9px] font-mono text-slate-400">${s.ticketId}</span>` : ''}
+              ${s.invoiceNumber ? `<span class="text-[9px] font-mono text-slate-400">${escapeHtml(s.ticketId)}</span>` : ''}
             </div>
-            <p class="text-[10px] text-slate-500 mt-0.5">${s.time} &bull; Paid via ${s.paymentMethod}</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">${escapeHtml(s.time)} &bull; Paid via ${escapeHtml(s.paymentMethod)}</p>
           </div>
           <div class="text-right">
             <strong class="text-emerald-700 font-mono font-black block">Rs. ${(Number(s.total)||0).toLocaleString()}</strong>
@@ -811,7 +819,7 @@
         const row = document.createElement('div');
         row.className = "flex justify-between items-center";
         row.innerHTML = `
-          <span>${it.qty}x ${it.title}</span>
+          <span>${it.qty}x ${escapeHtml(it.title)}</span>
           <span class="font-mono text-slate-900 font-semibold">Rs. ${(it.price * it.qty).toLocaleString()}</span>
         `;
         itemsList.appendChild(row);
@@ -960,12 +968,12 @@
             <hr style="border-top: 1px dashed #000;"/>
           </center>
           <p><strong>Table:</strong> ${currentSettleOrder.table}</p>
-          <p><strong>Ticket #:</strong> ${ord.ticketId}</p>
+          <p><strong>Ticket #:</strong> ${escapeHtml(ord.ticketId)}</p>
           <p><strong>Date/Time:</strong> ${new Date().toLocaleString()}</p>
           <hr style="border-top: 1px dashed #000;"/>
           ${(ord.items || []).map(i => `
             <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-              <span>${i.qty}x ${i.title}</span>
+              <span>${i.qty}x ${escapeHtml(i.title)}</span>
               <span>Rs. ${(i.price * i.qty).toLocaleString()}</span>
             </div>
           `).join('')}

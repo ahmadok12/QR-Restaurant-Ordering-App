@@ -463,7 +463,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-slate-500 text-[11px]">Password:</span>
                 <div class="flex items-center gap-1.5">
-                  <span id="v-cred-pass" class="font-mono text-brand font-bold">DeraAdmin#2026</span>
+                  <span id="v-cred-pass" class="font-mono text-brand font-bold">••••••</span>
                   <button type="button" onclick="copyPassword('v-cred-pass', true)" class="p-1 text-slate-500 hover:text-slate-800" title="Copy">
                     <span class="material-symbols-outlined text-[15px]">content_copy</span>
                   </button>
@@ -568,7 +568,7 @@
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-600 mb-1">Master Password</label>
-            <input id="super-login-password" type="password" required value="SuperAdmin#2026" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] font-medium text-slate-900 focus:outline-none focus:border-brand"/>
+            <input id="super-login-password" type="password" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-[13px] font-medium text-slate-900 focus:outline-none focus:border-brand"/>
           </div>
           <div id="super-login-error" class="hidden text-[11px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2 font-medium"></div>
           <button type="submit" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-white font-black text-[13px] shadow-sm transition-all flex items-center justify-center gap-1.5">
@@ -960,7 +960,9 @@
         });
         const result = await res.json();
         if (result.ok) {
-          showToast(`Restaurant ${result.restaurant.id} created successfully!`);
+          const pinNote = result.initialManagerPin ? ` Manager PIN: ${result.initialManagerPin}.` : '';
+          const passNote = result.initialPassword ? ` Password: ${result.initialPassword}.` : '';
+          alert(`Restaurant ${result.restaurant.id} created.${passNote}${pinNote}\n\nSave these now: they are stored hashed and cannot be shown again.`);
           closeAddRestaurantSheet();
           document.getElementById('add-rest-form').reset();
           refreshData();
@@ -1057,7 +1059,7 @@
       }
 
       document.getElementById('v-cred-email').textContent = rest.credentials ? rest.credentials.email : 'N/A';
-      document.getElementById('v-cred-pass').textContent = rest.credentials ? rest.credentials.password : 'N/A';
+      document.getElementById('v-cred-pass').textContent = 'Hidden (stored securely; set a new one to reset)';
 
       setFormEditable(false);
     }

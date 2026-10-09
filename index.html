@@ -3227,9 +3227,10 @@
           }
         }
 
-        // 4. Verify against backend /api/db
+        // 4. Verify against the backend (only this table's open ticket is public)
         try {
-          const res = await fetch(`${getApiBase()}/api/db`);
+          const ticketQuery = savedTicket && savedTicket.ticketId ? `&ticketId=${encodeURIComponent(savedTicket.ticketId)}` : '';
+          const res = await fetch(`${getApiBase()}/api/public/table-ticket?table=${encodeURIComponent(tNum)}${ticketQuery}`);
           if (res.ok) {
             const db = await res.json();
             // Check if savedTicket was settled by cashier on backend

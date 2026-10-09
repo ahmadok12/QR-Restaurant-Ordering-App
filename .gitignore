@@ -1,4 +1,7 @@
-﻿node_modules/
+node_modules/
 stitch_restaurant_menu_app_ui/
 .DS_Store
 *.log
+
+# Runtime data: database (passwords, orders) and token secret. Never commit.
+data/

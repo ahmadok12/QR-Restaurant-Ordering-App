@@ -7,8 +7,7 @@ const os = require('os');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
-const DB_FILE = path.join(DATA_DIR, 'pos_db.json');
-const AUTH_SECRET = process.env.AUTH_SECRET || 'pos_secure_secret_key_2026_dera';
+const DB_FILE = process.env.DB_FILE ? path.resolve(process.env.DB_FILE) : path.join(DATA_DIR, 'pos_db.json');
 
 function getLocalIpAddress() {
   const nets = os.networkInterfaces();
@@ -22,8 +21,59 @@ function getLocalIpAddress() {
   return '127.0.0.1';
 }
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(path.dirname(DB_FILE))) {
+  fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+}
+
+// Token signing secret: use AUTH_SECRET if set, otherwise a random secret persisted
+// next to the database (never committed) so tokens survive restarts.
+function loadAuthSecret() {
+  if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  const secretFile = path.join(path.dirname(DB_FILE), '.auth_secret');
+  try {
+    if (fs.existsSync(secretFile)) {
+      const existing = fs.readFileSync(secretFile, 'utf8').trim();
+      if (existing.length >= 32) return existing;
+    }
+    const generated = crypto.randomBytes(48).toString('base64url');
+    fs.writeFileSync(secretFile, generated, { encoding: 'utf8', mode: 0o600 });
+    return generated;
+  } catch (e) {
+    console.warn('Could not persist auth secret, using an in-memory one (tokens reset on restart):', e.message);
+    return crypto.randomBytes(48).toString('base64url');
+  }
+}
+const AUTH_SECRET = loadAuthSecret();
+
+// --- PASSWORD & PIN HASHING (scrypt, no dependencies) ---
+const HASH_PREFIX = 'scrypt$';
+
+function hashSecret(plain) {
+  const salt = crypto.randomBytes(16).toString('base64url');
+  const hash = crypto.scryptSync(String(plain), salt, 32).toString('base64url');
+  return `${HASH_PREFIX}${salt}$${hash}`;
+}
+
+function isHashed(value) {
+  return typeof value === 'string' && value.startsWith(HASH_PREFIX);
+}
+
+function verifySecret(plain, stored) {
+  if (!stored || plain === undefined || plain === null || plain === '') return false;
+  if (!isHashed(stored)) {
+    // Legacy plaintext value (migrated to a hash on startup)
+    const a = Buffer.from(String(plain));
+    const b = Buffer.from(String(stored));
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  }
+  const [, salt, hash] = stored.split('$');
+  const expected = Buffer.from(hash, 'base64url');
+  const actual = crypto.scryptSync(String(plain), salt, expected.length);
+  return crypto.timingSafeEqual(actual, expected);
+}
+
+function generatePin() {
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 const DEFAULT_THEME = {
@@ -498,7 +548,6 @@ function readDb() {
       if (!data.shifts) data.shifts = [];
       if (!data.superAdmin) data.superAdmin = DEFAULT_DB.superAdmin;
       (data.restaurants || []).forEach(r => {
-        if (!r.managerPin) r.managerPin = "7788";
         if (!r.nextInvoiceNumber) r.nextInvoiceNumber = 1001;
       });
       return data;
@@ -519,7 +568,8 @@ function writeDb(data) {
 
 if (!fs.existsSync(DB_FILE)) {
   writeDb(DEFAULT_DB);
-} else {
+}
+{
   const current = readDb();
   let updated = false;
   if (!current.restaurants || current.restaurants.length === 0) { current.restaurants = DEFAULT_DB.restaurants; updated = true; }
@@ -535,10 +585,38 @@ if (!fs.existsSync(DB_FILE)) {
   if (!current.shifts) { current.shifts = []; updated = true; }
   if (!current.superAdmin) { current.superAdmin = DEFAULT_DB.superAdmin; updated = true; }
   (current.restaurants || []).forEach(r => {
-    if (!r.managerPin) { r.managerPin = "7788"; updated = true; }
+    if (!r.managerPin) {
+      const pin = generatePin();
+      console.log(`Generated manager PIN for ${r.id} (${r.name}): ${pin}  (shown once, store it safely)`);
+      r.managerPin = pin;
+      updated = true;
+    }
     if (!r.nextInvoiceNumber) { r.nextInvoiceNumber = 1001; updated = true; }
     if (!r.theme) { r.theme = { ...DEFAULT_THEME }; updated = true; }
   });
+
+  // Migrate any plaintext passwords and PINs to scrypt hashes
+  if (current.superAdmin && current.superAdmin.password && !isHashed(current.superAdmin.password)) {
+    current.superAdmin.password = hashSecret(current.superAdmin.password);
+    updated = true;
+  }
+  (current.restaurants || []).forEach(r => {
+    if (r.credentials && r.credentials.password && !isHashed(r.credentials.password)) {
+      r.credentials.password = hashSecret(r.credentials.password);
+      updated = true;
+    }
+    if (r.managerPin && !isHashed(r.managerPin)) {
+      r.managerPin = hashSecret(r.managerPin);
+      updated = true;
+    }
+  });
+  (current.staff || []).forEach(st => {
+    if (st.password && !isHashed(st.password)) {
+      st.password = hashSecret(st.password);
+      updated = true;
+    }
+  });
+  if (current.managerPin) { delete current.managerPin; updated = true; }
   if (updated) writeDb(current);
 }
 
@@ -580,6 +658,131 @@ function getRequestAuth(req) {
   return null;
 }
 
+const ADMIN_ROLES = ['restaurant_admin', 'super_admin'];
+const STAFF_ROLES = ['waiter', 'cashier', 'restaurant_admin', 'super_admin'];
+
+function sendJson(res, status, body) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(body));
+}
+
+// Returns the verified token payload, or sends 401/403 and returns null.
+function requireRole(req, res, roles) {
+  const auth = getRequestAuth(req);
+  if (!auth) {
+    sendJson(res, 401, { error: 'Login required.' });
+    return null;
+  }
+  if (!roles.includes(auth.role)) {
+    sendJson(res, 403, { error: 'You do not have permission to do this.' });
+    return null;
+  }
+  return auth;
+}
+
+// The demo restaurant historically used both 'rest-dera-01' and 'REST-001'.
+function canonicalRestId(id) {
+  return id === 'rest-dera-01' ? 'REST-001' : id;
+}
+
+// Super admins can act on any restaurant; everyone else only on their own.
+function canAccessRestaurant(auth, restId) {
+  if (!auth) return false;
+  if (auth.role === 'super_admin') return true;
+  if (!restId) return true;
+  return canonicalRestId(auth.restaurantId) === canonicalRestId(restId);
+}
+
+function denyOtherRestaurant(res) {
+  sendJson(res, 403, { error: 'This belongs to a different restaurant.' });
+}
+
+// Strip secrets before anything leaves the server.
+function publicStaff(staff) {
+  if (!staff) return staff;
+  const { password, ...rest } = staff;
+  return rest;
+}
+
+function publicRestaurant(rest) {
+  if (!rest) return rest;
+  const { managerPin, credentials, ...copy } = rest;
+  if (credentials) copy.credentials = { email: credentials.email };
+  return copy;
+}
+
+function publicDb(db) {
+  const copy = { ...db };
+  delete copy.superAdmin;
+  delete copy.managerPin;
+  copy.restaurants = (db.restaurants || []).map(publicRestaurant);
+  copy.staff = (db.staff || []).map(publicStaff);
+  return copy;
+}
+
+// Guest-typed text is shown on staff screens; strip characters that could inject HTML or script.
+function cleanText(value, maxLength = 300) {
+  if (value === undefined || value === null) return value;
+  return String(value).replace(/[<>"'`\\]/g, '').slice(0, maxLength);
+}
+
+function cleanGuestFields(obj, fields) {
+  if (!obj || typeof obj !== 'object') return obj;
+  (fields || Object.keys(obj)).forEach(key => {
+    if (typeof obj[key] === 'string') obj[key] = cleanText(obj[key]);
+  });
+  return obj;
+}
+
+// Manager PIN brute-force protection: 5 wrong PINs locks voids for that restaurant for 15 minutes.
+const PIN_MAX_ATTEMPTS = 5;
+const PIN_LOCK_MS = 15 * 60 * 1000;
+const pinFailures = new Map();
+
+function isPinLocked(restId) {
+  const entry = pinFailures.get(restId);
+  return Boolean(entry && entry.lockedUntil && entry.lockedUntil > Date.now());
+}
+
+function recordPinFailure(restId) {
+  const entry = pinFailures.get(restId) || { count: 0, lockedUntil: 0 };
+  if (entry.lockedUntil && entry.lockedUntil <= Date.now()) {
+    entry.count = 0;
+    entry.lockedUntil = 0;
+  }
+  entry.count += 1;
+  if (entry.count >= PIN_MAX_ATTEMPTS) entry.lockedUntil = Date.now() + PIN_LOCK_MS;
+  pinFailures.set(restId, entry);
+}
+
+function clearPinFailures(restId) {
+  pinFailures.delete(restId);
+}
+
+// Login brute-force protection: 10 failed logins per identifier per 15 minutes.
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const loginFailures = new Map();
+
+function isLoginLocked(key) {
+  const entry = loginFailures.get(key);
+  if (!entry) return false;
+  if (Date.now() - entry.firstAt > LOGIN_WINDOW_MS) {
+    loginFailures.delete(key);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+function recordLoginFailure(key) {
+  const entry = loginFailures.get(key);
+  if (!entry || Date.now() - entry.firstAt > LOGIN_WINDOW_MS) {
+    loginFailures.set(key, { count: 1, firstAt: Date.now() });
+  } else {
+    entry.count += 1;
+  }
+}
+
 function logAuditEvent(db, action, details, actor = 'system', restaurantId = 'rest-dera-01') {
   if (!db.auditLogs) db.auditLogs = [];
   const actorName = typeof actor === 'object' ? (actor.name || actor.email || actor.role || 'user') : String(actor);
@@ -597,24 +800,67 @@ function logAuditEvent(db, action, details, actor = 'system', restaurantId = 're
   return entry;
 }
 
-function calculateAuthoritativeOrder(order, db, targetRestId) {
+// Fixed-price combo deals hardcoded in the customer menu (index.html addComboFeast)
+const BUILTIN_COMBOS = [
+  { id: 'deal-1', title: 'Deal 1: Solo Crunch Fiesta', price: 799, station: 'fastfood' },
+  { id: 'deal-2', title: 'Deal 2: Duo Pizza & Wings Feast', price: 1799, station: 'fastfood' },
+  { id: 'deal-3', title: 'Deal 3: Family Mega Party Combo', price: 2999, station: 'fastfood' },
+  { id: '101', title: 'Dera Karahi Feast (Family)', price: 3450, station: 'karahi' },
+  { id: '102', title: 'BBQ & Biryani Platter (Duo)', price: 2150, station: 'bbq' }
+];
+
+// Everything a guest can legitimately order for a restaurant, with server-side prices.
+function buildOrderCatalog(db, restId) {
+  const restKey = canonicalRestId(restId);
+  const ownMenu = (Array.isArray(db.menu) ? db.menu : [])
+    .filter(d => !d.restaurantId || canonicalRestId(d.restaurantId) === restKey);
+  const defaultMenu = (Array.isArray(DEFAULT_MENU) ? DEFAULT_MENU : [])
+    .filter(d => !d.restaurantId || canonicalRestId(d.restaurantId) === restKey);
+  const extras = (db.extras || DEFAULT_EXTRAS || []).map(x => ({
+    id: x.id, title: x.fullName || x.name, altTitle: x.name, price: Number(x.price) || 0, station: x.station || 'rice_naan'
+  }));
+  const sides = (db.sides || DEFAULT_SIDES || []).map(x => ({
+    id: x.id, title: x.name, price: Number(x.price) || 0, station: x.station || 'rice_naan'
+  }));
+  const services = (db.waiterServices || DEFAULT_WAITER_SERVICES || [])
+    .filter(x => Number(x.price) > 0)
+    .map(x => ({ id: x.id, title: x.name, price: Number(x.price) || 0, station: x.station || 'rice_naan' }));
+  return [...ownMenu, ...defaultMenu, ...BUILTIN_COMBOS, ...extras, ...sides, ...services];
+}
+
+function findCatalogItem(catalog, item) {
+  const wantId = item.dishId !== undefined && item.dishId !== null ? String(item.dishId) : null;
+  const wantTitle = item.title ? String(item.title).toLowerCase().trim() : null;
+  return catalog.find(d => wantId !== null && String(d.id) === wantId) ||
+    catalog.find(d => wantTitle && (
+      (d.title && d.title.toLowerCase().trim() === wantTitle) ||
+      (d.altTitle && d.altTitle.toLowerCase().trim() === wantTitle)
+    ));
+}
+
+// strict: reject items that are not on this restaurant's menu (used for new guest orders).
+// Non-strict keeps the stored price for items no longer on the menu (used when settling).
+function calculateAuthoritativeOrder(order, db, targetRestId, options = {}) {
   const restId = targetRestId || order.restaurantId || 'rest-dera-01';
   const rest = (db.restaurants || []).find(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01') || (restId === 'rest-dera-01' && r.id === 'REST-001')) || (db.restaurants && db.restaurants[0]) || {};
   const taxRate = Number(rest.taxRate) || 0.05;
 
-  const catalog = [
-    ...(Array.isArray(db.menu) ? db.menu : []),
-    ...(Array.isArray(DEFAULT_MENU) ? DEFAULT_MENU : [])
-  ];
+  const catalog = buildOrderCatalog(db, rest.id || restId);
   let subtotal = 0;
 
-  const authoritativeItems = (order.items || []).map(item => {
-    const canonical = catalog.find(d => 
-      String(d.id) === String(item.dishId) || 
-      (d.title && item.title && d.title.toLowerCase().trim() === item.title.toLowerCase().trim())
-    );
+  if (options.strict) {
+    const unknown = (order.items || []).filter(item => !findCatalogItem(catalog, item));
+    if (unknown.length > 0) {
+      const err = new Error(`Item not on the menu: ${unknown.map(i => i.title || i.dishId).join(', ')}`);
+      err.statusCode = 400;
+      throw err;
+    }
+  }
 
-    let unitPrice = canonical ? canonical.price : (Number(item.price) || 0);
+  const authoritativeItems = (order.items || []).map(item => {
+    const canonical = findCatalogItem(catalog, item);
+
+    let unitPrice = canonical ? canonical.price : Math.max(0, Number(item.price) || 0);
 
     if (canonical && canonical.sizeOptions && Array.isArray(canonical.sizeOptions) && item.size) {
       const sizeOpt = canonical.sizeOptions.find(s => s.name === item.size);
@@ -641,10 +887,10 @@ function calculateAuthoritativeOrder(order, db, targetRestId) {
       title: canonical ? canonical.title : (item.title || 'Custom Dish'),
       price: finalItemPrice,
       qty: qty,
-      size: item.size || 'Standard Portion',
-      spice: item.spice || 'Normal 🍃',
-      station: canonical ? canonical.station : (item.station || 'karahi'),
-      notes: item.notes || item.note || ''
+      size: cleanText(item.size || 'Standard Portion', 100),
+      spice: cleanText(item.spice || 'Normal 🍃', 100),
+      station: canonical ? canonical.station : cleanText(item.station || 'karahi', 50),
+      notes: cleanText(item.notes || item.note || '')
     };
   });
 
@@ -764,6 +1010,11 @@ function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
   };
 }
 
+const PUBLIC_PAGES = new Set([
+  'index.html', 'hub.html', 'restaurant_admin.html', 'super_admin.html',
+  'cashier.html', 'waiter.html', 'kds.html', 'admin.html'
+]);
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -790,6 +1041,26 @@ function parseBody(req) {
   });
 }
 
+const SUPER_ROLES = ['super_admin'];
+const ADMIN_WRITE_PREFIXES = [
+  '/api/staff', '/api/waiter-ranks', '/api/menu', '/api/categories', '/api/sides',
+  '/api/tags', '/api/extras', '/api/waiter-services'
+];
+
+// Returns the roles allowed to call a route, or null when the route is public.
+function requiredRolesFor(method, pathname) {
+  if (!pathname.startsWith('/api/')) return null;
+  const isWrite = method === 'POST' || method === 'PUT' || method === 'DELETE';
+
+  if (pathname === '/api/super/restaurants' || pathname.startsWith('/api/super/')) return SUPER_ROLES;
+  if (pathname === '/api/staff' || pathname.startsWith('/api/staff/')) return ADMIN_ROLES;
+  if (isWrite && ADMIN_WRITE_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))) return ADMIN_ROLES;
+  if (isWrite && (pathname === '/api/restaurant/theme' || pathname === '/api/restaurant/billing-settings')) return ADMIN_ROLES;
+  if (pathname === '/api/test/reset-table') return ADMIN_ROLES;
+  if (method === 'GET' && (pathname === '/api/db' || pathname === '/api/tables')) return STAFF_ROLES;
+  return null;
+}
+
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -803,6 +1074,10 @@ const server = http.createServer(async (req, res) => {
 
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
+
+  // Central access control for API routes that change data or expose staff-only data.
+  const routeRoles = requiredRolesFor(req.method, pathname);
+  if (routeRoles && !requireRole(req, res, routeRoles)) return;
 
   // Real-time SSE Endpoint
   if (pathname === '/api/events') {
@@ -877,15 +1152,7 @@ const server = http.createServer(async (req, res) => {
   // Super Admin: List all restaurants
   if (pathname === '/api/super/restaurants' && req.method === 'GET') {
     const db = readDb();
-    const auth = getRequestAuth(req);
-    const rests = (db.restaurants || []).map(r => {
-      const copy = { ...r };
-      // If caller is not authenticated super admin, redact password
-      if (!auth || auth.role !== 'super_admin') {
-        if (copy.credentials) copy.credentials = { email: copy.credentials.email, password: '***' };
-      }
-      return copy;
-    });
+    const rests = (db.restaurants || []).map(publicRestaurant);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(rests));
     return;
@@ -907,14 +1174,17 @@ const server = http.createServer(async (req, res) => {
 
       const startDate = new Date();
       const endDate = new Date(Date.now() + planDurationDays * 86400000);
+      const initialPassword = data.password || ('RestPass#' + crypto.randomBytes(6).toString('base64url'));
+      const initialPin = data.managerPin ? String(data.managerPin).trim() : generatePin();
 
       // Calculate unique serialwise restaurant ID (e.g. REST-001, REST-002)
       let serialId = (data.id || '').trim().toUpperCase();
-      if (!serialId || (db.restaurants || []).some(r => r.id === serialId)) {
+      if (!serialId || (db.restaurants || []).some(r => canonicalRestId(r.id) === canonicalRestId(serialId))) {
         let maxNum = 0;
         (db.restaurants || []).forEach(r => {
           if (r.id) {
-            const m = r.id.match(/REST-(\d+)/i);
+            // 'rest-dera-01' is the demo restaurant's legacy alias for REST-001
+            const m = canonicalRestId(r.id).match(/REST-(\d+)/i);
             if (m) {
               const num = parseInt(m[1], 10);
               if (num > maxNum) maxNum = num;
@@ -933,7 +1203,7 @@ const server = http.createServer(async (req, res) => {
         ownerManagesApp: !!data.ownerManagesApp,
         managerName: data.ownerManagesApp ? '' : (data.managerName || ''),
         managerPhone: data.ownerManagesApp ? '' : (data.managerPhone || ''),
-        managerPin: "7788",
+        managerPin: hashSecret(initialPin),
         nextInvoiceNumber: 1001,
         plan: data.plan || 'trial',
         planLabel: planLabel,
@@ -944,7 +1214,7 @@ const server = http.createServer(async (req, res) => {
         endDate: endDate.toISOString(),
         credentials: {
           email: (data.email || '').trim().toLowerCase(),
-          password: data.password || 'RestPass#' + Math.floor(100 + Math.random() * 900)
+          password: hashSecret(initialPassword)
         },
         currency: 'Rs.',
         taxRate: 0.05,
@@ -955,10 +1225,16 @@ const server = http.createServer(async (req, res) => {
       db.restaurants.unshift(newRest);
       logAuditEvent(db, 'RESTAURANT_CREATED', { restaurantId: serialId, name: newRest.name, plan: planLabel }, auth ? auth.name : 'Super Admin', serialId);
       writeDb(db);
-      broadcastEvent({ type: 'RESTAURANTS_UPDATED', restaurant: newRest });
+      broadcastEvent({ type: 'RESTAURANTS_UPDATED', restaurant: publicRestaurant(newRest) });
 
+      // The plaintext password and PIN are returned once so the super admin can hand them over.
       res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, restaurant: newRest }));
+      res.end(JSON.stringify({
+        ok: true,
+        restaurant: publicRestaurant(newRest),
+        initialPassword: data.password ? undefined : initialPassword,
+        initialManagerPin: initialPin
+      }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -994,7 +1270,10 @@ const server = http.createServer(async (req, res) => {
       if (data.address !== undefined) rest.address = data.address;
       if (data.ownerName !== undefined) rest.ownerName = data.ownerName;
       if (data.ownerPhone !== undefined) rest.ownerPhone = data.ownerPhone;
-      if (data.managerPin) rest.managerPin = String(data.managerPin).trim();
+      if (data.managerPin) {
+        rest.managerPin = hashSecret(String(data.managerPin).trim());
+        clearPinFailures(canonicalRestId(rest.id));
+      }
       if (typeof data.ownerManagesApp === 'boolean') {
         rest.ownerManagesApp = data.ownerManagesApp;
         if (rest.ownerManagesApp) {
@@ -1034,16 +1313,16 @@ const server = http.createServer(async (req, res) => {
 
       if (data.credentials) {
         if (data.credentials.email) rest.credentials.email = data.credentials.email;
-        if (data.credentials.password) rest.credentials.password = data.credentials.password;
+        if (data.credentials.password && data.credentials.password !== '***') rest.credentials.password = hashSecret(data.credentials.password);
         logAuditEvent(db, 'CREDENTIALS_CHANGED', { restaurantId: restId, email: rest.credentials.email }, auth ? auth.name : 'Super Admin', restId);
       }
 
       db.restaurants[idx] = rest;
       writeDb(db);
-      broadcastEvent({ type: 'RESTAURANTS_UPDATED', restaurant: rest });
+      broadcastEvent({ type: 'RESTAURANTS_UPDATED', restaurant: publicRestaurant(rest) });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, restaurant: rest }));
+      res.end(JSON.stringify({ ok: true, restaurant: publicRestaurant(rest) }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -1059,9 +1338,15 @@ const server = http.createServer(async (req, res) => {
       const password = (data.password || '').trim();
       const db = readDb();
 
+      const throttleKey = email || 'anonymous';
+      if (isLoginLocked(throttleKey)) {
+        sendJson(res, 429, { error: 'Too many failed attempts. Try again in 15 minutes.' });
+        return;
+      }
+
       // Check Super Admin credentials
-      const superAdmin = db.superAdmin || { email: "superadmin@deragourmet.com", password: "SuperAdmin#2026", name: "Platform Super Admin" };
-      if (email === superAdmin.email.toLowerCase() && password === superAdmin.password) {
+      const superAdmin = db.superAdmin;
+      if (superAdmin && superAdmin.email && email === superAdmin.email.toLowerCase() && verifySecret(password, superAdmin.password)) {
         const token = generateAuthToken({
           id: 'super-admin-01',
           email: superAdmin.email,
@@ -1087,8 +1372,8 @@ const server = http.createServer(async (req, res) => {
       // Check Restaurant Admin credentials
       const rest = (db.restaurants || []).find(r => 
         r.credentials && 
-        r.credentials.email.toLowerCase() === email && 
-        r.credentials.password === password
+        (r.credentials.email || '').toLowerCase() === email && 
+        verifySecret(password, r.credentials.password)
       );
 
       if (rest) {
@@ -1099,7 +1384,7 @@ const server = http.createServer(async (req, res) => {
           res.end(JSON.stringify({ 
             error: 'Restaurant subscription is CANCELLED or INACTIVE. Please contact platform super admin.',
             isCancelled: true,
-            restaurant: rest 
+            restaurant: publicRestaurant(rest)
           }));
           return;
         }
@@ -1121,7 +1406,7 @@ const server = http.createServer(async (req, res) => {
           ok: true,
           token: token,
           role: 'restaurant_admin',
-          restaurant: rest,
+          restaurant: publicRestaurant(rest),
           user: {
             name: adminName,
             email: rest.credentials.email,
@@ -1140,7 +1425,7 @@ const server = http.createServer(async (req, res) => {
         const matchesIdentifier = (staffEmail && staffEmail === email) ||
                                   (staffUsername && staffUsername === email) ||
                                   (staffPhone && (staffPhone === email || (inputPhoneDigits && staffPhone === inputPhoneDigits)));
-        return matchesIdentifier && s.password === password;
+        return matchesIdentifier && verifySecret(password, s.password);
       });
 
       if (staffMember) {
@@ -1172,12 +1457,13 @@ const server = http.createServer(async (req, res) => {
           ok: true,
           token: token,
           role: staffMember.role,
-          staff: staffMember,
-          restaurant: staffRest
+          staff: publicStaff(staffMember),
+          restaurant: publicRestaurant(staffRest)
         }));
         return;
       }
 
+      recordLoginFailure(throttleKey);
       logAuditEvent(db, 'LOGIN_FAILED', { email: email, attemptedRole: data.role || 'unknown' }, 'Anonymous');
       writeDb(db);
 
@@ -1193,22 +1479,11 @@ const server = http.createServer(async (req, res) => {
   // Staff API: List, Add, Remove, Edit Staff (Waiters & Cashiers)
   if (pathname === '/api/staff' && req.method === 'GET') {
     const db = readDb();
-    const restId = parsedUrl.query.restaurantId || 'REST-001';
     const auth = getRequestAuth(req);
+    const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
     const staffList = (db.staff || [])
-      .filter(s => 
-        !restId || 
-        s.restaurantId === restId || 
-        (restId === 'REST-001' && s.restaurantId === 'rest-dera-01')
-      )
-      .map(s => {
-        const copy = { ...s };
-        // Mask passwords if caller is not admin
-        if (!auth || (auth.role !== 'restaurant_admin' && auth.role !== 'super_admin')) {
-          copy.password = '***';
-        }
-        return copy;
-      });
+      .filter(s => canonicalRestId(s.restaurantId) === canonicalRestId(restId))
+      .map(publicStaff);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(staffList));
     return;
@@ -1226,8 +1501,10 @@ const server = http.createServer(async (req, res) => {
         ? 'Cashier#' + Math.floor(100 + Math.random() * 900) 
         : 'Waiter#' + Math.floor(100 + Math.random() * 900);
 
-      const targetRestId = data.restaurantId === 'rest-dera-01' ? 'REST-001' : (data.restaurantId || 'REST-001');
+      const requestedRestId = auth.role === 'super_admin' ? (data.restaurantId || 'REST-001') : auth.restaurantId;
+      const targetRestId = canonicalRestId(requestedRestId);
       const phoneClean = (data.phone || '').replace(/\D/g, '');
+      const initialPassword = data.password || defaultPass;
       const username = (data.username || phoneClean || data.phone || data.email || '').trim();
 
       const newStaff = {
@@ -1237,7 +1514,7 @@ const server = http.createServer(async (req, res) => {
         phone: phoneClean || data.phone || '',
         username: username,
         email: (data.email || username).trim().toLowerCase(),
-        password: data.password || defaultPass,
+        password: hashSecret(initialPassword),
         role: role,
         counter: data.counter || (role === 'cashier' ? 'Counter 01 (Front Register)' : ''),
         rankName: data.rankName || '',
@@ -1250,10 +1527,14 @@ const server = http.createServer(async (req, res) => {
       db.staff.push(newStaff);
       logAuditEvent(db, 'STAFF_CREATED', { staffId: newStaff.id, name: newStaff.name, role: newStaff.role }, auth ? auth.name : 'Admin', targetRestId);
       writeDb(db);
-      broadcastEvent({ type: 'STAFF_UPDATED', staff: db.staff });
+      broadcastEvent({ type: 'STAFF_UPDATED', staff: db.staff.map(publicStaff) });
 
       res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, staff: newStaff }));
+      res.end(JSON.stringify({
+        ok: true,
+        staff: publicStaff(newStaff),
+        initialPassword: data.password ? undefined : initialPassword
+      }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -1266,12 +1547,16 @@ const server = http.createServer(async (req, res) => {
     const auth = getRequestAuth(req);
     const db = readDb();
     const staffMember = (db.staff || []).find(s => s.id === staffId);
+    if (staffMember && !canAccessRestaurant(auth, staffMember.restaurantId)) {
+      denyOtherRestaurant(res);
+      return;
+    }
     db.staff = (db.staff || []).filter(s => s.id !== staffId);
     if (staffMember) {
       logAuditEvent(db, 'STAFF_DELETED', { staffId: staffId, name: staffMember.name, role: staffMember.role }, auth ? auth.name : 'Admin', staffMember.restaurantId);
     }
     writeDb(db);
-    broadcastEvent({ type: 'STAFF_UPDATED', staff: db.staff });
+    broadcastEvent({ type: 'STAFF_UPDATED', staff: db.staff.map(publicStaff) });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
     return;
@@ -1285,12 +1570,23 @@ const server = http.createServer(async (req, res) => {
       const db = readDb();
       const idx = (db.staff || []).findIndex(s => s.id === staffId);
       if (idx >= 0) {
-        db.staff[idx] = { ...db.staff[idx], ...data };
+        if (!canAccessRestaurant(auth, db.staff[idx].restaurantId)) {
+          denyOtherRestaurant(res);
+          return;
+        }
+        // Only profile fields can be edited; id, restaurant and role stay fixed.
+        const EDITABLE_STAFF_FIELDS = ['name', 'phone', 'username', 'email', 'counter', 'rankName', 'hierarchyLevel', 'maxConcurrentOrders', 'status'];
+        EDITABLE_STAFF_FIELDS.forEach(field => {
+          if (data[field] !== undefined) db.staff[idx][field] = data[field];
+        });
+        if (data.password && data.password !== '***') {
+          db.staff[idx].password = hashSecret(String(data.password).trim());
+        }
         logAuditEvent(db, 'STAFF_UPDATED', { staffId: staffId, name: db.staff[idx].name, role: db.staff[idx].role }, auth ? auth.name : 'Admin', db.staff[idx].restaurantId);
         writeDb(db);
-        broadcastEvent({ type: 'STAFF_UPDATED', staff: db.staff });
+        broadcastEvent({ type: 'STAFF_UPDATED', staff: db.staff.map(publicStaff) });
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, staff: db.staff[idx] }));
+        res.end(JSON.stringify({ ok: true, staff: publicStaff(db.staff[idx]) }));
       } else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Staff member not found' }));
@@ -1331,7 +1627,7 @@ const server = http.createServer(async (req, res) => {
 
       const rankName = (data.name || '').trim();
       const ranking = parseInt(data.ranking, 10) || 1;
-      const targetRestId = data.restaurantId || (auth ? auth.restaurantId : 'REST-001') || 'REST-001';
+      const targetRestId = auth.role === 'super_admin' ? (data.restaurantId || 'REST-001') : canonicalRestId(auth.restaurantId);
 
       if (!rankName) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1417,6 +1713,10 @@ const server = http.createServer(async (req, res) => {
       const data = await parseBody(req);
       const db = readDb();
       const restId = data.restaurantId || (auth ? auth.restaurantId : null) || parsedUrl.query.restaurantId || 'REST-001';
+      if (!canAccessRestaurant(auth, restId)) {
+        denyOtherRestaurant(res);
+        return;
+      }
       const idx = (db.restaurants || []).findIndex(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01'));
       if (idx === -1) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -1498,6 +1798,10 @@ const server = http.createServer(async (req, res) => {
       const data = await parseBody(req);
       const db = readDb();
       const restId = data.restaurantId || (auth ? auth.restaurantId : null) || parsedUrl.query.restaurantId || 'REST-001';
+      if (!canAccessRestaurant(auth, restId)) {
+        denyOtherRestaurant(res);
+        return;
+      }
       const idx = (db.restaurants || []).findIndex(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01'));
       if (idx === -1) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -1628,7 +1932,7 @@ const server = http.createServer(async (req, res) => {
       const tNum = rawTable.padStart(2, '0');
       const tableStr = `Table ${tNum}`;
       const deviceId = (data.deviceId || '').trim();
-      const clientName = (data.name || '').trim();
+      const clientName = cleanText((data.name || '').trim(), 60);
 
       if (!deviceId) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1746,7 +2050,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (action === 'add' && data.item) {
-        const item = data.item;
+        const item = cleanGuestFields({ ...data.item });
         const existing = tbl.session.draftCart.find(ci => 
           ci.dishId === item.dishId && ci.size === item.size && ci.spice === item.spice && ci.note === item.note
         );
@@ -2098,7 +2402,7 @@ const server = http.createServer(async (req, res) => {
       const db = readDb();
       if (!db.menu) db.menu = [...(DEFAULT_MENU || [])];
 
-      const targetRestId = data.restaurantId === 'rest-dera-01' ? 'REST-001' : (data.restaurantId || 'REST-001');
+      const targetRestId = canonicalRestId(auth.role === 'super_admin' ? (data.restaurantId || 'REST-001') : auth.restaurantId);
 
       const basePrice = Number(data.price) || Number(data.regularPrice) || (data.sizeOptions && data.sizeOptions[0] ? Number(data.sizeOptions[0].price || data.sizeOptions[0].extra || 0) : 0);
       const newDish = {
@@ -2160,8 +2464,13 @@ const server = http.createServer(async (req, res) => {
 
       const idx = db.menu.findIndex(d => String(d.id) === String(dishId));
       if (idx >= 0) {
+        if (!canAccessRestaurant(auth, db.menu[idx].restaurantId)) {
+          denyOtherRestaurant(res);
+          return;
+        }
         const oldPrice = db.menu[idx].price;
-        db.menu[idx] = { ...db.menu[idx], ...data };
+        const { id: _ignoredId, restaurantId: _ignoredRest, ...changes } = data;
+        db.menu[idx] = { ...db.menu[idx], ...changes };
         
         // Audit price alterations
         if (data.price !== undefined && data.price !== oldPrice) {
@@ -2190,6 +2499,10 @@ const server = http.createServer(async (req, res) => {
     const db = readDb();
     if (!db.menu) db.menu = [];
     const item = db.menu.find(d => String(d.id) === String(dishId));
+    if (item && !canAccessRestaurant(auth, item.restaurantId)) {
+      denyOtherRestaurant(res);
+      return;
+    }
     db.menu = db.menu.filter(d => String(d.id) !== String(dishId));
     if (item) {
       logAuditEvent(db, 'MENU_ITEM_DELETED', { dishId: dishId, title: item.title }, auth ? auth.name : 'Admin', item.restaurantId);
@@ -2862,11 +3175,21 @@ const server = http.createServer(async (req, res) => {
       }
 
       // Verify Authorization: Manager PIN or Admin Token
-      const rest = (db.restaurants || []).find(r => r.id === ticket.restaurantId) || (db.restaurants && db.restaurants[0]) || {};
-      const validPin = rest.managerPin || db.managerPin || '7788';
+      const ticketRestId = canonicalRestId(ticket.restaurantId || 'REST-001');
+      const rest = (db.restaurants || []).find(r => canonicalRestId(r.id) === ticketRestId) || {};
+      const pinLockKey = canonicalRestId(rest.id || ticketRestId);
 
-      const isAuthorizedByPin = pin && pin === validPin;
-      const isAuthorizedByToken = auth && ['restaurant_admin', 'super_admin'].includes(auth.role);
+      const isAuthorizedByToken = Boolean(auth && ADMIN_ROLES.includes(auth.role) && canAccessRestaurant(auth, ticketRestId));
+      let isAuthorizedByPin = false;
+      if (!isAuthorizedByToken && pin) {
+        if (isPinLocked(pinLockKey)) {
+          sendJson(res, 429, { error: 'Too many wrong PIN attempts. Voids are locked for 15 minutes.' });
+          return;
+        }
+        isAuthorizedByPin = verifySecret(pin, rest.managerPin);
+        if (isAuthorizedByPin) clearPinFailures(pinLockKey);
+        else recordPinFailure(pinLockKey);
+      }
 
       if (!isAuthorizedByPin && !isAuthorizedByToken) {
         logAuditEvent(db, 'VOID_REJECTED', {
@@ -3001,7 +3324,24 @@ const server = http.createServer(async (req, res) => {
         const eventData = JSON.parse(body);
         const db = readDb();
 
+        // Guests may only place orders and ring the service bell. Everything else
+        // (status changes, sold-out lists, settlements, custom events) needs a staff login.
+        const PUBLIC_EVENT_TYPES = ['NEW_ORDER', 'SERVICE_BELL'];
+        if (!PUBLIC_EVENT_TYPES.includes(eventData.type) && eventData.type !== 'BILL_SETTLED') {
+          const broadcastAuth = getRequestAuth(req);
+          if (!broadcastAuth || !STAFF_ROLES.includes(broadcastAuth.role)) {
+            sendJson(res, 403, { error: 'Staff login required for this update.' });
+            return;
+          }
+        }
+
         if (eventData.type === 'NEW_ORDER' && eventData.order) {
+          cleanGuestFields(eventData.order, ['guest', 'notes', 'payment', 'time', 'table', 'status']);
+          if (eventData.table) eventData.table = cleanText(eventData.table, 40);
+          if (eventData.order.ticketId && !/^#?[A-Za-z0-9_-]{1,40}$/.test(String(eventData.order.ticketId))) {
+            sendJson(res, 400, { error: 'Invalid ticket id.' });
+            return;
+          }
           const restId = eventData.order.restaurantId || 'rest-dera-01';
           let tableStr = (eventData.order.table || eventData.table || '').trim();
           if (!tableStr && eventData.order.ticketId) {
@@ -3029,7 +3369,13 @@ const server = http.createServer(async (req, res) => {
           }
 
           // SERVER-AUTHORITATIVE RECALCULATION
-          const authoritative = calculateAuthoritativeOrder(eventData.order, db, restId);
+          let authoritative;
+          try {
+            authoritative = calculateAuthoritativeOrder(eventData.order, db, restId, { strict: true });
+          } catch (calcErr) {
+            sendJson(res, calcErr.statusCode || 400, { error: calcErr.message });
+            return;
+          }
           eventData.order.items = authoritative.items;
           eventData.order.subtotal = authoritative.subtotal;
           eventData.order.tax = authoritative.tax;
@@ -3098,6 +3444,7 @@ const server = http.createServer(async (req, res) => {
 
           writeDb(db);
         } else if (eventData.type === 'STATUS_UPDATE') {
+          eventData.status = cleanText(eventData.status, 40);
           const t = db.tickets.find(x => x.ticketId === eventData.ticketId);
           if (t) {
             t.status = eventData.status;
@@ -3109,6 +3456,7 @@ const server = http.createServer(async (req, res) => {
           }
           writeDb(db);
         } else if (eventData.type === 'SERVICE_BELL') {
+          cleanGuestFields(eventData, ['table', 'request']);
           db.serviceBells.unshift({
             id: 'B-' + Date.now(),
             table: eventData.table,
@@ -3125,7 +3473,7 @@ const server = http.createServer(async (req, res) => {
             return;
           }
         } else if (eventData.type === 'ITEM_86_UPDATE') {
-          db.soldOut = eventData.soldOutList || [];
+          db.soldOut = Array.isArray(eventData.soldOutList) ? eventData.soldOutList : [];
           writeDb(db);
         }
 
@@ -3141,46 +3489,36 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Full DB Read Endpoint (Sanitized to prevent credential theft)
+  // Full DB Read Endpoint (staff only; secrets always stripped)
   if (pathname === '/api/db' && req.method === 'GET') {
-    const auth = getRequestAuth(req);
+    sendJson(res, 200, publicDb(readDb()));
+    return;
+  }
+
+  // Public: the open ticket for one table, so a guest's phone can restore its order
+  if (pathname === '/api/public/table-ticket' && req.method === 'GET') {
     const db = readDb();
-    if (auth && auth.role === 'super_admin') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(db));
-      return;
-    }
-
-    // Strip sensitive passwords & credentials for non-superadmin clients
-    const sanitized = JSON.parse(JSON.stringify(db));
-    delete sanitized.superAdmin;
-    delete sanitized.managerPin;
-    if (sanitized.restaurants) {
-      sanitized.restaurants.forEach(r => {
-        if (r.credentials) r.credentials = { email: r.credentials.email, password: '***' };
-        delete r.managerPin;
-      });
-    }
-    if (sanitized.staff) {
-      sanitized.staff.forEach(s => {
-        s.password = '***';
-      });
-    }
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(sanitized));
+    const tNum = String(parsedUrl.query.table || '').replace('Table ', '').trim().padStart(2, '0');
+    const ticketId = String(parsedUrl.query.ticketId || '');
+    const tableNames = [`Table ${tNum}`, `Table ${parseInt(tNum, 10)}`];
+    const tickets = (db.tickets || []).filter(t =>
+      (tableNames.includes(t.table) && t.status !== 'Settled' && t.status !== 'Voided') ||
+      (ticketId && t.ticketId === ticketId)
+    );
+    sendJson(res, 200, { tickets });
     return;
   }
 
-  // Static File Serving
+  // Static File Serving: only the app's HTML pages are public.
+  // Data files, server source and tests are never served.
   let filePath = pathname === '/' ? '/hub.html' : pathname;
-  let safePath = path.normalize(path.join(__dirname, filePath));
-
-  if (!safePath.startsWith(__dirname)) {
-    res.writeHead(403);
-    res.end('Forbidden');
+  const fileName = path.basename(filePath);
+  if (path.dirname(path.posix.normalize(filePath)) !== '/' || !PUBLIC_PAGES.has(fileName)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('404 Not Found');
     return;
   }
+  let safePath = path.join(__dirname, fileName);
 
   fs.stat(safePath, (err, stats) => {
     if (err || !stats.isFile()) {
@@ -3199,5 +3537,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('RESTAURANT ECOSYSTEM SERVER RUNNING ON http://0.0.0.0:' + PORT);
-  console.log('LOCAL NETWORK ACCESS (MOBILE): http://192.168.1.13:' + PORT);
+  console.log('LOCAL NETWORK ACCESS (MOBILE): http://' + getLocalIpAddress() + ':' + PORT);
 });
