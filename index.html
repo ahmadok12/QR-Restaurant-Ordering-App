@@ -139,7 +139,7 @@
               <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
               <span id="table-role-text">Table Host</span>
             </span>
-            <button type="button" onclick="toggleHostRoleForTesting()" class="text-[10px] font-semibold text-primary hover:underline cursor-pointer" title="Toggle role to test Host / Guest permissions">(Switch)</button>
+            <button type="button" onclick="toggleHostRoleForTesting()" class="hidden text-[10px] font-semibold text-primary hover:underline cursor-pointer" title="Toggle role to test Host / Guest permissions">(Switch)</button>
           </div>
         </div>
       </div>
@@ -175,6 +175,17 @@
   <!-- ================= MAIN CONTAINER ================= -->
   <main class="flex-1 w-full max-w-xl mx-auto pt-20 pb-28 px-0 flex flex-col">
 
+    <!-- Ordering paused / online ordering off notice (filled by applyOrderingSettings) -->
+    <div id="ordering-status-banner" class="hidden px-margin mb-2" role="status" aria-live="polite">
+      <div class="w-full bg-amber-50 border border-amber-300 text-amber-950 p-3 rounded-2xl flex items-start gap-2.5 shadow-2xs">
+        <span class="material-symbols-outlined text-[20px] text-amber-600 shrink-0 mt-0.5">pause_circle</span>
+        <div class="min-w-0">
+          <span class="text-[13px] font-bold block leading-tight" id="ordering-status-title">Ordering is paused</span>
+          <span class="text-[12px] text-amber-900/80 block mt-0.5 leading-snug" id="ordering-status-text"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- ================= VIEW 1: MENU & EXPLORATION ================= -->
     <section id="view-menu" class="w-full flex flex-col">
       
@@ -192,7 +203,7 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="resetOrderForTesting()" class="text-[11px] font-bold text-red-600 bg-red-100 hover:bg-red-200 border border-red-300 px-2.5 py-1 rounded-xl transition-all active:scale-95 flex items-center gap-0.5" title="Reset order for testing">
+            <button onclick="resetOrderForTesting()" class="hidden text-[11px] font-bold text-red-600 bg-red-100 hover:bg-red-200 border border-red-300 px-2.5 py-1 rounded-xl transition-all active:scale-95 flex items-center gap-0.5" title="Reset order for testing">
               <span class="material-symbols-outlined text-[13px]">restart_alt</span>
               <span>Reset</span>
             </button>
@@ -488,7 +499,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-1">
               <span id="cart-host-status-title" class="font-bold block text-[13px] text-amber-950">👑 You are Table Host</span>
-              <button type="button" onclick="toggleHostRoleForTesting()" class="text-[10px] font-bold text-primary hover:underline shrink-0">Switch Role</button>
+              <button type="button" onclick="toggleHostRoleForTesting()" class="hidden text-[10px] font-bold text-primary hover:underline shrink-0">Switch Role</button>
             </div>
             <span id="cart-host-status-desc" class="text-amber-900/80 text-[11.5px] block mt-0.5 leading-snug">As the 1st person who scanned, only you can fire the initial order to the kitchen.</span>
           </div>
@@ -518,8 +529,10 @@
           <input id="general-order-notes" type="text" placeholder="e.g. Serve drinks first, less spice/salt" class="w-full bg-surface-container-low rounded-lg px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
         </div>
 
-        <!-- Submit Order Directly to Kitchen Button -->
-        <button onclick="submitOrderToKitchen()" id="btn-proceed-checkout" class="w-full py-4 px-5 rounded-full bg-primary text-on-primary font-headline font-bold text-[16px] flex items-center justify-between shadow-[0_6px_22px_rgba(172,45,0,0.32)] hover:brightness-105 active:scale-95 transition-all">
+        <div id="cart-send-error" class="hidden rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-[12.5px] font-semibold px-3 py-2" role="alert"></div>
+
+        <!-- Opens the review step; the order is sent from there -->
+        <button onclick="openOrderReview()" id="btn-proceed-checkout" class="w-full py-4 px-5 rounded-full bg-primary text-on-primary font-headline font-bold text-[16px] flex items-center justify-between shadow-[0_6px_22px_rgba(172,45,0,0.32)] hover:brightness-105 active:scale-95 transition-all">
           <div class="flex items-center gap-2">
             <span id="btn-checkout-icon" class="material-symbols-outlined text-[22px]">soup_kitchen</span>
             <span id="btn-checkout-label">Fire Order to Kitchen</span>
@@ -544,13 +557,37 @@
           <span class="material-symbols-outlined text-[17px]">restaurant_menu</span>
           <span>Full Menu</span>
         </button>
-        <button onclick="resetOrderForTesting()" class="flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
+        <button onclick="resetOrderForTesting()" class="hidden flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
           <span class="material-symbols-outlined text-[16px]">restart_alt</span>
           <span>Reset Order (Test)</span>
         </button>
         <div class="flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full shrink-0">
           <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
           <span>Live Tracking</span>
+        </div>
+      </div>
+
+      <!-- Closed order (Rejected / Voided / Settled): final state + start again -->
+      <div id="ticket-final-panel" class="hidden px-margin mt-3">
+        <div class="rounded-2xl border p-4 shadow-sm flex flex-col gap-2" id="ticket-final-card">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[22px]" id="ticket-final-icon">info</span>
+            <span class="font-headline font-bold text-[16px]" id="ticket-final-title">Order closed</span>
+          </div>
+          <p class="text-[12.5px] leading-snug" id="ticket-final-text"></p>
+          <button onclick="startNewOrder()" id="btn-start-new-order" class="mt-1 w-full py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
+            Start a new order
+          </button>
+        </div>
+      </div>
+
+      <!-- Updates from the restaurant about this order (newest first) -->
+      <div id="ticket-notices-wrap" class="hidden px-margin mt-3">
+        <div class="bg-surface-container-lowest border border-surface-container rounded-2xl p-3 shadow-sm">
+          <span class="text-[11px] uppercase tracking-wider text-secondary font-bold flex items-center gap-1 mb-1.5">
+            <span class="material-symbols-outlined text-[15px] text-primary">campaign</span> Updates on your order
+          </span>
+          <div id="ticket-notices" class="flex flex-col gap-1.5"></div>
         </div>
       </div>
 
@@ -620,13 +657,13 @@
 
           <!-- Time info & demo status advance + Reset button -->
           <div class="mt-3 pt-2.5 border-t border-surface-container/60 flex items-center justify-between gap-2 text-[11px] text-secondary">
-            <button onclick="resetOrderForTesting()" class="text-red-600 font-bold hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg active:scale-95 transition-all" type="button" title="Reset order to start from scratch">
+            <button onclick="resetOrderForTesting()" class="hidden text-red-600 font-bold hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg active:scale-95 transition-all" type="button" title="Reset order to start from scratch">
               <span class="material-symbols-outlined text-[14px]">restart_alt</span>
               <span>Reset Order</span>
             </button>
             <div class="flex items-center gap-3">
               <span id="prep-time-estimate-text" class="hidden sm:inline">Estimated prep: ~18-22 mins</span>
-              <button onclick="advanceDemoStatus()" class="text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
+              <button onclick="advanceDemoStatus()" class="hidden text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
                 <span>Advance Status (Demo)</span>
                 <span class="material-symbols-outlined text-[12px]">fast_forward</span>
               </button>
@@ -636,7 +673,7 @@
       </div>
 
       <!-- Quick Add-Ons for Your Table Section (1-Tap Fast Add) -->
-      <div class="px-margin mt-4">
+      <div class="px-margin mt-4" id="addons-section">
         <div class="flex items-center justify-between mb-2">
           <div>
             <h3 class="font-headline font-bold text-[15px] text-on-surface flex items-center gap-1.5">
@@ -742,19 +779,30 @@
             <!-- Rendered dynamically -->
           </div>
 
-          <!-- Total due -->
-          <div class="pt-3 border-t border-surface-container flex items-center justify-between">
-            <span class="font-headline font-bold text-[15px] text-on-surface">Total Due (Incl. 5% Tax):</span>
+          <!-- Totals from the server: confirmed items only -->
+          <div id="ticket-totals-breakdown" class="pt-2 border-t border-dashed border-surface-container space-y-1"></div>
+          <div class="pt-2 mt-1 border-t border-surface-container flex items-center justify-between">
+            <span class="font-headline font-bold text-[15px] text-on-surface" id="ticket-total-label">Total (confirmed items)</span>
             <span class="font-headline font-bold text-[18px] text-primary" id="ticket-total-val">Rs. 0</span>
+          </div>
+          <div id="ticket-pending-total-row" class="hidden mt-1 flex items-center justify-between text-[12px] text-amber-800">
+            <span>Awaiting confirmation</span>
+            <span class="font-semibold" id="ticket-pending-total-val">Rs. 0</span>
           </div>
 
           <div class="mt-3 pt-2.5 border-t border-surface-container flex items-center justify-between text-[11px] text-secondary">
             <span>Diner: <strong class="text-on-surface" id="ticket-guest-val">Guest</strong></span>
-            <button onclick="requestPhysicalBill()" id="btn-request-bill-tab" class="text-primary font-bold hover:underline flex items-center gap-1">
-              <span class="material-symbols-outlined text-[15px]">receipt_long</span>
-              <span id="btn-request-bill-tab-label">Request Physical Bill</span>
+            <button onclick="openBillView()" id="btn-view-bill" class="text-primary font-bold hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-[15px]">receipt</span>
+              <span>View bill</span>
             </button>
           </div>
+
+          <button onclick="requestPhysicalBill()" id="btn-request-bill-tab" class="mt-2.5 w-full py-2.5 px-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 font-headline font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[17px]">receipt_long</span>
+            <span id="btn-request-bill-tab-label">Request bill</span>
+          </button>
+          <p id="bill-request-status" class="hidden mt-1.5 text-center text-[11.5px] font-semibold text-emerald-700">Your waiter has been asked to bring the bill.</p>
 
           <div class="mt-2.5 p-2 rounded-xl bg-surface-container-low border border-surface-container text-center text-[10px] text-secondary">
             🔒 Table tab remains open. You can add extra rounds or services until cleared by Cashier.
@@ -988,6 +1036,67 @@
         Start New Dining Order
       </button>
     </div>
+  </div>
+
+  <!-- ================= ORDER REVIEW (before sending) ================= -->
+  <div id="order-review-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex-col justify-end" role="dialog" aria-modal="true" aria-labelledby="order-review-title">
+    <div class="w-full max-w-xl mx-auto bg-surface rounded-t-3xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl animate-slide-up flex flex-col">
+      <div class="sticky top-0 z-10 bg-surface/95 backdrop-blur-md px-margin py-3 flex items-center justify-between border-b border-surface-container">
+        <div>
+          <span class="font-headline font-bold text-[17px] text-on-surface block leading-tight" id="order-review-title">Check your order</span>
+          <span class="text-[11.5px] text-secondary" id="order-review-subtitle">Make sure everything is right before sending.</span>
+        </div>
+        <button onclick="closeOrderReview()" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface" type="button" aria-label="Close">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <div class="px-margin py-3 flex flex-col gap-2" id="order-review-list"></div>
+      <div class="px-margin pb-2">
+        <div class="bg-surface-container-lowest border border-surface-container rounded-xl p-3 flex items-center justify-between">
+          <span class="text-[13px] text-secondary">Estimated total <span class="text-[11px]">(incl. charges)</span></span>
+          <span class="font-headline font-bold text-[18px] text-primary" id="order-review-total">Rs. 0</span>
+        </div>
+        <p class="text-[11.5px] text-secondary mt-2 leading-snug" id="order-review-note">Your waiter will confirm this order before it goes to the kitchen. Final prices come from the restaurant.</p>
+        <div id="order-review-error" class="hidden mt-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-[12.5px] font-semibold px-3 py-2" role="alert"></div>
+      </div>
+      <div class="px-margin pt-1 pb-5 grid grid-cols-[1fr_2fr] gap-2.5">
+        <button onclick="closeOrderReview()" type="button" class="py-3.5 px-3 rounded-full bg-surface-container-lowest border border-surface-container font-headline font-bold text-[14px] text-on-surface active:scale-95 transition-all">Edit</button>
+        <button onclick="submitOrderToKitchen()" id="order-review-send-btn" type="button" class="py-3.5 px-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-center gap-1.5 shadow-[0_6px_22px_rgba(172,45,0,0.32)] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-[19px]">send</span>
+          <span id="order-review-send-label">Send to waiter</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ITEMISED BILL VIEW ================= -->
+  <div id="bill-view-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-margin" role="dialog" aria-modal="true" aria-labelledby="bill-view-title">
+    <div class="w-full max-w-sm bg-surface rounded-2xl p-5 shadow-2xl animate-fade-in flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">receipt_long</span>
+          <div>
+            <h3 class="font-headline font-bold text-[16px] text-on-surface leading-tight" id="bill-view-title">Your bill</h3>
+            <span class="text-[11px] text-secondary" id="bill-view-sub"></span>
+          </div>
+        </div>
+        <button onclick="closeBillView()" class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface" type="button" aria-label="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+      <div id="bill-view-body" class="py-2 flex flex-col gap-1.5 text-[12.5px]"></div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <button onclick="closeBillView()" type="button" class="py-2.5 rounded-xl bg-surface-container-lowest border border-surface-container font-bold text-[13px] text-on-surface">Close</button>
+        <button onclick="closeBillView(); requestPhysicalBill();" type="button" class="py-2.5 rounded-xl bg-amber-600 text-white font-bold text-[13px]">Request bill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live updates connection lost -->
+  <div id="sse-reconnect-banner" class="hidden fixed top-[4.25rem] inset-x-0 z-50 justify-center pointer-events-none" role="status" aria-live="polite">
+    <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11.5px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+      <span class="material-symbols-outlined text-[14px] animate-spin">sync</span> Reconnecting…
+    </span>
   </div>
 
   <!-- ================= TOAST NOTIFICATION ================= -->
@@ -2160,8 +2269,15 @@
               }
             } catch (err) {}
           };
+          this.eventSource.onopen = () => {
+            const wasDown = sseReconnecting;
+            setReconnectingBanner(false);
+            // Catch up on anything missed while the connection was down
+            if (wasDown) { try { pollTableSession(); } catch (err) {} }
+          };
           this.eventSource.onerror = () => {
-            // Keep connection alive for automatic browser retry
+            // The browser retries on its own; tell the guest updates may be late
+            setReconnectingBanner(true);
           };
         } catch (e) {
           console.warn('SSE connection skipped:', e);
@@ -2327,8 +2443,91 @@
       hostName: "Table Host",
       hostDeviceId: null,
       tableSessionId: null,
-      billingCharges: []
+      billingCharges: [],
+      tableToken: '',          // QR secret from the `t` URL param
+      tableInvalid: false,     // set when the server rejects the QR token
+      isSending: false,
+      orderingPaused: false,
+      pausedMessage: '',
+      onlineOrderingOff: false,
+      waiterConfirms: true
     };
+
+    const CLOSED_TICKET_STATUSES = ['Settled', 'Voided', 'Rejected'];
+    let sseReconnecting = false;
+
+    function setReconnectingBanner(show) {
+      sseReconnecting = Boolean(show);
+      const el = document.getElementById('sse-reconnect-banner');
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+      el.classList.toggle('flex', Boolean(show));
+    }
+
+    function isTicketClosed(t) {
+      return Boolean(t) && CLOSED_TICKET_STATUSES.includes(t.status);
+    }
+
+    // An order the table can still add to (not paid, voided or rejected)
+    function hasOpenTicket() {
+      return Boolean(appState.currentTicket && appState.currentTicket.ticketId && !isTicketClosed(appState.currentTicket));
+    }
+
+    function tableTokenStorageKey() {
+      return 'gourmet_table_token_' + appState.tableNumber;
+    }
+
+    // Reads the QR secret from the URL, or from this tab's earlier visit to the same table
+    function initTableToken() {
+      if (appState.isOnlineOrder) { appState.tableToken = ''; return; }
+      const fromUrl = new URLSearchParams(window.location.search).get('t');
+      if (fromUrl) {
+        appState.tableToken = fromUrl;
+        try { sessionStorage.setItem(tableTokenStorageKey(), fromUrl); } catch (e) {}
+      } else {
+        let stored = '';
+        try { stored = sessionStorage.getItem(tableTokenStorageKey()) || ''; } catch (e) {}
+        appState.tableToken = stored;
+      }
+    }
+
+    function tokenQuery() {
+      return appState.tableToken ? `&t=${encodeURIComponent(appState.tableToken)}` : '';
+    }
+
+    async function readJsonSafe(res) {
+      try { return await res.json(); } catch (e) { return {}; }
+    }
+
+    // True (and the guest sees the invalid-QR screen) when a table call was refused for a bad QR code
+    function handleInvalidTableResponse(res, data) {
+      if (appState.isOnlineOrder) return false;
+      if (res && res.status === 403 && data && data.invalidTable) {
+        showInvalidTableScreen();
+        return true;
+      }
+      return false;
+    }
+
+    function showInvalidTableScreen() {
+      appState.tableInvalid = true;
+      if (tablePollInterval) { clearInterval(tablePollInterval); tablePollInterval = null; }
+      try { sessionStorage.removeItem(tableTokenStorageKey()); } catch (e) {}
+      if (document.getElementById('invalid-table-overlay')) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'invalid-table-overlay';
+      overlay.setAttribute('role', 'alertdialog');
+      overlay.setAttribute('aria-live', 'assertive');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(255,255,255,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;';
+      overlay.innerHTML = `
+        <div class="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-4 shadow-sm">
+          <span class="material-symbols-outlined text-[36px]">qr_code_2</span>
+        </div>
+        <h2 class="font-headline text-[20px] font-black tracking-tight text-slate-900">Please scan again</h2>
+        <p id="invalid-table-message" class="text-[14px] text-slate-600 mt-2 max-w-[300px] leading-snug">This QR code is not valid any more. Please scan the code on your table or ask a waiter.</p>
+      `;
+      document.body.appendChild(overlay);
+    }
 
     // --- MULTI-PERSON TABLE SESSION & HOST MANAGEMENT ---
     function getDeviceId() {
@@ -2377,6 +2576,13 @@
     }
 
     async function syncTableSession() {
+      if (appState.isOnlineOrder) {
+        // Online orders have no shared table: this phone always places its own order
+        appState.isHost = true;
+        updateRoleUI();
+        return;
+      }
+      if (appState.tableInvalid) return;
       try {
         const devId = getDeviceId();
         const urlParams = new URLSearchParams(window.location.search);
@@ -2388,29 +2594,32 @@
             table: appState.tableNumber,
             deviceId: devId,
             name: localStorage.getItem('gourmet_guest_name') || 'Table Host',
-            claimHost: !isGuestMode
+            claimHost: !isGuestMode,
+            tableToken: appState.tableToken
           })
         });
+        const data = await readJsonSafe(res);
+        if (handleInvalidTableResponse(res, data)) return;
         if (res.ok) {
-          const data = await res.json();
           appState.isHost = Boolean(data.isHost);
           appState.hostName = data.hostName || 'Table Host';
           appState.hostDeviceId = data.hostDeviceId;
           appState.tableSessionId = data.sessionId;
 
           if (data.hasActiveOrder && data.activeTicket) {
-            appState.currentTicket = data.activeTicket;
-            syncTicketToStorage(appState.currentTicket);
-            appState.cart = [];
-            saveCartToStorage();
-            applyTicketStatusUI(data.activeTicket.status || 'New');
-            renderTicketDetails();
-          } else if (Array.isArray(data.draftCart) && !appState.currentTicket) {
-            if (data.draftCart.length > 0 || !appState.isHost) {
-              appState.cart = data.draftCart;
-              saveCartToStorage();
-              renderCartItems();
-              renderDishGrid();
+            adoptTicket(data.activeTicket, { notify: false });
+          } else {
+            if (hasOpenTicket()) {
+              // Our saved order is no longer open on the server: find out how it ended
+              refreshTicketFromServer();
+            }
+            if (Array.isArray(data.draftCart) && !hasOpenTicket()) {
+              if (data.draftCart.length > 0 || !appState.isHost) {
+                appState.cart = data.draftCart;
+                saveCartToStorage();
+                renderCartItems();
+                renderDishGrid();
+              }
             }
           }
 
@@ -2422,40 +2631,21 @@
       }
     }
 
+    // The server's switch-role endpoint is admin-only now, so guests cannot flip roles.
+    // The buttons that called this are hidden; kept as a no-op for old links.
     async function toggleHostRoleForTesting() {
-      try {
-        const devId = getDeviceId();
-        const res = await fetch(`${getApiBase()}/api/table-session/switch-role`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            table: appState.tableNumber,
-            deviceId: devId,
-            targetRole: 'toggle'
-          })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          appState.isHost = Boolean(data.isHost);
-          appState.hostName = data.hostName;
-          appState.hostDeviceId = data.hostDeviceId;
-          updateRoleUI();
-          updateCartUI();
-          showToast(appState.isHost ? "Testing role: 👑 Table Host!" : "Testing role: 👤 Guest Co-Diner!");
-        }
-      } catch (e) {
-        showToast("Role switch failed: " + e.message);
-      }
+      showToast('Switching roles is only available to staff.');
     }
 
     // Atomic cart synchronization with server
     async function syncCartAction(action, data = {}) {
-      if (appState.currentTicket) return;
+      if (hasOpenTicket() || appState.isOnlineOrder || appState.tableInvalid) return;
       try {
         const payload = {
           action: action,
           table: appState.tableNumber,
           deviceId: getDeviceId(),
+          tableToken: appState.tableToken,
           ...data
         };
         const res = await fetch(`${getApiBase()}/api/table-session/cart`, {
@@ -2463,8 +2653,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        const resData = await readJsonSafe(res);
+        if (handleInvalidTableResponse(res, resData)) return;
         if (res.ok) {
-          const resData = await res.json();
           if (Array.isArray(resData.cart)) {
             appState.cart = resData.cart;
             saveCartToStorage();
@@ -2486,17 +2677,28 @@
     let tablePollInterval = null;
     function startTableSessionPolling() {
       if (tablePollInterval) clearInterval(tablePollInterval);
+      tablePollInterval = null;
+      if (appState.isOnlineOrder || appState.tableInvalid) return;
       tablePollInterval = setInterval(pollTableSession, 2000);
+    }
+
+    // Compact fingerprint of what the guest sees, to skip needless re-renders
+    function ticketSignature(t) {
+      if (!t) return '';
+      return JSON.stringify([
+        t.ticketId, t.status, t.items, t.pendingItems, t.total, t.pendingTotal,
+        (t.notices || []).length, t.billRequested, t.invoiceNumber
+      ]);
     }
 
     async function pollTableSession() {
       try {
-        if (!appState.tableNumber) return;
+        if (!appState.tableNumber || appState.isOnlineOrder || appState.tableInvalid) return;
         const devId = getDeviceId();
-        const res = await fetch(`${getApiBase()}/api/table-session/poll?table=${appState.tableNumber}&deviceId=${devId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data.ok) return;
+        const res = await fetch(`${getApiBase()}/api/table-session/poll?table=${encodeURIComponent(appState.tableNumber)}&deviceId=${encodeURIComponent(devId)}${tokenQuery()}`);
+        const data = await readJsonSafe(res);
+        if (handleInvalidTableResponse(res, data)) return;
+        if (!res.ok || !data.ok) return;
 
         // Reconcile role
         if (typeof data.isHost === 'boolean' && appState.isHost !== data.isHost) {
@@ -2507,36 +2709,27 @@
           updateCartUI();
         }
 
-        // Active ticket reconciliation
+        // Active ticket reconciliation (server is authoritative)
         if (data.hasActiveOrder && data.activeTicket) {
-          const hadExistingTicket = Boolean(appState.currentTicket && appState.currentTicket.ticketId);
-          const isDifferentTicket = !hadExistingTicket || appState.currentTicket.ticketId !== data.activeTicket.ticketId;
-          const isStatusChanged = appState.currentTicket && appState.currentTicket.status !== data.activeTicket.status;
-          const prevItemsCount = hadExistingTicket ? (appState.currentTicket.items || []).length : 0;
-          const newItemsCount = (data.activeTicket.items || []).length;
-          const isItemsChanged = hadExistingTicket && (
-            newItemsCount !== prevItemsCount ||
-            data.activeTicket.total !== appState.currentTicket.total
-          );
-
-          if (isDifferentTicket || isStatusChanged || isItemsChanged) {
-            appState.currentTicket = data.activeTicket;
-            syncTicketToStorage(appState.currentTicket);
-            if (isDifferentTicket) {
+          const prev = appState.currentTicket;
+          const isFirstSeen = !prev || isTicketClosed(prev) || prev.ticketId !== data.activeTicket.ticketId;
+          if (isFirstSeen || ticketSignature(prev) !== ticketSignature(data.activeTicket)) {
+            adoptTicket(data.activeTicket);
+            if (isFirstSeen && !appState.isSending) {
+              // Someone at the table sent the first order; the shared cart went with it
               appState.cart = [];
               saveCartToStorage();
-              showToast("🔥 Table Host sent the order to the kitchen!");
+              updateCartUI();
+              renderCartItems();
+              renderDishGrid();
+              showToast("🔥 Your table's order was sent!");
               switchView('confirmation');
-            } else if (newItemsCount > prevItemsCount) {
-              showToast(`🍽️ Table order updated (${newItemsCount} items on tab)!`);
             }
-            applyTicketStatusUI(data.activeTicket.status || 'New');
-            renderTicketDetails();
-            updateRoleUI();
-            updateCartUI();
-            renderDishGrid();
           }
-        } else if (!appState.currentTicket && Array.isArray(data.draftCart)) {
+        } else if (hasOpenTicket()) {
+          // Our order closed on the server (paid, voided or rejected)
+          await refreshTicketFromServer();
+        } else if (!hasOpenTicket() && Array.isArray(data.draftCart)) {
           // Reconcile draft cart if changed
           const currentCartStr = JSON.stringify(appState.cart || []);
           const serverCartStr = JSON.stringify(data.draftCart || []);
@@ -2551,6 +2744,82 @@
       } catch (e) {
         // Silent catch for background polling
       }
+    }
+
+    // Re-reads this table's ticket (open one, or how our last one ended)
+    async function refreshTicketFromServer() {
+      if (appState.isOnlineOrder || appState.tableInvalid || !appState.tableNumber) return;
+      try {
+        const tNum = appState.tableNumber.toString().padStart(2, '0');
+        const ourId = appState.currentTicket && appState.currentTicket.ticketId;
+        const idQuery = ourId ? `&ticketId=${encodeURIComponent(ourId)}` : '';
+        const res = await fetch(`${getApiBase()}/api/public/table-ticket?table=${encodeURIComponent(tNum)}${idQuery}${tokenQuery()}`);
+        const data = await readJsonSafe(res);
+        if (handleInvalidTableResponse(res, data)) return;
+        if (!res.ok) return;
+        const tickets = Array.isArray(data.tickets) ? data.tickets : [];
+        const mine = ourId ? tickets.find(t => t.ticketId === ourId) : null;
+        const open = tickets.find(t => !isTicketClosed(t));
+        if (mine) {
+          adoptTicket(mine);
+        } else if (open) {
+          adoptTicket(open);
+        } else if (appState.currentTicket && !isTicketClosed(appState.currentTicket)) {
+          // The server no longer knows this order; stop tracking it
+          clearCurrentTicket();
+          switchView('menu');
+        }
+      } catch (e) {
+        // Network hiccup: the next poll tries again
+      }
+    }
+
+    // Shows a server guest view of the ticket as the active ticket
+    function adoptTicket(view, opts = {}) {
+      if (!view || !view.ticketId) return;
+      const prev = appState.currentTicket;
+      if (prev && prev.ticketId === view.ticketId && opts.notify !== false) {
+        const seen = new Set((prev.notices || []).map(n => n.id));
+        const fresh = (view.notices || []).filter(n => n && !seen.has(n.id));
+        if (fresh.length) showToast(String(fresh[fresh.length - 1].text || ''));
+      }
+      appState.currentTicket = view;
+      syncTicketToStorage(view);
+      applyTicketStatusUI(view.status || 'Pending');
+      renderTicketDetails();
+      updateRoleUI();
+      updateCartUI();
+      renderDishGrid();
+      refreshActiveOrderBanner();
+    }
+
+    function clearCurrentTicket() {
+      try { localStorage.removeItem('gourmet_active_order_' + appState.tableNumber); } catch (e) {}
+      appState.currentTicket = null;
+      renderTicketDetails();
+      updateRoleUI();
+      updateCartUI();
+      renderDishGrid();
+      refreshActiveOrderBanner();
+    }
+
+    function refreshActiveOrderBanner() {
+      const banner = document.getElementById('active-cooking-banner');
+      if (!banner) return;
+      const menuVisible = !document.getElementById('view-menu')?.classList.contains('hidden');
+      banner.classList.toggle('hidden', !(menuVisible && appState.currentTicket));
+    }
+
+    // Guest leaves a closed (paid / voided / rejected) order and starts again
+    function startNewOrder() {
+      clearCurrentTicket();
+      ['bill-settled-modal', 'bill-view-modal'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+      });
+      resetBillRequestUI();
+      syncTableSession();
+      switchView('menu');
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -2585,7 +2854,7 @@
       const checkoutLabel = document.getElementById('btn-checkout-label');
       const checkoutIcon = document.getElementById('btn-checkout-icon');
 
-      const isPostOrder = Boolean(appState.currentTicket && appState.currentTicket.ticketId);
+      const isPostOrder = hasOpenTicket();
 
       if (isPostOrder) {
         // Active table order exists: ANYONE can submit post-order dishes!
@@ -2646,6 +2915,67 @@
           if (checkoutIcon) checkoutIcon.textContent = "lock";
         }
       }
+
+      if (checkoutLabel && checkoutBtn && !checkoutBtn.disabled) {
+        checkoutLabel.textContent = isPostOrder ? "Review & add to order" : "Review order";
+      }
+
+      // Paused ordering / online ordering off / bad QR / sending: no sending at all
+      const blocked = orderingBlockedMessage();
+      if (checkoutBtn && (blocked || appState.isSending)) {
+        checkoutBtn.disabled = true;
+        checkoutBtn.className = "w-full py-4 px-5 rounded-full bg-surface-container text-secondary font-headline font-bold text-[15px] flex items-center justify-between shadow-none opacity-80 cursor-not-allowed";
+        if (checkoutLabel) checkoutLabel.textContent = appState.isSending ? "Sending…" : (appState.onlineOrderingOff ? "Online ordering is off" : "Ordering paused");
+        if (checkoutIcon) checkoutIcon.textContent = appState.isSending ? "hourglass_top" : "pause_circle";
+      }
+    }
+
+    // Why sending is not possible right now ('' when it is)
+    function orderingBlockedMessage() {
+      if (appState.tableInvalid) return 'This QR code is not valid any more. Please scan the code on your table or ask a waiter.';
+      if (appState.onlineOrderingOff) return 'Online ordering is turned off right now. Please contact the restaurant.';
+      if (appState.orderingPaused) return appState.pausedMessage || 'Ordering is paused right now. Please ask a member of staff.';
+      return '';
+    }
+
+    function applyOrderingSettings(ordering) {
+      const o = ordering || {};
+      appState.orderingPaused = o.paused === true;
+      appState.pausedMessage = o.message ? String(o.message) : '';
+      appState.onlineOrderingOff = Boolean(appState.isOnlineOrder && o.online === false);
+      appState.waiterConfirms = o.waiterConfirms !== false;
+
+      const banner = document.getElementById('ordering-status-banner');
+      const title = document.getElementById('ordering-status-title');
+      const text = document.getElementById('ordering-status-text');
+      if (banner) {
+        if (appState.onlineOrderingOff) {
+          if (title) title.textContent = 'Online ordering is off';
+          if (text) text.textContent = 'This restaurant is not taking online orders right now. You can still browse the menu.';
+          banner.classList.remove('hidden');
+        } else if (appState.orderingPaused) {
+          if (title) title.textContent = 'Ordering is paused';
+          if (text) text.textContent = appState.pausedMessage || 'Please ask a member of staff.';
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+      const note = document.getElementById('order-review-note');
+      if (note) {
+        note.textContent = appState.waiterConfirms
+          ? 'Your waiter will confirm this order before it goes to the kitchen. Final prices come from the restaurant.'
+          : 'This order goes straight to the kitchen. Final prices come from the restaurant.';
+      }
+      updateRoleUI();
+    }
+
+    async function refreshOrderingSettings() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/public/info?restaurantId=${encodeURIComponent(appState.restaurantId || 'REST-001')}`);
+        const data = await readJsonSafe(res);
+        if (data && data.restaurant) applyOrderingSettings(data.restaurant.ordering);
+      } catch (e) {}
     }
 
     // Dynamic Ticket Status Visual Updater
@@ -2669,7 +2999,41 @@
 
       if (bannerTkt) bannerTkt.textContent = appState.currentTicket.ticketId;
 
-      if (curStatus === 'Served' || curStatus === 'Plated & Ready') {
+      if (CLOSED_TICKET_STATUSES.includes(curStatus)) {
+        const closedLabels = {
+          Settled: ['Bill paid ✓', 'text-emerald-800 bg-emerald-100', 'Thank you! Tap to see your order.'],
+          Voided: ['Order cancelled', 'text-slate-700 bg-slate-200', 'Tap to see details or start a new order'],
+          Rejected: ['Order not accepted', 'text-rose-800 bg-rose-100', 'Tap to see why or start a new order']
+        };
+        const [label, cls, sub] = closedLabels[curStatus];
+        if (chip) {
+          chip.textContent = label;
+          chip.className = `text-[12px] font-bold px-2.5 py-1 rounded-full transition-colors ${cls}`;
+        }
+        if (bar) bar.style.width = curStatus === 'Settled' ? '100%' : '0%';
+        if (celebrationBanner) celebrationBanner.classList.add('hidden');
+        if (prepTimeText) prepTimeText.textContent = label;
+        if (bannerStatus) bannerStatus.textContent = label;
+        if (bannerSub) bannerSub.textContent = sub;
+      } else if (curStatus === 'Pending') {
+        if (chip) {
+          chip.textContent = "Waiting for waiter ⏳";
+          chip.className = "text-[12px] font-bold text-amber-900 px-2.5 py-1 rounded-full bg-amber-100 transition-colors";
+        }
+        if (bar) bar.style.width = '8%';
+        if (prepDot) {
+          prepDot.className = "w-8 h-8 rounded-full bg-surface-container text-secondary flex items-center justify-center text-[14px] font-bold transition-colors";
+          prepDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">soup_kitchen</span>';
+        }
+        if (servedDot) {
+          servedDot.className = "w-8 h-8 rounded-full bg-surface-container text-secondary flex items-center justify-center text-[14px] font-bold transition-colors";
+          servedDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">dinner_dining</span>';
+        }
+        if (celebrationBanner) celebrationBanner.classList.add('hidden');
+        if (prepTimeText) prepTimeText.textContent = "Your waiter will confirm your order shortly.";
+        if (bannerStatus) bannerStatus.textContent = "Waiting for waiter ⏳";
+        if (bannerSub) bannerSub.textContent = "Your waiter will confirm your order shortly";
+      } else if (curStatus === 'Served' || curStatus === 'Plated & Ready') {
         if (chip) {
           chip.textContent = (curStatus === 'Served') ? "Dishes Served! 🍽️" : "Plated & Serving 🍽️";
           chip.className = "text-[12px] font-bold text-emerald-800 px-2.5 py-1 rounded-full bg-emerald-100 transition-colors";
@@ -2731,49 +3095,55 @@
       }
     }
 
+    // Is a broadcast about this phone's table (or, for online orders, this phone's ticket)?
+    function isOurTicketEvent(table, ticketId) {
+      const cur = appState.currentTicket;
+      if (cur && ticketId && cur.ticketId === ticketId) return true;
+      if (appState.isOnlineOrder) return false;
+      const eventTable = String(table || '').trim();
+      if (!eventTable) return false;
+      const ourNum = appState.tableNumber.toString().padStart(2, '0');
+      return eventTable === `Table ${appState.tableNumber}` || eventTable === `Table ${ourNum}` ||
+        eventTable === ourNum || eventTable === appState.tableNumber;
+    }
+
     // Initialize PosSync listener
     PosSync.init((data) => {
       if (!data) return;
 
       if (data.type === 'STATUS_UPDATE') {
-        const ourTable = `Table ${appState.tableNumber}`;
-        const ourNum = appState.tableNumber.toString().padStart(2, '0');
-        const isOurOrder = (appState.currentTicket && (
-          appState.currentTicket.ticketId === data.ticketId ||
-          data.table === ourTable ||
-          data.table === `Table ${ourNum}` ||
-          data.table === ourNum ||
-          data.table === appState.tableNumber
-        ));
-
-        if (isOurOrder && appState.currentTicket) {
-          appState.currentTicket.status = data.status;
-          localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
-          applyTicketStatusUI(data.status);
+        if (appState.currentTicket && isOurTicketEvent(data.table, data.ticketId) &&
+            (!data.ticketId || data.ticketId === appState.currentTicket.ticketId)) {
+          const changed = appState.currentTicket.status !== data.status;
+          if (data.status) appState.currentTicket.status = data.status;
+          syncTicketToStorage(appState.currentTicket);
+          applyTicketStatusUI(appState.currentTicket.status);
           renderTicketDetails();
-
-          if (data.status === 'In Kitchen') {
+          if (changed && data.status === 'In Kitchen') {
             showToast("👨‍🍳 Kitchen has started cooking your order!");
-          } else if (data.status === 'Plated & Ready' || data.status === 'Served') {
+          } else if (changed && (data.status === 'Plated & Ready' || data.status === 'Served')) {
             showToast("🍽️ Dishes are served! Enjoy your feast.");
+          }
+          refreshTicketFromServer();
+        }
+      } else if (data.type === 'ORDER_UPDATED') {
+        // Waiter confirmed / rejected a round or removed a line
+        if (isOurTicketEvent(data.table, data.ticketId)) {
+          if (appState.isOnlineOrder) {
+            if (appState.currentTicket && data.status) {
+              appState.currentTicket.status = data.status;
+              applyTicketStatusUI(data.status);
+              renderTicketDetails();
+            }
+          } else {
+            refreshTicketFromServer();
           }
         }
       } else if (data.type === 'BILL_SETTLED') {
-        const ourTable = `Table ${appState.tableNumber}`;
-        const ourNum = appState.tableNumber.toString().padStart(2, '0');
-        const eventTable = (data.table || '').trim();
-        const isMatch = (
-          eventTable === ourTable ||
-          eventTable === `Table ${ourNum}` ||
-          eventTable === ourNum ||
-          eventTable === appState.tableNumber ||
-          (appState.currentTicket && data.ticketId === appState.currentTicket.ticketId)
-        );
-
-        if (isMatch) {
-          syncTableSession();
+        if (isOurTicketEvent(data.table, data.ticketId)) {
+          refreshTicketFromServer();
           const tableNameEl = document.getElementById('settled-table-name');
-          if (tableNameEl) tableNameEl.textContent = ourTable;
+          if (tableNameEl) tableNameEl.textContent = `Table ${appState.tableNumber}`;
           const modal = document.getElementById('bill-settled-modal');
           if (modal) {
             modal.classList.remove('hidden');
@@ -2781,79 +3151,50 @@
           }
         }
       } else if ((data.type === 'NEW_ORDER' || data.type === 'TABLE_ORDER_UPDATED') && data.order) {
-        const ourTable = `Table ${appState.tableNumber}`;
-        const ourNum = appState.tableNumber.toString().padStart(2, '0');
-        const eventTable = (data.order.table || data.table || '').trim();
-        const isOurTable = (
-          eventTable === ourTable ||
-          eventTable === `Table ${ourNum}` ||
-          eventTable === ourNum ||
-          eventTable === appState.tableNumber
-        );
-        if (isOurTable) {
-          const hadExistingTicket = Boolean(appState.currentTicket && appState.currentTicket.ticketId);
-          const previousItemsCount = hadExistingTicket ? (appState.currentTicket.items || []).length : 0;
-          const newItemsCount = (data.order.items || []).length;
-          const isSenderUs = Boolean(data.senderDeviceId && data.senderDeviceId === getDeviceId());
-
-          const isDiffTicket = !hadExistingTicket || appState.currentTicket.ticketId !== data.order.ticketId;
-          const isStatDiff = hadExistingTicket && appState.currentTicket.status !== data.order.status;
-          const isContentDiff = hadExistingTicket && (
-            newItemsCount !== previousItemsCount ||
-            data.order.total !== appState.currentTicket.total
-          );
-
-          if (isDiffTicket || isStatDiff || isContentDiff) {
-            appState.currentTicket = data.order;
-            syncTicketToStorage(appState.currentTicket);
+        if (isOurTicketEvent(data.order.table || data.table, data.order.ticketId)) {
+          const hadOpenTicket = hasOpenTicket();
+          const prev = appState.currentTicket;
+          const isSameTicket = Boolean(prev && prev.ticketId === data.order.ticketId);
+          if (!isSameTicket || ticketSignature(prev) !== ticketSignature(data.order)) {
+            adoptTicket(data.order);
+          }
+          if (!hadOpenTicket && !appState.isSending) {
+            // The host sent the table's first order: the shared cart went with it
             appState.cart = [];
             saveCartToStorage();
-            applyTicketStatusUI(data.order.status || 'New');
-            renderTicketDetails();
-            updateRoleUI();
             updateCartUI();
+            renderCartItems();
             renderDishGrid();
-
+            switchView('confirmation');
+            showToast(`🔥 Order sent for Table #${appState.tableNumber}!`);
+          } else if (!appState.isSending) {
             const activeViewEl = document.querySelector('section[id^="view-"]:not(.hidden)');
-            const currentView = activeViewEl ? activeViewEl.id : 'view-menu';
-
-            if (!hadExistingTicket) {
-              // Table Host just submitted the initial order: automatically transition all diners to live order confirmation!
+            if (activeViewEl && activeViewEl.id === 'view-cart' && appState.cart.length === 0) {
               switchView('confirmation');
-              if (!isSenderUs) {
-                showToast(`🔥 Order fired to kitchen for Table #${appState.tableNumber}!`);
-              }
-            } else if (currentView === 'view-cart') {
-              // Co-diner was on the cart view: switch to confirmation to view live tab
-              switchView('confirmation');
-              if (!isSenderUs) {
-                showToast(`🍽️ Table order updated (${newItemsCount} items on tab)!`);
-              }
-            } else if (newItemsCount > previousItemsCount) {
-              if (!isSenderUs) {
-                showToast(`🍽️ Co-diner added +${newItemsCount - previousItemsCount} dish to Table #${appState.tableNumber}!`);
-              }
             }
           }
+        }
+      } else if (data.type === 'ORDER_SETTINGS_UPDATED') {
+        if (!data.restaurantId || data.restaurantId === appState.restaurantId ||
+            (appState.restaurantId === 'REST-001' && data.restaurantId === 'rest-dera-01')) {
+          refreshOrderingSettings();
         }
       } else if (data.type === 'TABLE_SESSION_UPDATED') {
         const ourTable = `Table ${appState.tableNumber}`;
         const ourNum = appState.tableNumber.toString().padStart(2, '0');
         const eventTable = (data.table || '').trim();
         if (eventTable === ourTable || eventTable === `Table ${ourNum}` || eventTable === ourNum) {
-          appState.hostDeviceId = data.hostDeviceId;
+          // Device ids are not broadcast; ask the server whether this phone is the host
           appState.hostName = data.hostName || 'Table Lead';
-          appState.isHost = (data.hostDeviceId === getDeviceId());
-          updateRoleUI();
-          updateCartUI();
+          pollTableSession();
         }
       } else if (data.type === 'TABLE_CART_UPDATED') {
         const ourTable = `Table ${appState.tableNumber}`;
         const ourNum = appState.tableNumber.toString().padStart(2, '0');
         const eventTable = (data.table || '').trim();
         const isOurTable = (eventTable === ourTable || eventTable === `Table ${ourNum}` || eventTable === ourNum || eventTable === appState.tableNumber);
-        if (isOurTable) {
-          if (!appState.currentTicket) {
+        if (isOurTable && !appState.isOnlineOrder) {
+          if (!hasOpenTicket()) {
             appState.cart = Array.isArray(data.cart) ? data.cart : [];
             saveCartToStorage();
             updateCartUI();
@@ -2950,34 +3291,6 @@
       }
     }
 
-    // Periodic check for order status updates & authentic bill settlement from storage
-    setInterval(async () => {
-      try {
-        if (appState.currentTicket) {
-          const kdsData = localStorage.getItem('gourmet_kds_tickets');
-          if (kdsData) {
-            const ticketList = JSON.parse(kdsData);
-            const found = ticketList.find(t => t.ticketId === appState.currentTicket.ticketId);
-            if (found) {
-              if (found.status === 'Settled') {
-                const modal = document.getElementById('bill-settled-modal');
-                if (modal && modal.classList.contains('hidden')) {
-                  PosSync.dispatch({
-                    type: 'BILL_SETTLED',
-                    table: `Table ${appState.tableNumber}`,
-                    ticketId: found.ticketId
-                  });
-                }
-              } else if (found.status && found.status !== appState.currentTicket.status) {
-                appState.currentTicket.status = found.status;
-                applyTicketStatusUI(found.status);
-              }
-            }
-          }
-        }
-      } catch (e) {}
-    }, 1200);
-
     // Load persisted state or URL table param on startup
     window.addEventListener('DOMContentLoaded', async () => {
       initTableFromUrl();
@@ -2990,6 +3303,9 @@
       }
       await syncTableSession();
       startTableSessionPolling();
+      if (!appState.isOnlineOrder && !appState.tableToken && !appState.tableInvalid) {
+        console.warn('No table QR token (t) in the URL; table calls will be refused if this table has a QR secret.');
+      }
       loadMenuFromBackend();
       loadDiningAddons();
       loadCustomerWaiterServices();
@@ -3045,6 +3361,7 @@
         appState.tableZone = "QR Detected";
       }
 
+      initTableToken();
       applyTableLabels();
       checkRestaurantSubscriptionStatus();
     }
@@ -3059,6 +3376,7 @@
         }
         const r = data && data.restaurant;
         if (r) {
+          applyOrderingSettings(r.ordering);
           document.title = `${r.name} - Digital Menu & Ordering`;
           const brandTitle = document.getElementById('restaurant-title-display');
           if (brandTitle) brandTitle.textContent = r.name;
@@ -3075,7 +3393,7 @@
               <div class="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-4 shadow-sm">
                 <span class="material-symbols-outlined text-[36px]">storefront</span>
               </div>
-              <h2 class="text-[20px] font-black tracking-tight text-slate-900">${r.name}</h2>
+              <h2 class="text-[20px] font-black tracking-tight text-slate-900">${escapeHtml(r.name)}</h2>
               <p class="text-[13px] text-slate-600 mt-2 max-w-[280px]">
                 Ordering service is temporarily inactive for this restaurant.
               </p>
@@ -3180,89 +3498,50 @@
         const tNum = appState.tableNumber.toString().padStart(2, '0');
         const ourTableStr = `Table ${appState.tableNumber}`;
 
-        // 1. Check dedicated localStorage key for this table
+        // 1. This phone's last known order for the table
         let savedTicket = null;
-        const activeOrderRaw = localStorage.getItem('gourmet_active_order_' + appState.tableNumber);
-        if (activeOrderRaw) {
-          try {
-            const parsed = JSON.parse(activeOrderRaw);
-            if (parsed && parsed.status !== 'Settled') {
-              savedTicket = parsed;
-            }
-          } catch (e) {}
-        }
-
-        // 2. Check floor tables in localStorage
-        if (!savedTicket) {
-          const tablesData = localStorage.getItem('gourmet_floor_tables');
-          if (tablesData) {
-            const tableList = JSON.parse(tablesData);
-            const myTable = tableList.find(t => t.id === tNum);
-            if (myTable && myTable.status === 'dining' && myTable.order) {
-              savedTicket = {
-                ticketId: myTable.order.ticketId || '#TKT-1000',
-                table: ourTableStr,
-                guest: myTable.order.guest || `Table #${appState.tableNumber} Guest`,
-                time: myTable.order.time || '12:00 PM',
-                timestamp: Date.now(),
-                payment: myTable.order.payment || 'Pay Cash at Table',
-                items: myTable.order.items || [],
-                subtotal: myTable.order.subtotal || 0,
-                total: myTable.order.total || 0,
-                status: myTable.order.status || 'In Kitchen'
-              };
-            }
-          }
-        }
-
-        // 3. Fallback: check gourmet_kds_tickets in localStorage
-        if (!savedTicket) {
-          const kdsData = localStorage.getItem('gourmet_kds_tickets');
-          if (kdsData) {
-            const kdsList = JSON.parse(kdsData);
-            const activeKds = kdsList.find(t => (t.table === ourTableStr || t.table === `Table ${tNum}`) && t.status !== 'Settled');
-            if (activeKds) {
-              savedTicket = activeKds;
-            }
-          }
-        }
-
-        // 4. Verify against the backend (only this table's open ticket is public)
         try {
-          const ticketQuery = savedTicket && savedTicket.ticketId ? `&ticketId=${encodeURIComponent(savedTicket.ticketId)}` : '';
-          const res = await fetch(`${getApiBase()}/api/public/table-ticket?table=${encodeURIComponent(tNum)}${ticketQuery}`);
-          if (res.ok) {
-            const db = await res.json();
-            // Check if savedTicket was settled by cashier on backend
-            if (savedTicket) {
-              const backendSettled = (db.tickets || []).find(t => t.ticketId === savedTicket.ticketId && t.status === 'Settled');
-              if (backendSettled) {
-                localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
-                savedTicket = null;
-                PosSync.dispatch({
-                  type: 'BILL_SETTLED',
-                  table: ourTableStr
-                });
-              }
-            }
-
-            // Check backend for active unsettled ticket (server is authoritative over localStorage!)
-            const serverTicket = (db.tickets || []).find(t => 
-              (t.table === ourTableStr || t.table === `Table ${tNum}`) && t.status !== 'Settled'
-            );
-            if (serverTicket) {
-              savedTicket = serverTicket;
-            }
-          }
+          const parsed = JSON.parse(localStorage.getItem('gourmet_active_order_' + appState.tableNumber) || 'null');
+          if (parsed && parsed.ticketId && !isTicketClosed(parsed)) savedTicket = parsed;
         } catch (e) {}
 
-        // 5. If active ticket exists, restore ticket details while keeping user on default home screen (menu)
-        if (savedTicket && savedTicket.status !== 'Settled') {
+        // 2. The server is authoritative for table orders
+        if (!appState.isOnlineOrder) {
+          try {
+            const ticketQuery = savedTicket ? `&ticketId=${encodeURIComponent(savedTicket.ticketId)}` : '';
+            const res = await fetch(`${getApiBase()}/api/public/table-ticket?table=${encodeURIComponent(tNum)}${ticketQuery}${tokenQuery()}`);
+            const db = await readJsonSafe(res);
+            if (handleInvalidTableResponse(res, db)) return;
+            if (res.ok) {
+              const tickets = Array.isArray(db.tickets) ? db.tickets : [];
+              const open = tickets.find(t => !isTicketClosed(t));
+              const earlier = savedTicket ? tickets.find(t => t.ticketId === savedTicket.ticketId) : null;
+              if (open) {
+                savedTicket = open;
+              } else if (earlier && earlier.status === 'Settled') {
+                // Paid while this phone was away
+                localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
+                savedTicket = null;
+                PosSync.dispatch({ type: 'BILL_SETTLED', table: ourTableStr });
+              } else if (earlier && isTicketClosed(earlier)) {
+                savedTicket = earlier; // show how it ended (rejected / voided)
+              } else {
+                savedTicket = null;
+                localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
+              }
+            }
+          } catch (e) {
+            // Offline: keep the saved copy until the server answers
+          }
+        }
+
+        // 3. Restore ticket details while keeping the guest on the menu unless asked otherwise
+        if (savedTicket) {
           appState.currentTicket = savedTicket;
           syncTicketToStorage(appState.currentTicket);
           renderTicketDetails();
-          applyTicketStatusUI(appState.currentTicket.status || 'In Kitchen');
-          
+          applyTicketStatusUI(appState.currentTicket.status || 'Pending');
+
           const viewParam = new URLSearchParams(window.location.search).get('view');
           if (viewParam === 'confirmation' || viewParam === 'order' || viewParam === 'status') {
             switchView('confirmation');
@@ -4307,7 +4586,7 @@
       if (floatQty) floatQty.textContent = totalQty;
       if (floatTotal) floatTotal.textContent = formatPrice(grandTotal);
       if (floatCta) {
-        floatCta.textContent = appState.currentTicket ? "Add to Kitchen Order" : "View Order";
+        floatCta.textContent = hasOpenTicket() ? "Add to Order" : "View Order";
       }
 
       if (floatBar) {
@@ -4323,6 +4602,9 @@
 
       // Update Table Host vs Guest visual role states
       updateRoleUI();
+
+      // Keep the review step in step with cart edits (own or a co-diner's)
+      if (isOrderReviewOpen()) renderOrderReview();
     }
 
     function renderCartItems() {
@@ -4344,18 +4626,18 @@
 
       container.innerHTML = appState.cart.map((item, idx) => `
         <div class="bg-surface-container-lowest rounded-xl p-3 border border-surface-container shadow-sm flex items-center gap-3">
-          <img src="${item.image}" alt="${item.title}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-surface-container"/>
+          <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-surface-container"/>
           
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between">
-              <h4 class="font-headline font-bold text-[14px] text-on-surface truncate">${item.title}</h4>
+              <h4 class="font-headline font-bold text-[14px] text-on-surface truncate">${escapeHtml(item.title)}</h4>
               <button onclick="removeCartItem(${idx})" class="text-secondary hover:text-error transition-colors p-1" title="Remove item">
                 <span class="material-symbols-outlined text-[16px]">close</span>
               </button>
             </div>
 
             <p class="text-[11px] text-secondary mt-0.5">
-              ${item.size} • ${item.spice} ${item.note ? `• <span class="italic">"${item.note}"</span>` : ''}
+              ${escapeHtml(item.size)} • ${escapeHtml(item.spice)} ${item.note ? `• <span class="italic">"${escapeHtml(item.note)}"</span>` : ''}
             </p>
 
             <div class="flex items-center justify-between mt-2">
@@ -4403,169 +4685,257 @@
       }
     }
 
-    function submitOrderToKitchen() {
+    // --- Review step: a last look at the dishes before they go to the waiter ---
+    function isOrderReviewOpen() {
+      const m = document.getElementById('order-review-modal');
+      return Boolean(m && !m.classList.contains('hidden'));
+    }
+
+    // Same estimate as the cart page; the server prices the order for real
+    function estimateCartTotal() {
+      const subtotal = appState.cart.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.qty) || 0), 0);
+      let charges = 0;
+      if (Array.isArray(appState.billingCharges) && appState.billingCharges.length > 0) {
+        appState.billingCharges.filter(c => c.enabled !== false).forEach(c => {
+          const rate = Number(c.rate) || 0;
+          charges += (c.type === 'percentage') ? Math.round(subtotal * rate / 100) : (subtotal > 0 ? Math.round(rate) : 0);
+        });
+      } else {
+        charges = Math.round(subtotal * 0.05);
+      }
+      return subtotal + charges;
+    }
+
+    function openOrderReview() {
       if (appState.cart.length === 0) {
         showToast("Your order is empty!");
         switchView('menu');
         return;
       }
+      const blocked = orderingBlockedMessage();
+      if (blocked) { showOrderError(blocked); return; }
+      if (!hasOpenTicket() && !appState.isHost) {
+        showToast(`👑 Only the Table Host (${appState.hostName || 'Table Lead'}) can send the first order!`);
+        return;
+      }
+      setOrderError('');
+      renderOrderReview();
+      const m = document.getElementById('order-review-modal');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+    }
 
-      // Enforce Table Host restriction for initial order
-      const isInitialOrder = !appState.currentTicket;
-      if (isInitialOrder && !appState.isHost) {
-        showToast(`👑 Only the Table Host (${appState.hostName || 'Table Lead'}) can fire the initial order!`);
+    function closeOrderReview() {
+      const m = document.getElementById('order-review-modal');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+    }
+
+    function renderOrderReview() {
+      const list = document.getElementById('order-review-list');
+      if (!list) return;
+      if (appState.cart.length === 0) {
+        closeOrderReview();
+        return;
+      }
+      list.innerHTML = appState.cart.map((item, idx) => {
+        const soldOut = soldOutSet.has(item.dishId) || soldOutSet.has(String(item.dishId));
+        const details = [item.size, item.spice].filter(Boolean).map(escapeHtml).join(' • ');
+        return `
+          <div class="bg-surface-container-lowest rounded-xl p-2.5 border ${soldOut ? 'border-rose-300' : 'border-surface-container'} flex items-center gap-2.5" data-review-line="${idx}">
+            <div class="flex-1 min-w-0">
+              <span class="font-headline font-bold text-[14px] text-on-surface block truncate">${escapeHtml(item.title)}</span>
+              <span class="text-[11px] text-secondary block">${details}${item.note ? ` • <span class="italic">"${escapeHtml(item.note)}"</span>` : ''}</span>
+              ${soldOut ? '<span class="text-[11px] font-bold text-rose-700">Sold out – please remove</span>' : `<span class="text-[12px] font-semibold text-primary">${formatPrice((Number(item.price) || 0) * item.qty)}</span>`}
+            </div>
+            <div class="inline-flex items-center bg-surface-container rounded-full px-1 py-0.5 shrink-0">
+              <button type="button" onclick="adjustCartItemQty(${idx}, -1)" class="w-7 h-7 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center active:scale-90" aria-label="One less ${escapeHtml(item.title)}">
+                <span class="material-symbols-outlined text-[15px]">${item.qty <= 1 ? 'delete' : 'remove'}</span>
+              </button>
+              <span class="font-bold text-[13px] px-2 min-w-[22px] text-center">${Number(item.qty) || 0}</span>
+              <button type="button" onclick="adjustCartItemQty(${idx}, 1)" class="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center active:scale-90" aria-label="One more ${escapeHtml(item.title)}">
+                <span class="material-symbols-outlined text-[15px]">add</span>
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+      const totalEl = document.getElementById('order-review-total');
+      if (totalEl) totalEl.textContent = formatPrice(estimateCartTotal());
+      const subtitle = document.getElementById('order-review-subtitle');
+      if (subtitle) {
+        const qty = appState.cart.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+        subtitle.textContent = `${qty} item${qty === 1 ? '' : 's'} for ${appState.isOnlineOrder ? 'your online order' : 'Table #' + appState.tableNumber}`;
+      }
+    }
+
+    function setOrderError(msg) {
+      ['order-review-error', 'cart-send-error'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = msg || '';
+        el.classList.toggle('hidden', !msg);
+      });
+    }
+
+    function showOrderError(msg) {
+      setOrderError(msg);
+      showToast(msg);
+    }
+
+    function setSendingState(sending) {
+      appState.isSending = Boolean(sending);
+      const btn = document.getElementById('order-review-send-btn');
+      const label = document.getElementById('order-review-send-label');
+      if (btn) btn.disabled = appState.isSending;
+      if (label) label.textContent = appState.isSending ? 'Sending…' : 'Send to waiter';
+      updateRoleUI();
+    }
+
+    // Only the dishes of this round, as the server expects them
+    function cartItemsForServer(cart) {
+      return cart.map(i => {
+        const line = {
+          dishId: i.dishId,
+          title: i.title,
+          qty: Number(i.qty) || 1,
+          size: i.size || 'Standard Portion',
+          spice: i.spice || 'Normal 🍃',
+          notes: i.notes || i.note || ''
+        };
+        const addonNames = Array.isArray(i.addons) ? i.addons.map(a => (typeof a === 'string' ? a : (a && a.name))).filter(Boolean) : [];
+        if (addonNames.length) line.selectedAddons = addonNames;
+        return line;
+      });
+    }
+
+    // POST one order round. Returns { ok, status, data } or { ok:false, networkError:true }.
+    async function postOrderRound(items, extra = {}) {
+      const order = {
+        restaurantId: appState.restaurantId || 'REST-001',
+        table: appState.isOnlineOrder ? 'Online Order' : `Table ${appState.tableNumber}`,
+        guest: extra.guest || (appState.isOnlineOrder ? 'Online Guest' : `Table #${appState.tableNumber} Guest`),
+        notes: extra.notes || '',
+        payment: extra.payment || 'Pay Cash to Server at Table',
+        newItemsOnly: true,
+        items: items
+      };
+      if (appState.isOnlineOrder && hasOpenTicket()) order.ticketId = appState.currentTicket.ticketId;
+      try {
+        const res = await fetch(`${getApiBase()}/api/broadcast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'NEW_ORDER',
+            senderDeviceId: getDeviceId(),
+            tableToken: appState.isOnlineOrder ? undefined : appState.tableToken,
+            order
+          })
+        });
+        const data = await readJsonSafe(res);
+        return { ok: res.ok && data && data.ok === true && Boolean(data.order), status: res.status, data, res };
+      } catch (e) {
+        return { ok: false, networkError: true, status: 0, data: {} };
+      }
+    }
+
+    // Turns a refused order into a message the guest can act on. The cart is left alone.
+    function handleOrderFailure(result) {
+      if (result.networkError) {
+        showOrderError('Could not send. Check your connection and try again.');
+        return;
+      }
+      const { status, data, res } = result;
+      if (handleInvalidTableResponse(res, data)) { closeOrderReview(); return; }
+      if (status === 409 && Array.isArray(data.soldOut)) {
+        data.soldOut.forEach(id => {
+          soldOutSet.add(id);
+          const dish = findDishById(id);
+          if (dish) { dish.isAvailable = false; soldOutSet.add(dish.id); }
+        });
+        renderDishGrid();
+        renderCartItems();
+        if (isOrderReviewOpen()) renderOrderReview();
+        showOrderError(data.error || 'Sorry, some dishes just sold out. Please remove them and send again.');
+        return;
+      }
+      if (status === 423 && data.orderingPaused) {
+        appState.orderingPaused = true;
+        appState.pausedMessage = data.error || appState.pausedMessage;
+        applyOrderingSettings({ paused: true, message: appState.pausedMessage, online: !appState.onlineOrderingOff, waiterConfirms: appState.waiterConfirms });
+        showOrderError(data.error || 'Ordering is paused right now. Please ask a member of staff.');
+        return;
+      }
+      if (status === 423 && data.tableClosed) {
+        showOrderError('Please ask your waiter to open the table.');
+        return;
+      }
+      if (status === 429) {
+        showOrderError('Please wait a few seconds and try again.');
+        return;
+      }
+      if (status === 403 && data.isHost === false) {
+        pollTableSession();
+      }
+      showOrderError((data && data.error) ? String(data.error) : 'Could not send. Please try again or ask your waiter.');
+    }
+
+    async function submitOrderToKitchen() {
+      if (appState.isSending) return;
+      if (appState.cart.length === 0) {
+        closeOrderReview();
+        showToast("Your order is empty!");
+        switchView('menu');
+        return;
+      }
+      const blocked = orderingBlockedMessage();
+      if (blocked) { showOrderError(blocked); return; }
+
+      // Only the Table Host may send the table's first order
+      const isInitialOrder = !hasOpenTicket();
+      if (isInitialOrder && !appState.isHost && !appState.isOnlineOrder) {
+        showOrderError(`Only the Table Host (${appState.hostName || 'Table Lead'}) can send the first order.`);
         return;
       }
 
       const guestName = document.getElementById('guest-name-input')?.value.trim() || (`Table #${appState.tableNumber} Guest`);
       const kitchenNotes = document.getElementById('general-order-notes')?.value.trim() || "";
-      const randomTicketNum = Math.floor(1000 + Math.random() * 9000);
-      const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
       let payLabel = "Pay Cash to Server at Table";
       if (appState.paymentMethod === 'cashier_counter') payLabel = "Pay Cash/Card at Cashier";
       if (appState.paymentMethod === 'table_tab') payLabel = "Open Table Tab (Settle Later)";
 
-      const subtotal = appState.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-
-      const itemsWithStation = appState.cart.map(item => {
-        const dishInfo = findDishById(item.dishId) || DISH_CATALOG.find(d => d.title === item.title);
-        return {
-          ...item,
-          station: item.station || (dishInfo ? dishInfo.station : 'karahi')
-        };
+      setOrderError('');
+      setSendingState(true);
+      const sentCart = appState.cart.slice();
+      const result = await postOrderRound(cartItemsForServer(sentCart), {
+        guest: appState.isOnlineOrder ? 'Online Guest' : guestName,
+        notes: kitchenNotes,
+        payment: payLabel
       });
+      setSendingState(false);
 
-      if (appState.currentTicket) {
-        // Appending new round of dishes to currently open order (open to all diners!)
-        appState.currentTicket.items.push(...itemsWithStation);
-        appState.currentTicket.subtotal += subtotal;
-
-        let combinedCharges = [];
-        let combinedTotalCharges = 0;
-        let combinedTax = 0;
-        let combinedService = 0;
-        const combSubtotal = appState.currentTicket.subtotal;
-
-        if (Array.isArray(appState.billingCharges) && appState.billingCharges.length > 0) {
-          appState.billingCharges.filter(c => c.enabled !== false).forEach(c => {
-            const rateVal = Number(c.rate) || 0;
-            const amt = (c.type === 'percentage') ? Math.round(combSubtotal * (rateVal / 100)) : Math.round(rateVal);
-            combinedTotalCharges += amt;
-            if (c.category === 'tax' || (c.name && c.name.toLowerCase().includes('tax')) || (c.name && c.name.toLowerCase().includes('gst'))) {
-              combinedTax += amt;
-            } else if (c.category === 'service' || (c.name && c.name.toLowerCase().includes('service'))) {
-              combinedService += amt;
-            }
-            combinedCharges.push({
-              id: c.id,
-              name: c.name,
-              type: c.type,
-              rate: rateVal,
-              amount: amt,
-              category: c.category || 'other'
-            });
-          });
-        } else {
-          combinedTax = Math.round(combSubtotal * 0.05);
-          combinedTotalCharges = combinedTax;
-          combinedCharges.push({
-            id: 'tax_default',
-            name: 'Sales Tax',
-            type: 'percentage',
-            rate: 5,
-            amount: combinedTax,
-            category: 'tax'
-          });
-        }
-
-        appState.currentTicket.tax = combinedTax;
-        appState.currentTicket.serviceCharge = combinedService;
-        appState.currentTicket.charges = combinedCharges;
-        appState.currentTicket.total = combSubtotal + combinedTotalCharges;
-        if (kitchenNotes) {
-          appState.currentTicket.notes = (appState.currentTicket.notes ? appState.currentTicket.notes + " | " : "") + kitchenNotes;
-        }
-      } else {
-        let initialCharges = [];
-        let initialTotalCharges = 0;
-        let initialTax = 0;
-        let initialService = 0;
-
-        if (Array.isArray(appState.billingCharges) && appState.billingCharges.length > 0) {
-          appState.billingCharges.filter(c => c.enabled !== false).forEach(c => {
-            const rateVal = Number(c.rate) || 0;
-            const amt = (c.type === 'percentage') ? Math.round(subtotal * (rateVal / 100)) : Math.round(rateVal);
-            initialTotalCharges += amt;
-            if (c.category === 'tax' || (c.name && c.name.toLowerCase().includes('tax')) || (c.name && c.name.toLowerCase().includes('gst'))) {
-              initialTax += amt;
-            } else if (c.category === 'service' || (c.name && c.name.toLowerCase().includes('service'))) {
-              initialService += amt;
-            }
-            initialCharges.push({
-              id: c.id,
-              name: c.name,
-              type: c.type,
-              rate: rateVal,
-              amount: amt,
-              category: c.category || 'other'
-            });
-          });
-        } else {
-          initialTax = Math.round(subtotal * 0.05);
-          initialTotalCharges = initialTax;
-          initialCharges.push({
-            id: 'tax_default',
-            name: 'Sales Tax',
-            type: 'percentage',
-            rate: 5,
-            amount: initialTax,
-            category: 'tax'
-          });
-        }
-
-        // Brand new order ticket for table
-        appState.currentTicket = {
-          ticketId: `#TKT-${randomTicketNum}`,
-          restaurantId: (appState.restaurantId === 'rest-dera-01' ? 'REST-001' : (appState.restaurantId || 'REST-001')),
-          table: appState.isOnlineOrder ? 'Online Order' : `Table ${appState.tableNumber}`,
-          guest: guestName,
-          time: currentTime,
-          timestamp: Date.now(),
-          notes: kitchenNotes,
-          payment: payLabel,
-          items: itemsWithStation,
-          subtotal: subtotal,
-          tax: initialTax,
-          serviceCharge: initialService,
-          charges: initialCharges,
-          total: subtotal + initialTotalCharges,
-          status: "New",
-          senderDeviceId: getDeviceId()
-        };
+      if (!result.ok) {
+        handleOrderFailure(result);
+        return;
       }
 
-      // Dedicated Active Order Storage and Sync
-      syncTicketToStorage(appState.currentTicket);
-
-      // Clear the cart
+      // The server's ticket (id, priced lines, pending round, totals) replaces anything built here
+      adoptTicket(result.data.order, { notify: false });
       appState.cart = [];
       saveCartToStorage();
+      const notesEl = document.getElementById('general-order-notes');
+      if (notesEl) notesEl.value = '';
+      closeOrderReview();
       updateCartUI();
+      renderCartItems();
       renderDishGrid();
-
-      // Render details and show follow-up screen
-      renderTicketDetails();
-      applyTicketStatusUI(appState.currentTicket.status);
       switchView('confirmation');
-      showToast(isInitialOrder ? "Order ticket sent directly to Kitchen Station!" : "Extra dishes fired to kitchen!");
 
-      // Broadcast to KDS, Waiter Floor & Cashier across all channels
-      PosSync.emit({
-        type: 'NEW_ORDER',
-        order: appState.currentTicket,
-        senderDeviceId: getDeviceId()
-      });
+      const pendingCount = (result.data.order.pendingItems || []).length;
+      if (result.data.nothingNew) {
+        showToast('Those dishes are already on your order.');
+      } else if (pendingCount > 0) {
+        showToast('Sent! Waiting for your waiter to confirm.');
+      } else {
+        showToast(isInitialOrder ? 'Order sent to the kitchen!' : 'Extra dishes sent to the kitchen!');
+      }
     }
 
     // --- 8. MULTI-ROUND ORDERING & DEMO STATUS ---
@@ -4575,53 +4945,9 @@
     }
 
     let demoStatusStep = 1; // 1: In kitchen, 2: Plated & Ready, 3: Served
+    // Demo-only: status changes now come from staff screens (the server refuses guest updates)
     function advanceDemoStatus() {
-      demoStatusStep = (demoStatusStep % 3) + 1;
-      let newStatus = 'In Kitchen';
-      if (demoStatusStep === 2) newStatus = 'Plated & Ready';
-      if (demoStatusStep === 3) newStatus = 'Served';
-
-      if (appState.currentTicket) {
-        appState.currentTicket.status = newStatus;
-        localStorage.setItem('gourmet_active_order_' + appState.tableNumber, JSON.stringify(appState.currentTicket));
-
-        try {
-          const existingKds = JSON.parse(localStorage.getItem('gourmet_kds_tickets') || '[]');
-          const found = existingKds.find(t => t.ticketId === appState.currentTicket.ticketId);
-          if (found) {
-            found.status = newStatus;
-            localStorage.setItem('gourmet_kds_tickets', JSON.stringify(existingKds));
-          }
-        } catch(e) {}
-
-        try {
-          const tNum = appState.tableNumber.toString().padStart(2, '0');
-          const tables = JSON.parse(localStorage.getItem('gourmet_floor_tables') || '[]');
-          const tbl = tables.find(t => t.id === tNum);
-          if (tbl && tbl.order) {
-            tbl.order.status = newStatus;
-            localStorage.setItem('gourmet_floor_tables', JSON.stringify(tables));
-          }
-        } catch(e) {}
-
-        applyTicketStatusUI(newStatus);
-        renderTicketDetails();
-
-        PosSync.emit({
-          type: 'STATUS_UPDATE',
-          ticketId: appState.currentTicket.ticketId,
-          table: `Table ${appState.tableNumber}`,
-          status: newStatus
-        });
-
-        if (newStatus === 'Served') {
-          showToast("🍽️ Order marked as Served! Enjoy your feast.");
-        } else if (newStatus === 'Plated & Ready') {
-          showToast("👨‍🍳 Dishes plated and ready for server.");
-        } else {
-          showToast("🔥 Kitchen actively preparing your meal.");
-        }
-      }
+      showToast('Order status is updated by the kitchen and your waiter.');
     }
 
     async function resetOrderForTesting() {
@@ -4669,12 +4995,6 @@
         });
       } catch (e) {}
 
-      // 6. Broadcast event
-      PosSync.emit({
-        type: 'BILL_SETTLED',
-        table: tableStr
-      });
-
       // 6b. Re-sync table session so this device binds as Host for the new session
       await syncTableSession();
 
@@ -4693,37 +5013,226 @@
       showToast(`Order reset! Starting from scratch for Table #${appState.tableNumber}`);
     }
 
+    function ticketLineHtml(item) {
+      const qty = Number(item.qty) || 0;
+      const amount = formatPrice((Number(item.price) || 0) * qty);
+      const details = [item.size || 'Standard', item.spice || 'Normal'].map(escapeHtml).join(' • ');
+      const notes = item.notes ? ` • <span class="italic">"${escapeHtml(item.notes)}"</span>` : '';
+      if (item.voided) {
+        return `
+          <div class="flex items-start justify-between text-[12px] opacity-75" data-line-state="voided">
+            <div>
+              <span class="font-bold text-secondary line-through">${qty}x ${escapeHtml(item.title)}</span>
+              <span class="text-rose-700 text-[11px] block pl-3">Removed${item.voidReason ? ': ' + escapeHtml(item.voidReason) : ''}</span>
+            </div>
+            <span class="font-semibold text-secondary line-through">${amount}</span>
+          </div>`;
+      }
+      return `
+        <div class="flex items-start justify-between text-[12px]" data-line-state="${item.pending ? 'pending' : 'confirmed'}">
+          <div>
+            <span class="font-bold text-on-surface">${qty}x ${escapeHtml(item.title)}</span>
+            <span class="text-secondary text-[11px] block pl-3">${details}${notes}</span>
+          </div>
+          <span class="font-semibold text-on-surface">${amount}</span>
+        </div>`;
+    }
+
+    function ticketChargesHtml(tkt) {
+      let html = `
+        <div class="flex items-center justify-between text-[12.5px] text-secondary">
+          <span>Subtotal</span><span class="font-semibold text-on-surface">${formatPrice(Number(tkt.subtotal) || 0)}</span>
+        </div>`;
+      const charges = Array.isArray(tkt.charges) ? tkt.charges : [];
+      if (charges.length) {
+        charges.forEach(c => {
+          const rate = c.type === 'percentage' && c.rate !== undefined ? ` (${escapeHtml(c.rate)}%)` : '';
+          html += `
+            <div class="flex items-center justify-between text-[12.5px] text-secondary">
+              <span>${escapeHtml(c.name || 'Charge')}${rate}</span><span class="font-semibold text-on-surface">${formatPrice(Number(c.amount) || 0)}</span>
+            </div>`;
+        });
+      } else {
+        if (Number(tkt.tax)) html += `<div class="flex items-center justify-between text-[12.5px] text-secondary"><span>Tax</span><span class="font-semibold text-on-surface">${formatPrice(Number(tkt.tax))}</span></div>`;
+        if (Number(tkt.serviceCharge)) html += `<div class="flex items-center justify-between text-[12.5px] text-secondary"><span>Service charge</span><span class="font-semibold text-on-surface">${formatPrice(Number(tkt.serviceCharge))}</span></div>`;
+      }
+      return html;
+    }
+
+    function renderTicketNotices(tkt) {
+      const wrap = document.getElementById('ticket-notices-wrap');
+      const list = document.getElementById('ticket-notices');
+      if (!wrap || !list) return;
+      const notices = (Array.isArray(tkt && tkt.notices) ? tkt.notices : []).slice(-5).reverse();
+      wrap.classList.toggle('hidden', notices.length === 0);
+      list.innerHTML = notices.map((n, i) => {
+        const when = n.at ? new Date(n.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div class="flex items-start gap-2 text-[12.5px] ${i === 0 ? 'text-on-surface font-semibold' : 'text-secondary'}">
+            <span class="text-[10.5px] font-mono text-secondary shrink-0 mt-0.5">${escapeHtml(when)}</span>
+            <span class="leading-snug">${escapeHtml(n.text)}</span>
+          </div>`;
+      }).join('');
+    }
+
+    function renderFinalState(tkt) {
+      const panel = document.getElementById('ticket-final-panel');
+      const addons = document.getElementById('addons-section');
+      const closed = isTicketClosed(tkt);
+      if (addons) addons.classList.toggle('hidden', closed);
+      if (!panel) return;
+      panel.classList.toggle('hidden', !closed);
+      if (!closed) return;
+      const card = document.getElementById('ticket-final-card');
+      const icon = document.getElementById('ticket-final-icon');
+      const title = document.getElementById('ticket-final-title');
+      const text = document.getElementById('ticket-final-text');
+      const lastNotice = (tkt.notices || []).length ? tkt.notices[tkt.notices.length - 1].text : '';
+      const states = {
+        Rejected: ['border-rose-200 bg-rose-50 text-rose-950', 'block', 'Your order was not accepted', lastNotice || 'The restaurant could not accept this order. Please ask your waiter.'],
+        Voided: ['border-slate-200 bg-slate-50 text-slate-900', 'cancel', 'This order was cancelled', lastNotice || 'The restaurant cancelled this order. Nothing is due for it.'],
+        Settled: ['border-emerald-200 bg-emerald-50 text-emerald-950', 'verified', 'Bill paid – thank you!', `Your bill${tkt.invoiceNumber ? ' (' + tkt.invoiceNumber + ')' : ''} has been settled.`]
+      };
+      const [cls, iconName, heading, body] = states[tkt.status];
+      if (card) card.className = `rounded-2xl border p-4 shadow-sm flex flex-col gap-2 ${cls}`;
+      if (icon) icon.textContent = iconName;
+      if (title) title.textContent = heading;
+      if (text) text.textContent = body;
+    }
+
     function renderTicketDetails() {
-      if (!appState.currentTicket) return;
       const tkt = appState.currentTicket;
+      if (!tkt) {
+        renderFinalState(null);
+        return;
+      }
       const ticketNumEl = document.getElementById('ticket-number-display');
       if (ticketNumEl) ticketNumEl.textContent = tkt.ticketId;
       const tableValEl = document.getElementById('ticket-table-val');
-      if (tableValEl) tableValEl.textContent = `${tkt.table} (${appState.tableZone})`;
+      if (tableValEl) tableValEl.textContent = `${tkt.table || ('Table ' + appState.tableNumber)} (${appState.tableZone})`;
       const guestValEl = document.getElementById('ticket-guest-val');
       if (guestValEl) guestValEl.textContent = tkt.guest || `Table #${appState.tableNumber} Guest`;
       const timeValEl = document.getElementById('ticket-time-val');
       if (timeValEl) timeValEl.textContent = tkt.time || 'Just now';
       const payValEl = document.getElementById('ticket-pay-val');
       if (payValEl) payValEl.textContent = tkt.payment || 'Pay at Table';
+
+      // Totals come from the server: total = confirmed, non-removed items only
       const totalValEl = document.getElementById('ticket-total-val');
-      if (totalValEl) totalValEl.textContent = formatPrice(tkt.total);
+      if (totalValEl) totalValEl.textContent = formatPrice(Number(tkt.total) || 0);
+      const breakdownEl = document.getElementById('ticket-totals-breakdown');
+      if (breakdownEl) breakdownEl.innerHTML = ticketChargesHtml(tkt);
+      const pendingItems = Array.isArray(tkt.pendingItems) ? tkt.pendingItems : [];
+      const pendingTotal = Number(tkt.pendingTotal) || 0;
+      const pendingRow = document.getElementById('ticket-pending-total-row');
+      if (pendingRow) pendingRow.classList.toggle('hidden', !(pendingItems.length > 0 || pendingTotal > 0));
+      const pendingVal = document.getElementById('ticket-pending-total-val');
+      if (pendingVal) pendingVal.textContent = formatPrice(pendingTotal);
 
       const ticketItemsContainer = document.getElementById('ticket-items-list');
-      if (ticketItemsContainer && tkt.items) {
-        ticketItemsContainer.innerHTML = tkt.items.map(item => `
-          <div class="flex items-start justify-between text-[12px]">
-            <div>
-              <span class="font-bold text-on-surface">${item.qty}x ${item.title}</span>
-              <span class="text-secondary text-[11px] block pl-3">${item.size || 'Standard'} • ${item.spice || 'Normal'}</span>
-            </div>
-            <span class="font-semibold text-on-surface">${formatPrice((item.price || 0) * (item.qty || 1))}</span>
-          </div>
-        `).join('');
+      if (ticketItemsContainer) {
+        const confirmed = Array.isArray(tkt.items) ? tkt.items : [];
+        let html = '';
+        if (pendingItems.length) {
+          html += `
+            <div id="ticket-pending-group" class="rounded-xl border border-amber-300 bg-amber-50 p-2.5 flex flex-col gap-1.5">
+              <span class="flex items-center gap-1.5 text-[12px] font-bold text-amber-900">
+                <span class="material-symbols-outlined text-[16px] animate-pulse">hourglass_top</span>
+                Waiting for your waiter to confirm
+              </span>
+              ${pendingItems.map(ticketLineHtml).join('')}
+              <span class="text-[11px] text-amber-800">${formatPrice(pendingTotal)} awaiting confirmation (not on your bill yet)</span>
+            </div>`;
+        }
+        if (confirmed.length) {
+          html += `
+            <div id="ticket-confirmed-group" class="flex flex-col gap-1.5 ${pendingItems.length ? 'mt-1' : ''}">
+              ${pendingItems.length ? '<span class="text-[11px] uppercase tracking-wider text-emerald-700 font-bold">Confirmed</span>' : ''}
+              ${confirmed.map(ticketLineHtml).join('')}
+            </div>`;
+        }
+        if (!html) html = '<span class="text-[12px] text-secondary">No dishes on this order.</span>';
+        ticketItemsContainer.innerHTML = html;
       }
+
+      renderTicketNotices(tkt);
+      renderFinalState(tkt);
+
+      if (tkt.billRequested) markBillRequestedUI();
+      if (isBillViewOpen()) renderBillView();
 
       // Ensure dining add-ons are up-to-date
       renderDiningAddons();
+    }
+
+    // --- Itemised bill (from the server's view of the ticket) ---
+    function isBillViewOpen() {
+      const m = document.getElementById('bill-view-modal');
+      return Boolean(m && !m.classList.contains('hidden'));
+    }
+
+    function renderBillView() {
+      const body = document.getElementById('bill-view-body');
+      const sub = document.getElementById('bill-view-sub');
+      const tkt = appState.currentTicket;
+      if (!body) return;
+      if (!tkt) {
+        body.innerHTML = '<span class="text-secondary">No order yet.</span>';
+        return;
+      }
+      if (sub) sub.textContent = `${tkt.table || ''} • ${tkt.ticketId}${tkt.invoiceNumber ? ' • ' + tkt.invoiceNumber : ''}`;
+      const lines = Array.isArray(tkt.items) ? tkt.items : [];
+      const pendingTotal = Number(tkt.pendingTotal) || 0;
+      body.innerHTML = `
+        ${lines.length ? lines.map(ticketLineHtml).join('') : '<span class="text-secondary">No confirmed dishes yet.</span>'}
+        <div class="mt-1 pt-1.5 border-t border-dashed border-surface-container space-y-1">${ticketChargesHtml(tkt)}</div>
+        <div class="pt-1.5 border-t border-surface-container flex items-center justify-between">
+          <span class="font-headline font-bold text-[15px] text-on-surface">Total</span>
+          <span class="font-headline font-bold text-[18px] text-primary">${formatPrice(Number(tkt.total) || 0)}</span>
+        </div>
+        ${pendingTotal > 0 ? `<span class="text-[11.5px] text-amber-800">${formatPrice(pendingTotal)} awaiting confirmation is not included.</span>` : ''}
+      `;
+    }
+
+    function openBillView() {
+      if (!appState.currentTicket) { showToast('No order yet.'); return; }
+      renderBillView();
+      const m = document.getElementById('bill-view-modal');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+      if (!appState.isOnlineOrder) refreshTicketFromServer();
+    }
+
+    function closeBillView() {
+      const m = document.getElementById('bill-view-modal');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+    }
+
+    function markBillRequestedUI() {
+      const label = document.getElementById('btn-request-bill-tab-label');
+      if (label) label.textContent = "Bill requested ✓";
+      const status = document.getElementById('bill-request-status');
+      if (status) status.classList.remove('hidden');
+      const quickBtn = document.getElementById('btn-quick-bring-bill');
+      if (quickBtn) {
+        quickBtn.classList.remove('bg-amber-50', 'border-amber-300');
+        quickBtn.classList.add('bg-emerald-50', 'border-emerald-400');
+        const text = quickBtn.querySelector('span:last-child');
+        if (text) text.textContent = "Requested ✓";
+      }
+    }
+
+    function resetBillRequestUI() {
+      const label = document.getElementById('btn-request-bill-tab-label');
+      if (label) label.textContent = "Request bill";
+      const status = document.getElementById('bill-request-status');
+      if (status) status.classList.add('hidden');
+      const quickBtn = document.getElementById('btn-quick-bring-bill');
+      if (quickBtn) {
+        quickBtn.classList.remove('bg-emerald-50', 'border-emerald-400');
+        quickBtn.classList.add('bg-amber-50', 'border-amber-300');
+        const text = quickBtn.querySelector('span:last-child');
+        if (text) text.textContent = "Bring Bill";
+      }
     }
 
     // Dining Add-ons (Extras) Management
@@ -4773,10 +5282,10 @@
         return `
           <button onclick="addExtraByIndex(${idx})" class="bg-surface-container-lowest border border-surface-container hover:border-primary p-2.5 rounded-xl flex flex-col justify-between text-left shadow-2xs active:scale-95 transition-all group">
             <div class="flex items-center justify-between w-full mb-1">
-              <span class="text-[20px]">${icon}</span>
+              <span class="text-[20px]">${escapeHtml(icon)}</span>
               <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
             </div>
-            <span class="font-bold text-[12px] text-on-surface block leading-tight">${displayName}</span>
+            <span class="font-bold text-[12px] text-on-surface block leading-tight">${escapeHtml(displayName)}</span>
             <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. ${price}</span>
           </button>
         `;
@@ -4793,71 +5302,43 @@
 
       promptUserConfirmation({
         title: 'Confirm Add-on Item',
-        message: `Add <b>${escapeHtml(title)}</b> (<span class="text-primary font-bold">Rs. ${price}</span>) directly to Table #${appState.tableNumber || '04'} kitchen order?`,
+        message: `Add <b>${escapeHtml(title)}</b> (<span class="text-primary font-bold">Rs. ${price}</span>) to your Table #${escapeHtml(appState.tableNumber || '04')} order?`,
         icon: 'add_shopping_cart',
         confirmText: 'Yes, Add Item',
         cancelText: 'Cancel',
         confirmColorClass: 'bg-primary hover:brightness-105',
         onConfirm: () => {
-          addQuickAddonToActiveOrder(title, price, station);
+          addQuickAddonToActiveOrder(title, price, station, item.id);
         }
       });
     }
 
-    function addQuickAddonToActiveOrder(title, price, station) {
-      const addonItem = {
-        dishId: `addon-${Date.now()}`,
-        title: title,
-        price: price,
-        qty: 1,
-        image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=800&q=80",
-        size: "Standard Portion",
-        spice: "Normal 🍃",
-        note: "Add-on Round",
-        station: station || "rice_naan"
-      };
-
-      if (appState.currentTicket) {
-        appState.currentTicket.items.push(addonItem);
-        appState.currentTicket.subtotal += price;
-
-        let totalCharges = 0;
-        let taxAmt = 0;
-        let svcAmt = 0;
-        let chgList = [];
-        const combSub = appState.currentTicket.subtotal;
-        if (Array.isArray(appState.billingCharges) && appState.billingCharges.length > 0) {
-          appState.billingCharges.filter(c => c.enabled !== false).forEach(c => {
-            const r = Number(c.rate) || 0;
-            const a = (c.type === 'percentage') ? Math.round(combSub * (r / 100)) : Math.round(r);
-            totalCharges += a;
-            if (c.category === 'tax' || (c.name && c.name.toLowerCase().includes('tax'))) taxAmt += a;
-            else if (c.category === 'service') svcAmt += a;
-            chgList.push({ id: c.id, name: c.name, type: c.type, rate: r, amount: a, category: c.category || 'other' });
-          });
-        } else {
-          taxAmt = Math.round(combSub * 0.05);
-          totalCharges = taxAmt;
-          chgList.push({ id: 'tax_default', name: 'Sales Tax', type: 'percentage', rate: 5, amount: taxAmt, category: 'tax' });
-        }
-        appState.currentTicket.tax = taxAmt;
-        appState.currentTicket.serviceCharge = svcAmt;
-        appState.currentTicket.charges = chgList;
-        appState.currentTicket.total = combSub + totalCharges;
-
-        syncTicketToStorage(appState.currentTicket);
-        renderTicketDetails();
-
-        // Emit to KDS and server
-        PosSync.emit({
-          type: 'NEW_ORDER',
-          order: appState.currentTicket,
-          senderDeviceId: getDeviceId()
-        });
-        showToast(`Added +1 ${title} to your Table #${appState.tableNumber} Order!`);
-      } else {
-        quickAddCustom(title, price, null, 'Standard Portion', station);
+    // Sends one add-on as its own round on the open order (the server prices it)
+    async function addQuickAddonToActiveOrder(title, price, station, dishId) {
+      if (!hasOpenTicket()) {
+        quickAddCustom(title, price, dishId || null, 'Standard Portion', station);
+        return;
       }
+      const blocked = orderingBlockedMessage();
+      if (blocked) { showToast(blocked); return; }
+      if (appState.isSending) return;
+      setSendingState(true);
+      const result = await postOrderRound([{
+        dishId: dishId || null,
+        title: title,
+        qty: 1,
+        size: 'Standard Portion',
+        spice: 'Normal 🍃',
+        notes: ''
+      }], { guest: appState.currentTicket.guest, payment: appState.currentTicket.payment });
+      setSendingState(false);
+      if (!result.ok) {
+        handleOrderFailure(result);
+        return;
+      }
+      adoptTicket(result.data.order, { notify: false });
+      const pending = (result.data.order.pendingItems || []).length > 0;
+      showToast(pending ? `${title} sent – waiting for your waiter to confirm.` : `Added ${title} to your order!`);
     }
 
     function sendServiceAction(actionName, price, station) {
@@ -4865,7 +5346,7 @@
       if (price && price > 0) {
         promptUserConfirmation({
           title: 'Confirm Extra Add-on',
-          message: `Add <b>${escapeHtml(actionName)}</b> (<span class="text-primary font-bold">Rs. ${price}</span>) to Table #${appState.tableNumber || '04'} kitchen order?`,
+          message: `Add <b>${escapeHtml(actionName)}</b> (<span class="text-primary font-bold">Rs. ${Number(price) || 0}</span>) to your Table #${escapeHtml(appState.tableNumber || '04')} order?`,
           icon: 'add_shopping_cart',
           confirmText: 'Yes, Add Item',
           cancelText: 'Cancel',
@@ -4882,23 +5363,19 @@
     function requestPhysicalBill() {
       promptUserConfirmation({
         title: 'Request Bill?',
-        message: `Request server to print and bring the bill to <b>Table #${appState.tableNumber || '04'}</b>?`,
+        message: `Ask your waiter to bring the bill to <b>Table #${escapeHtml(appState.tableNumber || '04')}</b>?`,
         icon: 'receipt_long',
         confirmText: 'Yes, Bring Bill',
         cancelText: 'Cancel',
         confirmColorClass: 'bg-amber-600 hover:bg-amber-700',
-        onConfirm: () => {
-          sendWaiterRequest('🧾 Bring Cash Bill to Table', true);
-          const btn = document.getElementById('btn-request-bill-tab-label');
-          if (btn) btn.textContent = "Bill Requested 🧾";
-          const quickBtn = document.getElementById('btn-quick-bring-bill');
-          if (quickBtn) {
-            quickBtn.classList.remove('bg-amber-50', 'border-amber-300');
-            quickBtn.classList.add('bg-emerald-50', 'border-emerald-400');
-            const text = quickBtn.querySelector('span:last-child');
-            if (text) text.textContent = "Requested ✓";
+        onConfirm: async () => {
+          const result = await sendServiceBell('Bill please');
+          if (result.ok) {
+            markBillRequestedUI();
+            showToast("Your waiter has been asked to bring the bill.");
+          } else {
+            showToast(result.message);
           }
-          showToast("Server notified! Bringing physical bill to Table #" + appState.tableNumber);
         }
       });
     }
@@ -5002,6 +5479,7 @@
     function setTableNumber(num, zone) {
       appState.tableNumber = num;
       appState.tableZone = zone || "Main Dining";
+      try { appState.tableToken = sessionStorage.getItem(tableTokenStorageKey()) || ''; } catch (e) { appState.tableToken = ''; }
       applyTableLabels();
       loadCartFromStorage();
       updateCartUI();
@@ -5079,11 +5557,37 @@
       document.getElementById('waiter-modal').classList.remove('flex');
     }
 
+    // Rings the waiter. Returns { ok, message }.
+    async function sendServiceBell(request) {
+      if (appState.tableInvalid) return { ok: false, message: orderingBlockedMessage() };
+      try {
+        const res = await fetch(`${getApiBase()}/api/broadcast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'SERVICE_BELL',
+            senderDeviceId: getDeviceId(),
+            tableToken: appState.isOnlineOrder ? undefined : appState.tableToken,
+            table: appState.isOnlineOrder ? 'Online Order' : `Table ${appState.tableNumber}`,
+            request: request
+          })
+        });
+        const data = await readJsonSafe(res);
+        if (handleInvalidTableResponse(res, data)) return { ok: false, message: orderingBlockedMessage() };
+        if (!res.ok) {
+          return { ok: false, message: res.status === 429 ? 'Please wait a few seconds and try again.' : ((data && data.error) || 'Could not reach your waiter. Please try again.') };
+        }
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, message: 'Could not send. Check your connection and try again.' };
+      }
+    }
+
     function sendWaiterRequest(actionName, bypassConfirm = false) {
       if (!bypassConfirm) {
         promptUserConfirmation({
           title: 'Call Server to Table?',
-          message: `Send request for <b>${escapeHtml(actionName)}</b> to staff for Table #${appState.tableNumber || '04'}?`,
+          message: `Send request for <b>${escapeHtml(actionName)}</b> to staff for Table #${escapeHtml(appState.tableNumber || '04')}?`,
           icon: 'notifications_active',
           confirmText: 'Yes, Call Waiter',
           cancelText: 'Cancel',
@@ -5096,26 +5600,8 @@
       }
 
       closeWaiterModal();
-      showToast(`Notified staff: "${actionName}" for Table #${appState.tableNumber}`);
-
-      const bell = {
-        id: `B-${Date.now()}`,
-        table: `Table ${appState.tableNumber}`,
-        request: actionName,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      try {
-        const bells = JSON.parse(localStorage.getItem('gourmet_service_bells') || '[]');
-        bells.unshift(bell);
-        localStorage.setItem('gourmet_service_bells', JSON.stringify(bells));
-      } catch (e) {}
-
-      // Broadcast to Waiter Floor Screen in real time across all channels
-      PosSync.emit({
-        type: 'SERVICE_BELL',
-        table: `Table ${appState.tableNumber}`,
-        request: actionName
+      sendServiceBell(actionName).then(result => {
+        showToast(result.ok ? `Notified staff: "${actionName}" for Table #${appState.tableNumber}` : result.message);
       });
     }
 
@@ -5142,24 +5628,9 @@
         modal.classList.add('hidden');
         modal.classList.remove('flex');
       }
-      localStorage.removeItem('gourmet_active_order_' + appState.tableNumber);
-      appState.currentTicket = null;
       appState.cart = [];
       saveCartToStorage();
-      updateCartUI();
-      renderDishGrid();
-      
-      const reqTabLabel = document.getElementById('btn-request-bill-tab-label');
-      if (reqTabLabel) reqTabLabel.textContent = "Request Physical Bill";
-      const quickBtn = document.getElementById('btn-quick-bring-bill');
-      if (quickBtn) {
-        quickBtn.classList.remove('bg-emerald-50', 'border-emerald-400');
-        quickBtn.classList.add('bg-amber-50', 'border-amber-300');
-        const text = quickBtn.querySelector('span:last-child');
-        if (text) text.textContent = "Bring Bill";
-      }
-
-      switchView('menu');
+      startNewOrder();
       showToast("Table cleared! Ready for your next dining visit. Thank you!");
     }
 

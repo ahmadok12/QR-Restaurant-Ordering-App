@@ -1,5 +1,6 @@
 // test_fraud_controls.js
 const http = require('http');
+const { tableToken, setOrderSettings } = require('./test_utils');
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -99,8 +100,12 @@ async function runTests() {
 
     // 3. SERVER-AUTHORITATIVE PRICING TAMPERING TEST
     console.log('\n--- 3. Server-Authoritative Price Recalculation ---');
+    // Pricing checks need the order to reach the bill straight away, so skip the waiter step here.
+    await setOrderSettings({ requireWaiterConfirm: false });
     const fakeTamperedOrder = {
       type: 'NEW_ORDER',
+      senderDeviceId: 'fraud-device-1',
+      tableToken: await tableToken('08'),
       order: {
         ticketId: '#TKT-TAMPER-' + Date.now().toString().slice(-4),
         table: 'Table 08',
@@ -201,6 +206,8 @@ async function runTests() {
     // Place a new test order to void
     const voidTestOrder = {
       type: 'NEW_ORDER',
+      senderDeviceId: 'fraud-device-2',
+      tableToken: await tableToken('05'),
       order: {
         ticketId: '#TKT-VOID-' + Date.now().toString().slice(-4),
         table: 'Table 05',
@@ -212,7 +219,9 @@ async function runTests() {
         total: 998
       }
     };
-    await request('/api/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: voidTestOrder });
+    const voidOrderRes = await request('/api/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: voidTestOrder });
+    assert('Server assigns its own ticket id', !!voidOrderRes.data.order && voidOrderRes.data.order.ticketId !== voidTestOrder.order.ticketId);
+    voidTestOrder.order.ticketId = voidOrderRes.data.order.ticketId;
 
     // Try voiding with wrong PIN
     const badVoid = await request('/api/orders/void', {
@@ -275,6 +284,7 @@ async function runTests() {
     console.log('\n====================================================');
     console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
     console.log('====================================================');
+    await setOrderSettings({ requireWaiterConfirm: true });
     if (failed > 0) process.exit(1);
   } catch (err) {
     console.error('Test execution error:', err);

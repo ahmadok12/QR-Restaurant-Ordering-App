@@ -46,6 +46,18 @@
     .pulse-urgent {
       animation: pulseAlert 1.6s infinite ease-in-out;
     }
+    /* Touch targets for order-control buttons (at least 44px) */
+    .tap-44 {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    @keyframes toastIn {
+      from { transform: translateY(-12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-in {
+      animation: toastIn 0.2s ease-out;
+    }
   </style>
 </head>
 <body class="h-full flex justify-center items-center bg-slate-200/70 p-0 sm:p-4 text-slate-800">
@@ -140,14 +152,23 @@
           </div>
         </div>
         <div class="flex items-center gap-1.5">
-          <a href="hub.html" title="Apps Hub" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+          <button id="btn-alert-mute" type="button" onclick="toggleAlertMute()" title="Mute new-order sound" aria-label="Mute new-order sound" aria-pressed="false" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+            <span id="icon-alert-mute" class="material-symbols-outlined text-[18px]">volume_up</span>
+          </button>
+          <a href="hub.html" title="Apps Hub" aria-label="Apps Hub" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
             <span class="material-symbols-outlined text-[18px]">grid_view</span>
           </a>
-          <button onclick="handleWaiterLogout()" title="Logout" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700">
+          <button onclick="handleWaiterLogout()" title="Logout" aria-label="Logout" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700">
             <span class="material-symbols-outlined text-[18px]">logout</span>
           </button>
         </div>
       </header>
+
+      <!-- Live connection banner (shown while the event stream reconnects) -->
+      <div id="conn-banner" role="status" aria-live="polite" class="hidden bg-amber-500 text-white px-4 py-1.5 flex items-center gap-1.5 font-bold text-[11px] flex-shrink-0">
+        <span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+        <span>Reconnecting&hellip; live updates paused</span>
+      </div>
 
       <!-- Food Ready Alert Banner (If kitchen marked any of this waiter's dishes ready) -->
       <div id="ready-alert-banner" class="hidden bg-emerald-600 text-white px-4 py-2 flex items-center justify-between font-bold text-[11px] pulse-urgent flex-shrink-0 shadow-md">
@@ -162,6 +183,23 @@
 
       <!-- Main Scrollable Content -->
       <main class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 pb-20">
+
+        <!-- NEEDS CONFIRMATION: guest rounds waiting for a waiter (shown on every tab) -->
+        <section id="sec-pending" class="hidden space-y-3" aria-labelledby="pending-heading">
+          <div class="flex items-center justify-between px-1">
+            <div>
+              <h2 id="pending-heading" class="text-[13px] font-black text-rose-700 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">pending_actions</span>
+                Needs Confirmation
+              </h2>
+              <p class="text-[10px] text-slate-500">Check each line with the guest, then confirm or reject</p>
+            </div>
+            <span id="badge-pending-count" class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">0</span>
+          </div>
+          <div id="pending-rounds-list" class="space-y-3">
+            <!-- Rendered via JS -->
+          </div>
+        </section>
 
         <!-- TAB 1: MY ASSIGNED ORDERS (Auto-assigned by hierarchy) -->
         <section id="sec-orders" class="space-y-3">
@@ -214,6 +252,23 @@
         </section>
 
       </main>
+
+      <!-- Toasts (new orders, service bells, errors) -->
+      <div id="toast-stack" class="absolute top-16 inset-x-0 px-4 z-40 flex flex-col items-center gap-2 pointer-events-none" aria-live="assertive"></div>
+
+      <!-- Reason / PIN modal -->
+      <div id="w-modal" class="hidden absolute inset-0 z-50 bg-slate-900/50 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-labelledby="w-modal-title">
+        <form id="w-modal-form" class="w-full max-w-sm bg-white rounded-2xl p-4 space-y-3 shadow-2xl">
+          <h3 id="w-modal-title" class="text-[14px] font-black text-slate-900"></h3>
+          <p id="w-modal-sub" class="text-[11px] text-slate-500"></p>
+          <div id="w-modal-body" class="space-y-2"></div>
+          <div id="w-modal-err" class="hidden p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold"></div>
+          <div class="flex gap-2 pt-1">
+            <button type="button" id="w-modal-cancel" class="tap-44 flex-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[12px]">Cancel</button>
+            <button type="submit" id="w-modal-ok" class="tap-44 flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-[12px]">OK</button>
+          </div>
+        </form>
+      </div>
 
       <!-- Bottom Mobile Navigation -->
       <nav class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around items-center z-20 shadow-lg">
@@ -337,14 +392,24 @@
       await refreshWaiterData();
     }
 
+    let refreshSeq = 0;
+    let refreshApplied = 0;
+
     async function refreshWaiterData() {
+      const seq = ++refreshSeq;
       try {
         const res = await fetch(`${getApiBase()}/api/db`);
         if (res.status === 401) {
           handleWaiterLogout();
           return;
         }
-        dbCache = await res.json();
+        const data = await res.json();
+        // Several events can trigger refreshes at once; never let an older reply overwrite a newer one.
+        if (seq < refreshApplied) return;
+        refreshApplied = seq;
+        dbCache = data;
+        detectNewPendingRounds();
+        renderPendingRounds();
         renderMyOrders();
         renderServiceBells();
         renderFloorGrid();
@@ -367,19 +432,523 @@
       });
     }
 
+    // ================= ORDER CONTROLS =================
+    const CLOSED_STATUSES = ['Settled', 'Voided', 'Rejected'];
+    // Waiters may only move a ticket one step forward. Settling is the cashier's job.
+    const NEXT_STATUS = { 'New': 'In Kitchen', 'In Kitchen': 'Plated & Ready', 'Plated & Ready': 'Served' };
+    const NEXT_STATUS_LABEL = { 'In Kitchen': 'Send to Kitchen', 'Plated & Ready': 'Mark Plated & Ready', 'Served': 'Mark as Served' };
+    const REMOVE_LINE_REASONS = [
+      { value: 'changed_mind', label: 'Guest changed mind' },
+      { value: 'wrong_item', label: 'Wrong item entered' },
+      { value: 'out_of_stock', label: 'Out of stock' },
+      { value: 'other', label: 'Other' }
+    ];
+    const REJECT_ROUND_REASONS = [
+      { value: 'guest_cancelled', label: 'Guest cancelled' },
+      { value: 'duplicate', label: 'Duplicate order' },
+      { value: 'not_at_table', label: 'Nobody at the table' },
+      { value: 'out_of_stock', label: 'Item not available' },
+      { value: 'other', label: 'Other' }
+    ];
+
+    // Qty edits the waiter made on pending lines, keyed by lineId (kept across refreshes).
+    let pendingEdits = {};
+    let seenRoundIds = null;
+
+    // The demo restaurant historically used both 'rest-dera-01' and 'REST-001'.
+    function canonicalRestId(id) {
+      return id === 'rest-dera-01' ? 'REST-001' : id;
+    }
+
+    function isMyRestaurant(ticket) {
+      if (!currentWaiter || !currentWaiter.restaurantId) return true;
+      return canonicalRestId(ticket.restaurantId || 'REST-001') === canonicalRestId(currentWaiter.restaurantId);
+    }
+
+    function isUnassigned(ticket) {
+      return !ticket.assignedWaiterId || ticket.assignedWaiterId === 'unassigned';
+    }
+
+    function isAssignedToMe(ticket) {
+      return Boolean(currentWaiter) && ticket.assignedWaiterId === currentWaiter.id;
+    }
+
+    function formatMoney(n) {
+      return `Rs. ${(Number(n) || 0).toLocaleString()}`;
+    }
+
+    function timeAgo(ms) {
+      const ts = typeof ms === 'number' ? ms : Date.parse(ms);
+      if (!ts || Number.isNaN(ts)) return '';
+      const secs = Math.max(0, Math.round((Date.now() - ts) / 1000));
+      if (secs < 45) return 'just now';
+      const mins = Math.round(secs / 60);
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.floor(mins / 60);
+      return `${hrs} h ${mins % 60} min ago`;
+    }
+
+    function lineDetails(line) {
+      const bits = [];
+      if (line.size) bits.push(escapeHtml(line.size));
+      if (line.spice) bits.push(`<span class="text-orange-700">${escapeHtml(line.spice)}</span>`);
+      let html = bits.length ? `<span class="text-slate-500">(${bits.join(' &bull; ')})</span>` : '';
+      if (line.notes) html += `<span class="block text-[10px] text-amber-800 italic">&ldquo;${escapeHtml(line.notes)}&rdquo;</span>`;
+      return html;
+    }
+
+    // Every open round awaiting a waiter in this restaurant: mine first, then oldest first.
+    function getPendingRoundEntries() {
+      const entries = [];
+      ((dbCache && dbCache.tickets) || []).forEach(t => {
+        if (CLOSED_STATUSES.includes(t.status) || !isMyRestaurant(t)) return;
+        (t.pendingRounds || []).forEach(r => entries.push({ ticket: t, round: r }));
+      });
+      entries.sort((a, b) =>
+        (isAssignedToMe(b.ticket) ? 1 : 0) - (isAssignedToMe(a.ticket) ? 1 : 0) ||
+        (Number(a.round.createdAt) || 0) - (Number(b.round.createdAt) || 0));
+      return entries;
+    }
+
+    function detectNewPendingRounds() {
+      const entries = getPendingRoundEntries();
+      const liveLineIds = new Set();
+      entries.forEach(e => (e.round.items || []).forEach(l => liveLineIds.add(l.lineId)));
+      Object.keys(pendingEdits).forEach(id => { if (!liveLineIds.has(id)) delete pendingEdits[id]; });
+
+      if (seenRoundIds === null) {
+        // First load: remember what is already waiting without sounding an alert.
+        seenRoundIds = new Set(entries.map(e => e.round.roundId));
+        return;
+      }
+      const fresh = entries.filter(e => !seenRoundIds.has(e.round.roundId));
+      fresh.forEach(e => seenRoundIds.add(e.round.roundId));
+      if (fresh.length) {
+        const tables = Array.from(new Set(fresh.map(e => e.ticket.table))).join(', ');
+        alertWaiter(`New order to confirm: ${tables}`, 'order');
+      }
+    }
+
+    function renderPendingRounds() {
+      const section = document.getElementById('sec-pending');
+      const list = document.getElementById('pending-rounds-list');
+      if (!section || !list) return;
+      const entries = getPendingRoundEntries();
+      document.getElementById('badge-pending-count').textContent = String(entries.length);
+      section.classList.toggle('hidden', entries.length === 0);
+      if (entries.length === 0) {
+        list.innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = entries.map(({ ticket: t, round: r }) => {
+        const mine = isAssignedToMe(t);
+        let roundTotal = 0;
+        const lines = (r.items || []).map(l => {
+          const orig = Number(l.qty) || 0;
+          const qty = pendingEdits[l.lineId] !== undefined ? pendingEdits[l.lineId] : orig;
+          roundTotal += (Number(l.price) || 0) * qty;
+          const changed = qty !== orig;
+          return `
+            <div class="flex items-center justify-between gap-2 py-1.5 ${qty === 0 ? 'opacity-50' : ''}">
+              <div class="min-w-0 text-[12px] text-slate-800">
+                <span class="${qty === 0 ? 'line-through' : ''}"><strong>${qty} &times;</strong> ${escapeHtml(l.title)}</span>
+                ${changed ? `<span class="ml-1 text-[10px] font-bold text-rose-700">(was ${orig})</span>` : ''}
+                ${lineDetails(l)}
+              </div>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button type="button" class="tap-44 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center disabled:opacity-30"
+                  data-line="${escapeHtml(l.lineId)}" data-orig="${orig}" onclick="adjustPendingQty(this, -1)" ${qty <= 0 ? 'disabled' : ''}
+                  aria-label="Lower quantity of ${escapeHtml(l.title)}">
+                  <span class="material-symbols-outlined text-[18px]">remove</span>
+                </button>
+                <span class="w-6 text-center font-mono font-black text-[13px]" aria-live="polite">${qty}</span>
+                <button type="button" class="tap-44 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center disabled:opacity-30"
+                  data-line="${escapeHtml(l.lineId)}" data-orig="${orig}" onclick="adjustPendingQty(this, 1)" ${qty >= orig ? 'disabled' : ''}
+                  aria-label="Restore quantity of ${escapeHtml(l.title)}">
+                  <span class="material-symbols-outlined text-[18px]">add</span>
+                </button>
+              </div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="pending-round-card p-4 rounded-2xl border-2 ${mine ? 'border-rose-300 bg-rose-50/60' : 'border-amber-300 bg-amber-50/60'} space-y-2 shadow-2xs" data-round="${escapeHtml(r.roundId)}">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <strong class="text-[15px] font-black text-slate-900">${escapeHtml(t.table)}</strong>
+                <span class="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-[10px] font-black text-slate-700">Round ${escapeHtml(r.round)}</span>
+              </div>
+              <span class="text-[10px] font-bold ${mine ? 'text-rose-700' : 'text-amber-800'} text-right">${mine ? 'Your table' : isUnassigned(t) ? 'Unassigned' : escapeHtml('For ' + (t.assignedWaiterName || 'another waiter'))}</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-600 bg-white/80 border border-slate-100 p-2 rounded-xl">
+              <span>Guest: <strong class="text-slate-800">${escapeHtml(t.guest || 'Guest')}</strong></span>
+              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span>${escapeHtml(timeAgo(r.createdAt))}</span>
+            </div>
+            <div class="divide-y divide-slate-200/70">${lines}</div>
+            ${t.notes ? `<div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900"><strong>Note:</strong> ${escapeHtml(t.notes)}</div>` : ''}
+            <div class="flex items-center justify-between text-[11px] text-slate-600 pt-1">
+              <span>Round total</span>
+              <strong class="text-slate-900 text-[13px]">${formatMoney(roundTotal)}</strong>
+            </div>
+            <div class="pending-round-err hidden p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold" role="alert"></div>
+            <div class="flex gap-2 pt-1">
+              <button type="button" class="tap-44 flex-1 rounded-xl bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 font-black text-[12px] flex items-center justify-center gap-1 disabled:opacity-50"
+                data-ticket="${escapeHtml(t.ticketId)}" data-round="${escapeHtml(r.roundId)}" onclick="rejectPendingRound(this)">
+                <span class="material-symbols-outlined text-[16px]">block</span><span>Reject</span>
+              </button>
+              <button type="button" class="tap-44 flex-[2] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[12px] flex items-center justify-center gap-1 shadow-xs disabled:opacity-50"
+                data-ticket="${escapeHtml(t.ticketId)}" data-round="${escapeHtml(r.roundId)}" onclick="confirmPendingRound(this)">
+                <span class="material-symbols-outlined text-[16px]">check_circle</span><span>Confirm &amp; Send</span>
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function adjustPendingQty(btn, delta) {
+      const lineId = btn.dataset.line;
+      const orig = Number(btn.dataset.orig) || 0;
+      const current = pendingEdits[lineId] !== undefined ? pendingEdits[lineId] : orig;
+      // Quantities can only go down (to 0 = drop the line), never above what the guest ordered.
+      const next = Math.max(0, Math.min(orig, current + delta));
+      if (next === orig) delete pendingEdits[lineId];
+      else pendingEdits[lineId] = next;
+      renderPendingRounds();
+    }
+
+    function findPendingRound(ticketId, roundId) {
+      const t = ((dbCache && dbCache.tickets) || []).find(x => x.ticketId === ticketId);
+      const r = t ? (t.pendingRounds || []).find(x => x.roundId === roundId) : null;
+      return { ticket: t, round: r };
+    }
+
+    function showRoundError(btn, message) {
+      const card = btn.closest('.pending-round-card');
+      const box = card ? card.querySelector('.pending-round-err') : null;
+      if (box) {
+        box.textContent = message;
+        box.classList.remove('hidden');
+      } else {
+        showToast(message, 'error');
+      }
+    }
+
+    function setCardBusy(btn, busy) {
+      const card = btn.closest('.pending-round-card') || btn.parentElement;
+      if (card) card.querySelectorAll('button').forEach(b => { b.disabled = busy; });
+    }
+
+    async function postWaiterApi(path, body) {
+      try {
+        const res = await fetch(`${getApiBase()}${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (res.status === 401) {
+          handleWaiterLogout();
+          return { ok: false, status: 401, data: { error: 'Your session expired. Please sign in again.' } };
+        }
+        let data = {};
+        try { data = await res.json(); } catch (e) {}
+        return { ok: res.ok && data.ok !== false, status: res.status, data: data || {} };
+      } catch (e) {
+        return { ok: false, status: 0, data: { error: 'Server connection error. Check Wi-Fi and try again.' } };
+      }
+    }
+
+    async function confirmPendingRound(btn) {
+      const ticketId = btn.dataset.ticket;
+      const roundId = btn.dataset.round;
+      const { round } = findPendingRound(ticketId, roundId);
+      if (!round) {
+        await refreshWaiterData();
+        return;
+      }
+      const items = round.items || [];
+      const edits = items
+        .filter(l => pendingEdits[l.lineId] !== undefined && pendingEdits[l.lineId] !== l.qty)
+        .map(l => ({ lineId: l.lineId, qty: pendingEdits[l.lineId] }));
+      const remaining = items.reduce((s, l) => s + (pendingEdits[l.lineId] !== undefined ? pendingEdits[l.lineId] : l.qty), 0);
+      if (remaining === 0) {
+        showRoundError(btn, 'Every line is at 0. Use Reject (with a reason) to cancel this round instead.');
+        return;
+      }
+
+      setCardBusy(btn, true);
+      const body = { ticketId, roundId };
+      if (edits.length) body.lines = edits;
+      const r = await postWaiterApi('/api/orders/confirm', body);
+      if (!r.ok) {
+        setCardBusy(btn, false);
+        showRoundError(btn, r.data.error || `Could not confirm (error ${r.status}).`);
+        return;
+      }
+      items.forEach(l => { delete pendingEdits[l.lineId]; });
+      showToast(`Confirmed and sent to the kitchen: ${ticketId}`, 'success');
+      await refreshWaiterData();
+    }
+
+    async function rejectPendingRound(btn) {
+      const ticketId = btn.dataset.ticket;
+      const roundId = btn.dataset.round;
+      const { ticket, round } = findPendingRound(ticketId, roundId);
+      const picked = await askReason({
+        title: 'Reject this order round?',
+        sub: ticket && round ? `${ticket.table} - Round ${round.round}. The guest will see your reason.` : 'The guest will see your reason.',
+        choices: REJECT_ROUND_REASONS,
+        okLabel: 'Reject Round'
+      });
+      if (!picked) return;
+      setCardBusy(btn, true);
+      const r = await postWaiterApi('/api/orders/reject', { ticketId, roundId, reason: picked.reason });
+      if (!r.ok) {
+        setCardBusy(btn, false);
+        showRoundError(btn, r.data.error || `Could not reject (error ${r.status}).`);
+        return;
+      }
+      (round && round.items || []).forEach(l => { delete pendingEdits[l.lineId]; });
+      showToast(`Round rejected: ${ticket ? ticket.table : ticketId}`, 'info');
+      await refreshWaiterData();
+    }
+
+    async function removeConfirmedLine(btn) {
+      const ticketId = btn.dataset.ticket;
+      const lineId = btn.dataset.line;
+      const t = ((dbCache && dbCache.tickets) || []).find(x => x.ticketId === ticketId);
+      const line = t ? (t.items || []).find(l => l.lineId === lineId) : null;
+      const picked = await askReason({
+        title: 'Remove item from bill?',
+        sub: line ? `${line.qty} × ${line.title} on ${t.table}` : '',
+        choices: REMOVE_LINE_REASONS,
+        okLabel: 'Remove Item'
+      });
+      if (!picked) return;
+
+      const body = { ticketId, lineId, reason: picked.reason, category: picked.category };
+      let r = await postWaiterApi('/api/orders/remove-line', body);
+      let pinError = '';
+      // After the kitchen starts, a manager has to approve the removal with their PIN.
+      while (!r.ok && r.data.needsManagerPin) {
+        const pin = await askManagerPin(pinError);
+        if (!pin) return;
+        r = await postWaiterApi('/api/orders/remove-line', Object.assign({}, body, { managerPin: pin }));
+        pinError = 'That PIN was not accepted. Please try again.';
+      }
+      if (!r.ok) {
+        // 429 = too many wrong PINs; the server's message says how long removals are locked.
+        showToast(r.data.error || `Could not remove the item (error ${r.status}).`, 'error');
+        await refreshWaiterData();
+        return;
+      }
+      showToast(`Removed${line ? ': ' + line.title : ''}`, 'success');
+      await refreshWaiterData();
+    }
+
+    // ---------- Reason / PIN modal ----------
+    function openWaiterModal(opts) {
+      return new Promise(resolve => {
+        const modal = document.getElementById('w-modal');
+        const form = document.getElementById('w-modal-form');
+        const errBox = document.getElementById('w-modal-err');
+        const cancelBtn = document.getElementById('w-modal-cancel');
+        document.getElementById('w-modal-title').textContent = opts.title || '';
+        document.getElementById('w-modal-sub').textContent = opts.sub || '';
+        document.getElementById('w-modal-body').innerHTML = opts.bodyHtml || '';
+        document.getElementById('w-modal-ok').textContent = opts.okLabel || 'OK';
+        errBox.textContent = opts.error || '';
+        errBox.classList.toggle('hidden', !opts.error);
+
+        const close = (value) => {
+          modal.classList.add('hidden');
+          form.onsubmit = null;
+          cancelBtn.onclick = null;
+          modal.onkeydown = null;
+          resolve(value);
+        };
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          const out = opts.read(form);
+          if (out.error) {
+            errBox.textContent = out.error;
+            errBox.classList.remove('hidden');
+            return;
+          }
+          close(out.value);
+        };
+        cancelBtn.onclick = () => close(null);
+        modal.onkeydown = (e) => { if (e.key === 'Escape') close(null); };
+        modal.classList.remove('hidden');
+        const first = form.querySelector('input:not([type=radio]), input[type=radio], textarea');
+        if (first) setTimeout(() => first.focus(), 30);
+      });
+    }
+
+    function askReason({ title, sub, choices, okLabel }) {
+      const radios = choices.map(c => `
+        <label class="tap-44 flex items-center gap-2 px-3 rounded-xl border border-slate-200 bg-slate-50 text-[12px] font-semibold text-slate-800 cursor-pointer has-[:checked]:border-rose-400 has-[:checked]:bg-rose-50">
+          <input type="radio" name="reason-choice" value="${escapeHtml(c.value)}" data-label="${escapeHtml(c.label)}" class="w-4 h-4 accent-rose-600"/>
+          <span>${escapeHtml(c.label)}</span>
+        </label>`).join('');
+      return openWaiterModal({
+        title, sub, okLabel,
+        bodyHtml: `
+          <div class="space-y-1.5" role="radiogroup" aria-label="Reason">${radios}</div>
+          <textarea name="reason-text" rows="2" maxlength="180" placeholder="Details (required for Other)"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-[12px] focus:outline-none focus:border-brand focus:bg-white select-text"></textarea>`,
+        read: (form) => {
+          const checked = form.querySelector('input[name=reason-choice]:checked');
+          const text = (form.querySelector('textarea[name=reason-text]').value || '').trim();
+          if (!checked) return { error: 'Please pick a reason.' };
+          if (checked.value === 'other' && !text) return { error: 'Please type the reason.' };
+          const label = checked.dataset.label;
+          const reason = checked.value === 'other' ? text : (text ? `${label} - ${text}` : label);
+          return { value: { reason, category: checked.value } };
+        }
+      });
+    }
+
+    function askManagerPin(error) {
+      return openWaiterModal({
+        title: 'Manager PIN needed',
+        sub: 'The kitchen has already started this order. Ask a manager to enter their PIN.',
+        okLabel: 'Approve',
+        error: error || '',
+        bodyHtml: `<input name="manager-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="Manager PIN"
+          class="tap-44 w-full px-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] font-mono tracking-[0.4em] text-center focus:outline-none focus:border-brand focus:bg-white select-text"/>`,
+        read: (form) => {
+          const pin = (form.querySelector('input[name=manager-pin]').value || '').trim();
+          if (!pin) return { error: 'Enter the manager PIN.' };
+          return { value: pin };
+        }
+      });
+    }
+
+    // ---------- Alerts: beep, vibration, toast ----------
+    const ALERT_MUTE_KEY = 'waiter_alert_muted';
+    let alertMuted = false;
+    try { alertMuted = localStorage.getItem(ALERT_MUTE_KEY) === '1'; } catch (e) {}
+    let audioCtx = null;
+    const lastAlertAt = {};
+
+    function getAudioCtx() {
+      try {
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          audioCtx = new Ctx();
+        }
+        return audioCtx;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Browsers only allow sound after a tap, so unlock audio on the first touch.
+    document.addEventListener('pointerdown', () => {
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    }, { passive: true });
+
+    function playBeep() {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      try {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        [0, 0.22].forEach((offset, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const start = ctx.currentTime + offset;
+          osc.type = 'sine';
+          osc.frequency.value = i === 0 ? 880 : 1175;
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(0.3, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.2);
+        });
+      } catch (e) {}
+    }
+
+    function alertWaiter(message, kind) {
+      const now = Date.now();
+      // One alert per burst (an SSE event and the refresh after it describe the same order).
+      if (lastAlertAt[kind] && now - lastAlertAt[kind] < 1500) return;
+      lastAlertAt[kind] = now;
+      showToast(message, kind);
+      if (alertMuted) return;
+      playBeep();
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+    }
+
+    function showToast(message, kind) {
+      const stack = document.getElementById('toast-stack');
+      if (!stack) return;
+      const styles = {
+        order: ['bg-rose-600 text-white', 'notifications_active'],
+        bell: ['bg-amber-500 text-white', 'room_service'],
+        error: ['bg-rose-50 text-rose-800 border border-rose-300', 'error'],
+        success: ['bg-emerald-600 text-white', 'check_circle'],
+        info: ['bg-slate-800 text-white', 'info']
+      };
+      const [cls, icon] = styles[kind] || styles.info;
+      const toast = document.createElement('div');
+      toast.className = `toast-in pointer-events-auto w-full max-w-sm px-3 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-[12px] font-bold ${cls}`;
+      toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+      const iconEl = document.createElement('span');
+      iconEl.className = 'material-symbols-outlined text-[18px]';
+      iconEl.textContent = icon;
+      const textEl = document.createElement('span');
+      textEl.className = 'flex-1';
+      textEl.textContent = message;
+      toast.appendChild(iconEl);
+      toast.appendChild(textEl);
+      toast.onclick = () => toast.remove();
+      stack.appendChild(toast);
+      while (stack.children.length > 3) stack.removeChild(stack.firstChild);
+      setTimeout(() => toast.remove(), kind === 'error' ? 8000 : 5000);
+    }
+
+    function renderMuteToggle() {
+      const btn = document.getElementById('btn-alert-mute');
+      if (!btn) return;
+      const label = alertMuted ? 'Unmute new-order sound' : 'Mute new-order sound';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      btn.setAttribute('aria-pressed', alertMuted ? 'true' : 'false');
+      btn.classList.toggle('text-rose-600', alertMuted);
+      document.getElementById('icon-alert-mute').textContent = alertMuted ? 'volume_off' : 'volume_up';
+    }
+
+    function toggleAlertMute() {
+      alertMuted = !alertMuted;
+      try { localStorage.setItem(ALERT_MUTE_KEY, alertMuted ? '1' : '0'); } catch (e) {}
+      renderMuteToggle();
+      if (!alertMuted) playBeep();
+    }
+    renderMuteToggle();
+
+    // Keep "x min ago" on pending rounds fresh.
+    setInterval(() => {
+      if (currentWaiter && dbCache) renderPendingRounds();
+    }, 30000);
+
     function renderMyOrders() {
       const container = document.getElementById('my-orders-list');
       container.innerHTML = '';
 
-      const tickets = (dbCache.tickets || []).filter(t => 
-        t.status !== 'Settled' && 
-        (t.assignedWaiterId === currentWaiter.id || (!t.assignedWaiterId && currentWaiter.hierarchyLevel === 1))
+      const tickets = (dbCache.tickets || []).filter(t =>
+        !CLOSED_STATUSES.includes(t.status) &&
+        isMyRestaurant(t) &&
+        (t.assignedWaiterId === currentWaiter.id || (isUnassigned(t) && currentWaiter.hierarchyLevel === 1))
       );
 
       document.getElementById('badge-my-orders-count').textContent = `${tickets.length} Active`;
       const maxCap = currentWaiter.maxConcurrentOrders || 4;
-      document.getElementById('my-load-count').textContent = tickets.length;
-      document.getElementById('header-load-info').innerHTML = `Load: <span class="${tickets.length >= maxCap ? 'text-rose-600' : 'text-emerald-700'} font-bold">${tickets.length}</span> / ${maxCap} orders`;
+      // (Rebuilding header-load-info also recreates #my-load-count, which the old code wrote to and then lost.)
+      document.getElementById('header-load-info').innerHTML = `Load: <span id="my-load-count" class="${tickets.length >= maxCap ? 'text-rose-600' : 'text-emerald-700'} font-bold">${tickets.length}</span> / ${maxCap} orders`;
 
       // Check if any order is "Plated & Ready" -> display alert
       const readyTicket = tickets.find(t => t.status === 'Plated & Ready');
@@ -405,13 +974,58 @@
       tickets.forEach(t => {
         const isReady = t.status === 'Plated & Ready';
         const isServed = t.status === 'Served';
+        const isPending = t.status === 'Pending';
+        const pendingCount = (t.pendingRounds || []).length;
+        const next = NEXT_STATUS[t.status];
 
         const card = document.createElement('div');
-        card.className = `p-4 rounded-2xl border transition-all space-y-3 shadow-2xs ${
-          isReady 
-            ? 'bg-emerald-50/80 border-emerald-300' 
-            : 'bg-white border-slate-200'
+        card.className = `my-order-card p-4 rounded-2xl border transition-all space-y-3 shadow-2xs ${
+          isReady
+            ? 'bg-emerald-50/80 border-emerald-300'
+            : isPending ? 'bg-slate-50 border-dashed border-slate-300' : 'bg-white border-slate-200'
         }`;
+        card.dataset.ticket = t.ticketId;
+
+        const lines = (t.items || []).map(i => i.voided ? `
+              <div class="flex justify-between items-start gap-2 py-0.5 text-slate-400">
+                <span class="min-w-0"><span class="line-through"><strong>${escapeHtml(i.qty)}x</strong> ${escapeHtml(i.title)}</span>
+                  <span class="block text-[10px] text-rose-600 font-semibold">Removed: ${escapeHtml(i.voidReason || 'no reason')}${i.voidedBy ? ' (' + escapeHtml(i.voidedBy) + ')' : ''}</span>
+                </span>
+                <span class="text-[10px] line-through">${formatMoney((Number(i.originalPrice || i.price) || 0) * (Number(i.qty) || 0))}</span>
+              </div>
+            ` : `
+              <div class="flex justify-between items-center gap-2 py-0.5">
+                <span class="min-w-0"><strong>${escapeHtml(i.qty)}x</strong> ${escapeHtml(i.title)} <span class="text-slate-500">(${escapeHtml(i.size || 'Standard')})</span>
+                  <span class="text-orange-700 text-[10px] font-semibold">${escapeHtml(i.spice || '')}</span>
+                  ${i.notes ? `<span class="block text-[10px] text-amber-800 italic">&ldquo;${escapeHtml(i.notes)}&rdquo;</span>` : ''}
+                </span>
+                <button type="button" class="tap-44 px-2 rounded-xl text-[10px] font-bold text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 flex-shrink-0"
+                  data-ticket="${escapeHtml(t.ticketId)}" data-line="${escapeHtml(i.lineId)}" onclick="removeConfirmedLine(this)"
+                  aria-label="Remove ${escapeHtml(i.title)} from ${escapeHtml(t.table)}">Remove</button>
+              </div>
+            `).join('');
+
+        let footerAction;
+        if (isPending) {
+          footerAction = `
+              <span class="text-rose-700 font-bold text-[11px] flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">pending_actions</span> Confirm above first
+              </span>`;
+        } else if (next) {
+          footerAction = `
+              <button type="button" data-ticket="${escapeHtml(t.ticketId)}" data-status="${escapeHtml(next)}" onclick="advanceTicketStatus(this)"
+                class="tap-44 px-4 rounded-xl ${next === 'Served' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-brand hover:bg-brand-dark'} text-white font-black text-[12px] flex items-center gap-1 shadow-xs active:scale-95 transition-all disabled:opacity-50">
+                <span class="material-symbols-outlined text-[16px]">${next === 'Served' ? 'check' : next === 'In Kitchen' ? 'skillet' : 'restaurant'}</span>
+                <span>${NEXT_STATUS_LABEL[next]}</span>
+              </button>`;
+        } else if (isServed) {
+          footerAction = `
+              <span class="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">done_all</span> Served &bull; cashier settles
+              </span>`;
+        } else {
+          footerAction = `<span class="text-slate-500 font-bold text-[11px]">${escapeHtml(t.status)}</span>`;
+        }
 
         card.innerHTML = `
           <div class="flex items-center justify-between">
@@ -420,7 +1034,9 @@
               <span class="text-[11px] font-mono font-bold text-slate-500">${escapeHtml(t.ticketId)}</span>
             </div>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-              isReady ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse' : 'bg-amber-100 text-amber-800 border border-amber-300'
+              isReady ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse'
+                : isPending ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                : 'bg-amber-100 text-amber-800 border border-amber-300'
             }">${escapeHtml(t.status)}</span>
           </div>
 
@@ -430,51 +1046,50 @@
           </div>
 
           <div class="space-y-1 text-[11px] text-slate-700">
-            ${(t.items || []).map(i => `
-              <div class="flex justify-between items-center py-0.5">
-                <span><strong>${escapeHtml(i.qty)}x</strong> ${escapeHtml(i.title)} <span class="text-slate-500">(${escapeHtml(i.size || 'Standard')})</span></span>
-                <span class="text-orange-700 text-[10px] font-semibold">${escapeHtml(i.spice || '')}</span>
-              </div>
-            `).join('')}
+            ${lines || '<p class="text-slate-400 italic">No confirmed items yet.</p>'}
           </div>
+
+          ${pendingCount && !isPending ? `<div class="p-2 bg-rose-50 border border-rose-200 rounded-xl text-[11px] text-rose-800 font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">pending_actions</span>${pendingCount} new round${pendingCount > 1 ? 's' : ''} waiting for confirmation above</div>` : ''}
 
           ${t.notes ? `<div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900"><strong>Note:</strong> ${escapeHtml(t.notes)}</div>` : ''}
 
-          <div class="pt-1 flex items-center justify-between border-t border-slate-100">
-            <span class="text-[11px] text-slate-500 font-semibold">${escapeHtml(t.payment || 'Pay at Table')}</span>
-            ${isReady ? `
-              <button onclick="updateTicketStatus('${t.ticketId}', 'Served')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[12px] flex items-center gap-1 shadow-xs active:scale-95 transition-all">
-                <span class="material-symbols-outlined text-[16px]">check</span>
-                <span>Mark as Served</span>
-              </button>
-            ` : isServed ? `
-              <span class="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
-                <span class="material-symbols-outlined text-[16px]">done_all</span> Served at Table
-              </span>
-            ` : `
-              <span class="text-amber-700 font-bold text-[11px] flex items-center gap-1">
-                <span class="material-symbols-outlined text-[16px]">skillet</span> Chef Preparing...
-              </span>
-            `}
+          <div class="pt-1 flex items-center justify-between gap-2 border-t border-slate-100">
+            <span class="text-[11px] text-slate-500 font-semibold">${escapeHtml(t.payment || 'Pay at Table')} &bull; <strong class="text-slate-800">${formatMoney(t.total)}</strong></span>
+            ${footerAction}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
+    async function advanceTicketStatus(btn) {
+      btn.disabled = true;
+      const ok = await updateTicketStatus(btn.dataset.ticket, btn.dataset.status);
+      if (!ok) btn.disabled = false;
+    }
+
     async function updateTicketStatus(ticketId, status) {
-      try {
-        await fetch(`${getApiBase()}/api/broadcast`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'STATUS_UPDATE',
-            ticketId: ticketId,
-            status: status
-          })
-        });
-        await refreshWaiterData();
-      } catch (e) {}
+      const r = await postWaiterApi('/api/broadcast', {
+        type: 'STATUS_UPDATE',
+        ticketId: ticketId,
+        status: status
+      });
+      if (!r.ok) showToast(r.data.error || `Could not update the order (error ${r.status}).`, 'error');
+      await refreshWaiterData();
+      return r.ok;
+    }
+
+    async function toggleTableOpen(btn) {
+      const open = btn.dataset.open === '1';
+      btn.disabled = true;
+      const r = await postWaiterApi('/api/tables/open', { table: btn.dataset.table, open });
+      if (!r.ok) {
+        btn.disabled = false;
+        showToast(r.data.error || `Could not update the table (error ${r.status}).`, 'error');
+        return;
+      }
+      showToast(open ? `${r.data.table ? r.data.table.name : 'Table'} is open for QR ordering` : `${r.data.table ? r.data.table.name : 'Table'} closed for QR ordering`, 'success');
+      await refreshWaiterData();
     }
 
     function dismissReadyAlert() {
@@ -581,7 +1196,7 @@
         const isOcc = t.status !== 'vacant' && t.order;
         const hasBell = serviceBells.some(b => b.table === t.name || b.table === `Table ${t.id}`);
         const card = document.createElement('div');
-        card.className = `p-3 rounded-2xl border flex flex-col justify-between h-28 shadow-2xs transition-all ${
+        card.className = `p-3 rounded-2xl border flex flex-col justify-between min-h-[7rem] shadow-2xs transition-all ${
           hasBell 
             ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-200 animate-pulse' 
             : isOcc 
@@ -598,10 +1213,11 @@
           <div class="flex items-center justify-between">
             <div>
               <div class="flex items-center gap-1">
-                <span class="text-[13px] font-black ${isOcc ? 'text-sky-950' : 'text-slate-800'}">${t.name}</span>
-                <span class="material-symbols-outlined text-[13px] text-slate-400" title="${t.shape || 'Square'}">${shapeIcon}</span>
+                <span class="text-[13px] font-black ${isOcc ? 'text-sky-950' : 'text-slate-800'}">${escapeHtml(t.name)}</span>
+                <span class="material-symbols-outlined text-[13px] text-slate-400" title="${escapeHtml(t.shape || 'Square')}">${shapeIcon}</span>
+                ${t.openForOrders ? `<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase" title="Open for QR ordering">Open</span>` : ''}
               </div>
-              <span class="text-[10px] text-slate-400 block">${t.zone} &bull; ${t.capacity || 4}p</span>
+              <span class="text-[10px] text-slate-400 block">${escapeHtml(t.zone)} &bull; ${escapeHtml(t.capacity || 4)}p</span>
             </div>
             <span class="w-2.5 h-2.5 rounded-full ${hasBell ? 'bg-rose-500 animate-ping' : isOcc ? 'bg-sky-500 animate-pulse' : 'bg-emerald-500'}"></span>
           </div>
@@ -615,27 +1231,73 @@
               <span class="text-emerald-700 font-bold">Vacant</span>
               <span class="text-slate-400 block text-[9px]">Tap to seat / take order</span>
             `}
+            ${!isOcc ? `
+              <button type="button" data-table="${escapeHtml(t.id)}" data-open="${t.openForOrders ? '0' : '1'}" onclick="toggleTableOpen(this)"
+                class="tap-44 w-full mt-1.5 px-2 rounded-xl text-[10px] font-bold border transition-colors disabled:opacity-50 ${
+                  t.openForOrders ? 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50' : 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+                }"
+                aria-label="${t.openForOrders ? 'Close' : 'Open'} ${escapeHtml(t.name)} for QR ordering">
+                ${t.openForOrders ? 'Close QR ordering' : 'Open table for ordering'}
+              </button>
+            ` : ''}
           </div>
         `;
         grid.appendChild(card);
       });
     }
 
-    // SSE Sync
-    try {
-      const evtSource = new EventSource(`${getApiBase()}/api/events`);
-      evtSource.onmessage = (e) => {
-        try {
-          const d = JSON.parse(e.data);
-          if (['NEW_ORDER', 'STATUS_UPDATE', 'SERVICE_BELL', 'BILL_SETTLED', 'TABLES_UPDATED', 'SECTIONS_UPDATED'].includes(d.type)) {
-            if (currentWaiter) {
-              refreshWaiterData();
-            }
-          }
-        } catch (err) {}
+    // SSE Sync (auto-reconnects; banner shows while the stream is down)
+    const REFRESH_EVENTS = ['NEW_ORDER', 'ORDER_UPDATED', 'STATUS_UPDATE', 'SERVICE_BELL', 'BILL_SETTLED', 'TABLES_UPDATED', 'SECTIONS_UPDATED'];
+    let evtSource = null;
+    let sseRetryTimer = null;
+    let sseHasOpened = false;
+
+    function setConnBanner(show) {
+      const el = document.getElementById('conn-banner');
+      if (el) el.classList.toggle('hidden', !show);
+    }
+
+    function handleWaiterEvent(e) {
+      let d;
+      try { d = JSON.parse(e.data); } catch (err) { return; }
+      if (!d || !REFRESH_EVENTS.includes(d.type) || !currentWaiter) return;
+      const done = refreshWaiterData();
+      if (d.type === 'NEW_ORDER') {
+        done.then(() => {
+          const t = ((dbCache && dbCache.tickets) || []).find(x => x.ticketId === d.ticketId);
+          if (!t || isMyRestaurant(t)) alertWaiter(`New order: ${(t && t.table) || d.table || 'a table'}`, 'order');
+        });
+      } else if (d.type === 'SERVICE_BELL') {
+        alertWaiter(`${d.table || 'A table'}: ${d.request || 'calling the waiter'}`, 'bell');
+      }
+    }
+
+    function connectWaiterEvents() {
+      clearTimeout(sseRetryTimer);
+      try {
+        if (evtSource) evtSource.close();
+        evtSource = new EventSource(`${getApiBase()}/api/events`);
+      } catch (err) {
+        setConnBanner(true);
+        sseRetryTimer = setTimeout(connectWaiterEvents, 5000);
+        return;
+      }
+      evtSource.onopen = () => {
+        setConnBanner(false);
+        // Catch up on anything missed while disconnected.
+        if (sseHasOpened && currentWaiter) refreshWaiterData();
+        sseHasOpened = true;
       };
-      evtSource.onerror = () => { evtSource.close(); };
-    } catch(err) {}
+      evtSource.onmessage = handleWaiterEvent;
+      evtSource.onerror = () => {
+        setConnBanner(true);
+        // The browser retries on its own unless the stream was closed for good.
+        if (evtSource.readyState === EventSource.CLOSED) {
+          sseRetryTimer = setTimeout(connectWaiterEvents, 3000);
+        }
+      };
+    }
+    connectWaiterEvents();
 
     // Auto-login from session
     const saved = sessionStorage.getItem('waiter_auth');

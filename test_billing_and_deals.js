@@ -1,5 +1,6 @@
 // Automated Test Suite for Billing Charges, Taxes, and Menu Deals Builder
 const http = require('http');
+const { tableToken } = require('./test_utils');
 
 const BASE_URL = 'http://127.0.0.1:3000';
 
@@ -126,12 +127,22 @@ async function runTests() {
       ]
     };
 
+    await request('POST', '/api/test/reset-table', { table: '04' }, adminHeaders);
     const broadcastRes = await request('POST', '/api/broadcast', {
       type: 'NEW_ORDER',
+      senderDeviceId: 'billing-device-1',
+      tableToken: await tableToken('04'),
       order: testOrder
     });
     assert(broadcastRes.status === 200, 'Order broadcast accepted');
-    const calcOrder = broadcastRes.data.order;
+    const guestView = broadcastRes.data.order || {};
+    assert(guestView.pendingItems && guestView.pendingItems.length === 1, 'Guest order waits for waiter confirmation');
+    assert(guestView.pendingTotal === sampleDish.price * 2, `Pending total shown to guest: ${guestView.pendingTotal}`);
+
+    // The waiter confirms the round, which moves it onto the bill
+    const confirmRes = await request('POST', '/api/orders/confirm', { ticketId: guestView.ticketId }, adminHeaders);
+    assert(confirmRes.status === 200, 'Waiter confirmation accepted');
+    const calcOrder = confirmRes.data.ticket;
     assert(calcOrder != null, 'Server returned recalculated order');
     
     const expectedSubtotal = sampleDish.price * 2;

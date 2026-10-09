@@ -617,6 +617,10 @@ if (!fs.existsSync(DB_FILE)) {
     }
   });
   if (current.managerPin) { delete current.managerPin; updated = true; }
+  // Every table QR carries a secret so a guessed table number can't order
+  (current.tables || []).forEach(t => {
+    if (!t.qrToken) { t.qrToken = generateTableToken(); updated = true; }
+  });
   if (updated) writeDb(current);
 }
 
@@ -711,8 +715,29 @@ function publicRestaurant(rest) {
   return copy;
 }
 
-function publicDb(db) {
+// Table info safe for anyone: no QR secret, no session device ids.
+function publicTable(t) {
+  if (!t) return t;
+  const { qrToken, session, ...rest } = t;
+  return rest;
+}
+
+// Staff view of a table: QR secret only for admins, never the host's device id.
+function staffTable(t, auth) {
+  if (!t) return t;
+  const isAdmin = auth && ADMIN_ROLES.includes(auth.role);
+  const { qrToken, session, ...rest } = t;
+  if (isAdmin) rest.qrToken = qrToken;
+  if (session) {
+    const { hostDeviceId, ...sessionRest } = session;
+    rest.session = sessionRest;
+  }
+  return rest;
+}
+
+function publicDb(db, auth) {
   const copy = { ...db };
+  copy.tables = (db.tables || []).map(t => staffTable(t, auth));
   delete copy.superAdmin;
   delete copy.managerPin;
   copy.restaurants = (db.restaurants || []).map(publicRestaurant);
@@ -843,7 +868,6 @@ function findCatalogItem(catalog, item) {
 function calculateAuthoritativeOrder(order, db, targetRestId, options = {}) {
   const restId = targetRestId || order.restaurantId || 'rest-dera-01';
   const rest = (db.restaurants || []).find(r => r.id === restId || (restId === 'REST-001' && r.id === 'rest-dera-01') || (restId === 'rest-dera-01' && r.id === 'REST-001')) || (db.restaurants && db.restaurants[0]) || {};
-  const taxRate = Number(rest.taxRate) || 0.05;
 
   const catalog = buildOrderCatalog(db, rest.id || restId);
   let subtotal = 0;
@@ -894,7 +918,22 @@ function calculateAuthoritativeOrder(order, db, targetRestId, options = {}) {
     };
   });
 
-  const billingCharges = (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
+  const totals = computeCharges(rest, subtotal);
+
+  return {
+    items: authoritativeItems,
+    subtotal: subtotal,
+    tax: totals.tax,
+    serviceCharge: totals.serviceCharge,
+    charges: totals.charges,
+    total: subtotal + totals.chargesTotal
+  };
+}
+
+// Applies a restaurant's enabled taxes and charges to a subtotal.
+function computeCharges(rest, subtotal) {
+  const taxRate = Number(rest && rest.taxRate) || 0.05;
+  const billingCharges = (rest && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
     ? rest.billingCharges
     : [
         { id: 'chg-tax-default', name: 'Sales Tax (PRA)', type: 'percentage', rate: Math.round(taxRate * 100) || 5, enabled: true, category: 'tax' }
@@ -912,14 +951,15 @@ function calculateAuthoritativeOrder(order, db, targetRestId, options = {}) {
         const ratePct = Number(charge.rate !== undefined ? charge.rate : charge.amount) || 0;
         amount = Math.round((subtotal * ratePct) / 100);
       } else {
-        // fixed flat amount
-        amount = Math.round(Number(charge.rate !== undefined ? charge.rate : charge.amount) || 0);
+        // fixed flat amount (only when something was ordered)
+        amount = subtotal > 0 ? Math.round(Number(charge.rate !== undefined ? charge.rate : charge.amount) || 0) : 0;
       }
       
-      const chgCat = charge.category || (charge.name && charge.name.toLowerCase().includes('service') ? 'service' : 'tax');
-      if (chgCat === 'tax' || charge.name.toLowerCase().includes('tax') || charge.name.toLowerCase().includes('pra') || charge.name.toLowerCase().includes('gst')) {
+      const chgName = String(charge.name || '').toLowerCase();
+      const chgCat = charge.category || (chgName.includes('service') ? 'service' : 'tax');
+      if (chgCat === 'tax' || chgName.includes('tax') || chgName.includes('pra') || chgName.includes('gst')) {
         taxSum += amount;
-      } else if (chgCat === 'service' || charge.name.toLowerCase().includes('service')) {
+      } else if (chgCat === 'service' || chgName.includes('service')) {
         serviceSum += amount;
       }
 
@@ -935,15 +975,596 @@ function calculateAuthoritativeOrder(order, db, targetRestId, options = {}) {
     }
   });
 
-  const total = subtotal + totalChargesAmount;
+  return { charges: appliedCharges, tax: taxSum, serviceCharge: serviceSum, chargesTotal: totalChargesAmount };
+}
 
+// ==========================================
+// ORDER CONTROLS ENGINE
+// Guests propose orders; the server owns tickets. Each submission becomes an
+// immutable "round" that waits for the waiter to confirm it (unless the
+// restaurant turns that off). Only confirmed, non-voided lines are billed.
+// ==========================================
+const ORDER_LIMITS = {
+  maxQtyPerLine: 20,
+  maxLinesPerRound: 30,
+  minMsBetweenRounds: 5000
+};
+const KITCHEN_FLOW = ['New', 'In Kitchen', 'Plated & Ready', 'Served'];
+const CLOSED_STATUSES = ['Settled', 'Voided', 'Rejected'];
+const ONLINE_TABLE = 'Online Order';
+const lastRoundByDevice = new Map();
+
+function findRestaurant(db, restId) {
+  const key = canonicalRestId(restId || 'REST-001');
+  return (db.restaurants || []).find(r => canonicalRestId(r.id) === key) || null;
+}
+
+function getOrderSettings(rest) {
+  const s = (rest && rest.orderSettings) || {};
   return {
-    items: authoritativeItems,
-    subtotal: subtotal,
-    tax: taxSum,
-    serviceCharge: serviceSum,
-    charges: appliedCharges,
-    total: total
+    requireWaiterConfirm: s.requireWaiterConfirm !== false,
+    requireTableOpen: s.requireTableOpen === true,
+    orderingPaused: s.orderingPaused === true,
+    pausedMessage: s.pausedMessage || 'Ordering is paused right now. Please ask a member of staff.',
+    onlineOrdering: s.onlineOrdering !== false
+  };
+}
+
+function tableNumberFrom(raw) {
+  return String(raw || '').replace(/^Table\s+/i, '').trim().padStart(2, '0');
+}
+
+function findTable(db, raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  const rawStr = String(raw).trim();
+  const tNum = tableNumberFrom(rawStr);
+  const tableStr = `Table ${tNum}`;
+  return (db.tables || []).find(t =>
+    t.id === tNum || t.id === rawStr || (t.name && t.name.toLowerCase() === tableStr.toLowerCase())
+  ) || null;
+}
+
+function generateTableToken() {
+  return crypto.randomBytes(9).toString('base64url');
+}
+
+function newTicketId() {
+  return '#TKT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+}
+
+function newRoundId() {
+  return 'rnd_' + crypto.randomBytes(5).toString('hex');
+}
+
+function newLineId() {
+  return 'ln_' + crypto.randomBytes(5).toString('hex');
+}
+
+function tokensMatch(a, b) {
+  const x = Buffer.from(String(a || ''));
+  const y = Buffer.from(String(b || ''));
+  return x.length === y.length && x.length > 0 && crypto.timingSafeEqual(x, y);
+}
+
+// Returns an error message when a guest may not use this table, else null.
+function tableAccessError(tbl, token) {
+  if (!tbl) return 'This table is not on the floor plan. Please ask a member of staff.';
+  if (tbl.qrToken && !tokensMatch(token, tbl.qrToken)) {
+    return 'This QR code is no longer valid. Please scan the code on your table or ask staff.';
+  }
+  return null;
+}
+
+function isTicketOpen(ticket) {
+  return Boolean(ticket) && !CLOSED_STATUSES.includes(ticket.status);
+}
+
+function findTicket(db, ticketId) {
+  return (db.tickets || []).find(t => t.ticketId === ticketId) || null;
+}
+
+function findOpenTicketForTable(db, tbl) {
+  if (!tbl) return null;
+  const tableNames = [tbl.name, `Table ${tbl.id}`].filter(Boolean).map(n => n.toLowerCase());
+  if (tbl.order && tbl.order.ticketId) {
+    const t = findTicket(db, tbl.order.ticketId);
+    if (isTicketOpen(t)) return t;
+  }
+  return (db.tickets || []).find(t => isTicketOpen(t) && t.table && tableNames.includes(String(t.table).toLowerCase())) || null;
+}
+
+function isDishSoldOut(db, dish) {
+  if (!dish) return false;
+  if (dish.isAvailable === false) return true;
+  if (['sold_out', 'unavailable', 'soldout'].includes(String(dish.status || '').toLowerCase())) return true;
+  const soldOut = Array.isArray(db.soldOut) ? db.soldOut.map(String) : [];
+  return soldOut.includes(String(dish.id)) || (dish.title && soldOut.includes(dish.title));
+}
+
+function lineKey(line) {
+  return [line.dishId, line.size || '', line.spice || '', line.notes || ''].map(String).join('|');
+}
+
+// Everything already on the ticket (confirmed, pending or voided) counts as "already ordered".
+function existingQuantities(ticket) {
+  const counts = new Map();
+  const add = l => counts.set(lineKey(l), (counts.get(lineKey(l)) || 0) + (Number(l.qty) || 0));
+  (ticket.items || []).forEach(add);
+  (ticket.pendingRounds || []).forEach(r => (r.items || []).forEach(add));
+  return counts;
+}
+
+// The customer page re-sends the whole ticket each round. Keep only what is new,
+// so a re-send can add dishes but can never remove or shrink existing lines.
+function newLinesOnly(ticket, pricedLines) {
+  const remaining = existingQuantities(ticket);
+  const added = [];
+  pricedLines.forEach(line => {
+    const key = lineKey(line);
+    const already = remaining.get(key) || 0;
+    const used = Math.min(already, line.qty);
+    remaining.set(key, already - used);
+    if (line.qty - used > 0) added.push({ ...line, qty: line.qty - used });
+  });
+  return added;
+}
+
+function validateRoundLines(db, catalogLines) {
+  if (catalogLines.length === 0) return 'Your order is empty.';
+  if (catalogLines.length > ORDER_LIMITS.maxLinesPerRound) {
+    return `Too many different dishes in one order (max ${ORDER_LIMITS.maxLinesPerRound}). Please send in parts.`;
+  }
+  const tooMany = catalogLines.find(l => l.qty > ORDER_LIMITS.maxQtyPerLine);
+  if (tooMany) {
+    return `Maximum ${ORDER_LIMITS.maxQtyPerLine} of one dish per order (${tooMany.title}). Please ask staff for large orders.`;
+  }
+  return null;
+}
+
+// Recompute bill totals from confirmed, non-voided lines at their locked prices.
+function recomputeTicketTotals(ticket, db) {
+  const rest = findRestaurant(db, ticket.restaurantId) || {};
+  const billable = (ticket.items || []).filter(l => !l.voided);
+  const subtotal = billable.reduce((sum, l) => sum + (Number(l.price) || 0) * (Number(l.qty) || 0), 0);
+  const totals = computeCharges(rest, subtotal);
+  ticket.subtotal = subtotal;
+  ticket.tax = totals.tax;
+  ticket.serviceCharge = totals.serviceCharge;
+  ticket.charges = totals.charges;
+  ticket.total = subtotal + totals.chargesTotal;
+  ticket.pendingTotal = (ticket.pendingRounds || []).reduce((sum, r) =>
+    sum + (r.items || []).reduce((s2, l) => s2 + (Number(l.price) || 0) * (Number(l.qty) || 0), 0), 0);
+  return ticket;
+}
+
+function addTicketNotice(ticket, text) {
+  if (!ticket.notices) ticket.notices = [];
+  ticket.notices.push({ id: 'ntc_' + crypto.randomBytes(4).toString('hex'), at: Date.now(), text: cleanText(text, 200) });
+  if (ticket.notices.length > 50) ticket.notices.shift();
+}
+
+// The table's cached copy of its ticket, used by floor views and guest polling.
+function syncTableOrder(db, ticket) {
+  const tbl = ticket.tableId ? (db.tables || []).find(t => t.id === ticket.tableId) : findTable(db, ticket.table);
+  if (!tbl) return;
+  if (!isTicketOpen(ticket)) {
+    if (tbl.order && tbl.order.ticketId === ticket.ticketId) {
+      tbl.order = null;
+      tbl.status = 'vacant';
+      tbl.session = null;
+      const rest = findRestaurant(db, ticket.restaurantId);
+      if (getOrderSettings(rest).requireTableOpen) tbl.openForOrders = false;
+    }
+    return;
+  }
+  tbl.status = 'dining';
+  tbl.order = guestTicketView(ticket);
+}
+
+// What a guest at the table may see about their own ticket.
+function guestTicketView(ticket) {
+  return {
+    ticketId: ticket.ticketId,
+    table: ticket.table,
+    guest: ticket.guest,
+    time: ticket.time,
+    status: ticket.status,
+    payment: ticket.payment,
+    assignedWaiter: ticket.assignedWaiterName,
+    items: ticket.items || [],
+    pendingItems: (ticket.pendingRounds || []).flatMap(r => (r.items || []).map(l => ({ ...l, pending: true }))),
+    subtotal: ticket.subtotal,
+    tax: ticket.tax,
+    serviceCharge: ticket.serviceCharge,
+    charges: ticket.charges,
+    total: ticket.total,
+    pendingTotal: ticket.pendingTotal || 0,
+    notices: ticket.notices || [],
+    billRequested: Boolean(ticket.billRequested),
+    invoiceNumber: ticket.invoiceNumber || null
+  };
+}
+
+function staffActorName(auth) {
+  return auth ? (auth.name || auth.role) : 'Staff';
+}
+
+function confirmRound(db, ticket, round, auth, edits) {
+  let lines = (round.items || []).map(l => ({ ...l }));
+  const changes = [];
+  if (Array.isArray(edits)) {
+    // Waiters may lower quantities or drop lines before confirming, never add or raise.
+    lines = lines.map(l => {
+      const edit = edits.find(e => e.lineId === l.lineId);
+      if (!edit) return l;
+      const qty = Math.max(0, Math.min(l.qty, parseInt(edit.qty, 10)));
+      if (Number.isNaN(qty)) return l;
+      if (qty !== l.qty) changes.push(`${l.title}: ${l.qty} → ${qty}`);
+      return { ...l, qty };
+    }).filter(l => l.qty > 0);
+  }
+  ticket.pendingRounds = (ticket.pendingRounds || []).filter(r => r.roundId !== round.roundId);
+  const confirmedAt = Date.now();
+  lines.forEach(l => {
+    l.confirmedAt = confirmedAt;
+    l.confirmedBy = staffActorName(auth);
+  });
+  if (!ticket.items) ticket.items = [];
+  ticket.items.push(...lines);
+  if (!ticket.rounds) ticket.rounds = [];
+  ticket.rounds.push({
+    roundId: round.roundId, round: round.round, status: 'Confirmed', createdAt: round.createdAt,
+    confirmedAt, confirmedBy: staffActorName(auth), edits: changes
+  });
+
+  if (lines.length > 0 && ['Pending', 'Plated & Ready', 'Served'].includes(ticket.status)) {
+    ticket.status = 'New';
+  }
+  if (lines.length === 0 && (ticket.items || []).length === 0 && (ticket.pendingRounds || []).length === 0) {
+    ticket.status = 'Rejected';
+  }
+  recomputeTicketTotals(ticket, db);
+  addTicketNotice(ticket, changes.length
+    ? `Your order was confirmed with changes (${changes.join(', ')}).`
+    : 'Your order was confirmed and sent to the kitchen.');
+  logAuditEvent(db, 'ORDER_ROUND_CONFIRMED', {
+    ticketId: ticket.ticketId, table: ticket.table, round: round.round,
+    lines: lines.length, edits: changes, staffId: auth ? auth.userId : null
+  }, staffActorName(auth), ticket.restaurantId);
+  return lines;
+}
+
+// Creates or extends a ticket from a guest's (or staff member's) order.
+// Returns { status, body } for the HTTP response.
+function placeOrder(db, eventData, auth) {
+  const order = eventData.order || {};
+  const isStaff = Boolean(auth && STAFF_ROLES.includes(auth.role));
+  const restId = canonicalRestId((isStaff && auth.role !== 'super_admin' ? auth.restaurantId : order.restaurantId) || 'REST-001');
+  const rest = findRestaurant(db, restId);
+  if (!rest) return { status: 404, body: { error: 'Restaurant not found.' } };
+  if (rest.status === 'cancelled' || rest.subscriptionCancelled) {
+    return { status: 403, body: { error: 'This restaurant is not taking orders.' } };
+  }
+  const settings = getOrderSettings(rest);
+  if (settings.orderingPaused && !isStaff) {
+    return { status: 423, body: { error: settings.pausedMessage, orderingPaused: true } };
+  }
+
+  const deviceId = cleanText(String(eventData.senderDeviceId || order.senderDeviceId || '').trim(), 80);
+  if (!isStaff && !deviceId) return { status: 400, body: { error: 'Missing device id. Please reload the page.' } };
+
+  // Rate limit per phone
+  if (!isStaff) {
+    const last = lastRoundByDevice.get(deviceId) || 0;
+    if (Date.now() - last < ORDER_LIMITS.minMsBetweenRounds) {
+      return { status: 429, body: { error: 'Please wait a few seconds before sending again.' } };
+    }
+  }
+
+  const rawTable = String(order.table || eventData.table || '').trim();
+  const isOnline = rawTable.toLowerCase() === ONLINE_TABLE.toLowerCase();
+  let tbl = null;
+  let ticket = null;
+
+  if (isOnline) {
+    if (!settings.onlineOrdering) return { status: 403, body: { error: 'Online ordering is turned off.' } };
+    const prior = order.ticketId ? findTicket(db, order.ticketId) : null;
+    if (prior && isTicketOpen(prior) && prior.isOnline && prior.ownerDeviceId === deviceId) ticket = prior;
+  } else {
+    tbl = findTable(db, rawTable);
+    if (!isStaff) {
+      const accessError = tableAccessError(tbl, eventData.tableToken || order.tableToken);
+      if (accessError) return { status: 403, body: { error: accessError, invalidTable: true } };
+    } else if (!tbl) {
+      return { status: 404, body: { error: 'Table not found.' } };
+    }
+    ticket = findOpenTicketForTable(db, tbl);
+
+    if (!isStaff && settings.requireTableOpen && !ticket && !tbl.openForOrders) {
+      return { status: 423, body: { error: 'This table has not been opened yet. Please ask your waiter.', tableClosed: true } };
+    }
+    // Only the table host can send the first order
+    if (!isStaff && !ticket && tbl.session && tbl.session.hostDeviceId && deviceId !== tbl.session.hostDeviceId) {
+      return {
+        status: 403,
+        body: {
+          error: `Only the Table Host (${tbl.session.hostName || 'Table Lead'}) can submit the initial order. Dishes remain in the shared cart for the Host to fire.`,
+          isHost: false,
+          hostName: tbl.session.hostName
+        }
+      };
+    }
+  }
+
+  // Price every line from the menu; unknown dishes are rejected
+  let priced;
+  try {
+    priced = calculateAuthoritativeOrder({ items: order.items || [] }, db, restId, { strict: true });
+  } catch (err) {
+    return { status: err.statusCode || 400, body: { error: err.message } };
+  }
+  const catalog = buildOrderCatalog(db, restId);
+  const soldOut = priced.items.filter(l => isDishSoldOut(db, catalog.find(d => String(d.id) === String(l.dishId))));
+  if (soldOut.length > 0) {
+    return { status: 409, body: { error: `Sorry, sold out: ${soldOut.map(l => l.title).join(', ')}.`, soldOut: soldOut.map(l => l.dishId) } };
+  }
+
+  const isNewTicket = !ticket;
+  // order.newItemsOnly: the client sent just this round's dishes (current customer page).
+  // Otherwise it re-sent the whole ticket, so keep only what is new.
+  const lines = (isNewTicket || order.newItemsOnly === true) ? priced.items : newLinesOnly(ticket, priced.items);
+  const limitError = validateRoundLines(db, lines);
+  if (limitError) {
+    if (!isNewTicket && lines.length === 0) {
+      return { status: 200, body: { ok: true, order: guestTicketView(ticket), nothingNew: true } };
+    }
+    return { status: 400, body: { error: limitError } };
+  }
+
+  if (isNewTicket) {
+    const assigned = autoAssignWaiter(db, restId);
+    ticket = {
+      ticketId: newTicketId(),
+      restaurantId: restId,
+      table: isOnline ? ONLINE_TABLE : (tbl.name || `Table ${tbl.id}`),
+      tableId: tbl ? tbl.id : null,
+      isOnline: isOnline,
+      ownerDeviceId: deviceId || null,
+      guest: cleanText(order.guest || (tbl ? `${tbl.name} Guest` : 'Online Guest'), 60),
+      notes: cleanText(order.notes || ''),
+      payment: cleanText(order.payment || 'Pay Cash to Server at Table', 60),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      status: 'Pending',
+      items: [],
+      pendingRounds: [],
+      rounds: [],
+      notices: [],
+      assignedWaiterId: assigned.id,
+      assignedWaiterName: assigned.name
+    };
+    if (!db.tickets) db.tickets = [];
+    db.tickets.unshift(ticket);
+  } else if (order.notes) {
+    const extra = cleanText(order.notes);
+    if (extra && !String(ticket.notes || '').includes(extra)) {
+      ticket.notes = (ticket.notes ? ticket.notes + ' | ' : '') + extra;
+    }
+  }
+
+  const roundNo = (ticket.rounds || []).length + (ticket.pendingRounds || []).length + 1;
+  const round = {
+    roundId: newRoundId(),
+    round: roundNo,
+    createdAt: Date.now(),
+    source: isStaff ? 'staff' : 'guest',
+    deviceId: deviceId || null,
+    items: lines.map(l => ({ ...l, lineId: newLineId(), round: roundNo, addedAt: Date.now() }))
+  };
+  if (!ticket.pendingRounds) ticket.pendingRounds = [];
+  ticket.pendingRounds.push(round);
+
+  // Large orders always need a waiter, even when confirmation is turned off
+  const roundQty = round.items.reduce((s, l) => s + l.qty, 0);
+  const needsConfirm = settings.requireWaiterConfirm || roundQty > 10;
+  if (isStaff || !needsConfirm) {
+    confirmRound(db, ticket, round, isStaff ? auth : { name: 'Auto-confirmed', role: 'system' }, null);
+  } else {
+    recomputeTicketTotals(ticket, db);
+    addTicketNotice(ticket, `Order round ${roundNo} sent. Your waiter will confirm it shortly.`);
+  }
+
+  if (tbl && tbl.session) tbl.session.draftCart = [];
+  if (!isStaff) lastRoundByDevice.set(deviceId, Date.now());
+  syncTableOrder(db, ticket);
+
+  logAuditEvent(db, isNewTicket ? 'ORDER_CREATED' : 'ORDER_ROUND_ADDED', {
+    ticketId: ticket.ticketId,
+    table: ticket.table,
+    round: roundNo,
+    lines: round.items.length,
+    roundValue: round.items.reduce((s, l) => s + l.price * l.qty, 0),
+    needsConfirmation: !isStaff && needsConfirm,
+    assignedWaiter: ticket.assignedWaiterName
+  }, isStaff ? staffActorName(auth) : (ticket.guest || 'Customer'), ticket.restaurantId);
+
+  return { status: 200, body: { ok: true, order: guestTicketView(ticket), ticket } };
+}
+
+// Kitchen and floor status moves. Settled, Voided and Rejected only come from
+// their own endpoints, and statuses only move forward.
+function changeTicketStatus(db, ticketId, newStatus, auth) {
+  if (!auth || !STAFF_ROLES.includes(auth.role)) return { status: 403, body: { error: 'Staff login required.' } };
+  const ticket = findTicket(db, ticketId);
+  if (!ticket) return { status: 404, body: { error: 'Order not found.' } };
+  if (!canAccessRestaurant(auth, ticket.restaurantId)) return { status: 403, body: { error: 'This belongs to a different restaurant.' } };
+  const target = String(newStatus || '');
+  if (!KITCHEN_FLOW.includes(target)) {
+    return { status: 400, body: { error: 'Status can only be New, In Kitchen, Plated & Ready or Served. Payment, voids and rejections have their own steps.' } };
+  }
+  const from = KITCHEN_FLOW.indexOf(ticket.status);
+  if (from === -1) {
+    return { status: 409, body: { error: ticket.status === 'Pending'
+      ? 'This order is waiting for the waiter to confirm it.'
+      : `This order is ${ticket.status}; its status can no longer change.` } };
+  }
+  const to = KITCHEN_FLOW.indexOf(target);
+  if (to <= from) return { status: 409, body: { error: `This order is already ${ticket.status}.` } };
+
+  const previous = ticket.status;
+  ticket.status = target;
+  if (!ticket.statusHistory) ticket.statusHistory = [];
+  ticket.statusHistory.push({ from: previous, to: target, by: staffActorName(auth), staffId: auth.userId, at: Date.now() });
+  if (target === 'Plated & Ready') addTicketNotice(ticket, 'Your food is ready and on its way.');
+  syncTableOrder(db, ticket);
+  logAuditEvent(db, 'ORDER_STATUS_CHANGED', {
+    ticketId: ticket.ticketId, table: ticket.table, from: previous, to: target, staffId: auth.userId
+  }, staffActorName(auth), ticket.restaurantId);
+  return { status: 200, body: { ok: true }, ticket };
+}
+
+// Staff-facing order lookup with restaurant check. Returns [ticket, errorResult].
+function loadStaffTicket(db, ticketId, auth) {
+  const ticket = findTicket(db, ticketId);
+  if (!ticket) return [null, { status: 404, body: { error: 'Order not found.' } }];
+  if (!canAccessRestaurant(auth, ticket.restaurantId)) return [null, { status: 403, body: { error: 'This belongs to a different restaurant.' } }];
+  if (!isTicketOpen(ticket)) return [null, { status: 409, body: { error: `This order is already ${ticket.status}.` } }];
+  return [ticket, null];
+}
+
+function confirmPendingRound(db, data, auth) {
+  const [ticket, err] = loadStaffTicket(db, data.ticketId, auth);
+  if (err) return err;
+  const round = (ticket.pendingRounds || []).find(r => r.roundId === data.roundId) || (!data.roundId ? (ticket.pendingRounds || [])[0] : null);
+  if (!round) return { status: 404, body: { error: 'Nothing waiting for confirmation on this order.' } };
+  confirmRound(db, ticket, round, auth, Array.isArray(data.lines) ? data.lines : null);
+  syncTableOrder(db, ticket);
+  return { status: 200, body: { ok: true, ticket: guestTicketView(ticket) }, ticket };
+}
+
+function rejectPendingRound(db, data, auth) {
+  const reason = cleanText(String(data.reason || '').trim(), 200);
+  if (!reason) return { status: 400, body: { error: 'Please give a reason for rejecting.' } };
+  const [ticket, err] = loadStaffTicket(db, data.ticketId, auth);
+  if (err) return err;
+  const round = (ticket.pendingRounds || []).find(r => r.roundId === data.roundId) || (!data.roundId ? (ticket.pendingRounds || [])[0] : null);
+  if (!round) return { status: 404, body: { error: 'Nothing waiting for confirmation on this order.' } };
+
+  ticket.pendingRounds = ticket.pendingRounds.filter(r => r.roundId !== round.roundId);
+  if (!ticket.rounds) ticket.rounds = [];
+  ticket.rounds.push({
+    roundId: round.roundId, round: round.round, status: 'Rejected', createdAt: round.createdAt,
+    rejectedAt: Date.now(), rejectedBy: staffActorName(auth), reason,
+    value: round.items.reduce((s, l) => s + l.price * l.qty, 0)
+  });
+  if ((ticket.items || []).length === 0 && ticket.pendingRounds.length === 0) {
+    ticket.status = 'Rejected';
+    ticket.rejectReason = reason;
+  }
+  recomputeTicketTotals(ticket, db);
+  addTicketNotice(ticket, `Your order round ${round.round} was not accepted: ${reason}`);
+  syncTableOrder(db, ticket);
+  logAuditEvent(db, 'ORDER_ROUND_REJECTED', {
+    ticketId: ticket.ticketId, table: ticket.table, round: round.round, reason,
+    lines: round.items.length, staffId: auth.userId
+  }, staffActorName(auth), ticket.restaurantId);
+  return { status: 200, body: { ok: true, ticket: guestTicketView(ticket) }, ticket };
+}
+
+// Removing a confirmed line: free before the kitchen starts, manager PIN (or admin) after.
+function removeConfirmedLine(db, data, auth) {
+  const reason = cleanText(String(data.reason || '').trim(), 200);
+  if (!reason) return { status: 400, body: { error: 'Please give a reason for removing the item.' } };
+  const [ticket, err] = loadStaffTicket(db, data.ticketId, auth);
+  if (err) return err;
+  const line = (ticket.items || []).find(l => l.lineId === data.lineId);
+  if (!line) return { status: 404, body: { error: 'Item not found on this order.' } };
+  if (line.voided) return { status: 409, body: { error: 'This item was already removed.' } };
+
+  const kitchenStarted = ticket.status !== 'New';
+  const isAdmin = ADMIN_ROLES.includes(auth.role);
+  let authorizedBy = staffActorName(auth);
+  if (kitchenStarted && !isAdmin) {
+    const rest = findRestaurant(db, ticket.restaurantId) || {};
+    const lockKey = canonicalRestId(rest.id || ticket.restaurantId);
+    if (isPinLocked(lockKey)) return { status: 429, body: { error: 'Too many wrong PIN attempts. Removals are locked for 15 minutes.' } };
+    if (!verifySecret(String(data.managerPin || '').trim(), rest.managerPin)) {
+      recordPinFailure(lockKey);
+      logAuditEvent(db, 'LINE_VOID_REJECTED', { ticketId: ticket.ticketId, lineId: line.lineId, title: line.title, reason, staffId: auth.userId }, staffActorName(auth), ticket.restaurantId);
+      return { status: 403, body: { error: 'The kitchen has started this order, so a manager PIN is needed.', needsManagerPin: true } };
+    }
+    clearPinFailures(lockKey);
+    authorizedBy = 'Manager (PIN Verified)';
+  }
+
+  line.voided = true;
+  line.voidReason = reason;
+  line.voidCategory = cleanText(data.category || 'other', 40);
+  line.originalPrice = line.price;
+  line.voidedBy = staffActorName(auth);
+  line.voidAuthorizedBy = authorizedBy;
+  line.voidedAt = Date.now();
+  recomputeTicketTotals(ticket, db);
+  addTicketNotice(ticket, `${line.qty} × ${line.title} was removed from your bill (${reason}).`);
+  syncTableOrder(db, ticket);
+  logAuditEvent(db, 'LINE_VOIDED', {
+    ticketId: ticket.ticketId, table: ticket.table, lineId: line.lineId, title: line.title, qty: line.qty,
+    amount: line.originalPrice * line.qty, reason, category: line.voidCategory,
+    afterKitchenStarted: kitchenStarted, authorizedBy, staffId: auth.userId, assignedWaiterId: ticket.assignedWaiterId
+  }, staffActorName(auth), ticket.restaurantId);
+  return { status: 200, body: { ok: true, ticket: guestTicketView(ticket) }, ticket };
+}
+
+// Exceptions report for owners: who voided, removed or rejected what, and loose ends.
+function buildExceptionsReport(db, restId, fromMs, toMs) {
+  const key = canonicalRestId(restId);
+  const inRange = ts => ts >= fromMs && ts <= toMs;
+  const logs = (db.auditLogs || []).filter(l => canonicalRestId(l.restaurantId) === key && inRange(l.timestamp));
+  const tickets = (db.tickets || []).filter(t => canonicalRestId(t.restaurantId || 'REST-001') === key);
+  const staff = (db.staff || []).filter(s => canonicalRestId(s.restaurantId) === key);
+  const nameOf = id => (staff.find(s => s.id === id) || {}).name || id || 'Unassigned';
+
+  const pick = action => logs.filter(l => l.action === action).map(l => ({ at: l.isoTime, by: l.actor, ...l.details }));
+  const voids = pick('ORDER_VOIDED');
+  const lineVoids = pick('LINE_VOIDED');
+  const rejections = pick('ORDER_ROUND_REJECTED');
+  const failedPins = logs.filter(l => l.action === 'VOID_REJECTED' || l.action === 'LINE_VOID_REJECTED').length;
+
+  const perWaiter = {};
+  const bump = (id, field, amount = 0) => {
+    const k = id || 'unassigned';
+    if (!perWaiter[k]) perWaiter[k] = { waiterId: k, waiter: nameOf(k), orderVoids: 0, lineVoids: 0, voidedValue: 0, rejectedRounds: 0, edits: 0 };
+    perWaiter[k][field] += 1;
+    perWaiter[k].voidedValue += amount;
+  };
+  voids.forEach(v => bump(v.assignedWaiterId, 'orderVoids', Number(v.amount) || 0));
+  lineVoids.forEach(v => bump(v.assignedWaiterId, 'lineVoids', Number(v.amount) || 0));
+  rejections.forEach(r => {
+    const s = staff.find(x => x.id === r.staffId);
+    bump(s ? s.id : r.staffId, 'rejectedRounds');
+  });
+  pick('ORDER_ROUND_CONFIRMED').filter(c => (c.edits || []).length > 0).forEach(c => bump(c.staffId, 'edits'));
+
+  const now = Date.now();
+  const openTickets = tickets.filter(t => isTicketOpen(t));
+  return {
+    from: new Date(fromMs).toISOString(),
+    to: new Date(toMs).toISOString(),
+    totals: {
+      orderVoids: voids.length,
+      orderVoidValue: voids.reduce((s, v) => s + (Number(v.amount) || 0), 0),
+      lineVoids: lineVoids.length,
+      lineVoidValue: lineVoids.reduce((s, v) => s + (Number(v.amount) || 0), 0),
+      rejectedRounds: rejections.length,
+      failedPinAttempts: failedPins
+    },
+    perWaiter: Object.values(perWaiter).sort((a, b) => b.voidedValue - a.voidedValue),
+    voids, lineVoids, rejections,
+    servedNotSettled: openTickets.filter(t => t.status === 'Served')
+      .map(t => ({ ticketId: t.ticketId, table: t.table, total: t.total, waiter: t.assignedWaiterName, minutesOpen: Math.round((now - (t.timestamp || now)) / 60000) })),
+    pendingTooLong: openTickets.filter(t => (t.pendingRounds || []).some(r => now - r.createdAt > 5 * 60000))
+      .map(t => ({ ticketId: t.ticketId, table: t.table, waiter: t.assignedWaiterName, oldestMinutes: Math.round((now - Math.min(...t.pendingRounds.map(r => r.createdAt))) / 60000) })),
+    tablesClosedWithoutInvoice: logs.filter(l => l.action === 'TABLE_RESET').map(l => ({ at: l.isoTime, by: l.actor, ...l.details }))
   };
 }
 
@@ -964,8 +1585,9 @@ function broadcastEvent(eventData) {
 }
 
 function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
-  const waiters = (db.staff || []).filter(s => 
-    s.restaurantId === restaurantId && 
+  const restKey = canonicalRestId(restaurantId);
+  const waiters = (db.staff || []).filter(s =>
+    canonicalRestId(s.restaurantId) === restKey &&
     s.role === 'waiter' && 
     s.status === 'active'
   );
@@ -978,9 +1600,9 @@ function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
 
   // Count active orders currently assigned to each waiter (not yet served/settled)
   const activeTickets = (db.tickets || []).filter(t => 
-    (t.restaurantId === restaurantId || !t.restaurantId) && 
-    t.status !== 'Served' && 
-    t.status !== 'Settled'
+    (canonicalRestId(t.restaurantId) === restKey || !t.restaurantId) &&
+    t.status !== 'Served' &&
+    !CLOSED_STATUSES.includes(t.status)
   );
 
   for (const waiter of waiters) {
@@ -1057,6 +1679,9 @@ function requiredRolesFor(method, pathname) {
   if (isWrite && ADMIN_WRITE_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))) return ADMIN_ROLES;
   if (isWrite && (pathname === '/api/restaurant/theme' || pathname === '/api/restaurant/billing-settings')) return ADMIN_ROLES;
   if (pathname === '/api/test/reset-table') return ADMIN_ROLES;
+  if (pathname === '/api/table-session/switch-role') return ADMIN_ROLES;
+  if (['/api/orders/confirm', '/api/orders/reject', '/api/orders/remove-line', '/api/tables/open'].includes(pathname)) return STAFF_ROLES;
+  if (pathname === '/api/tables/rotate-token' || pathname === '/api/restaurant/order-settings' || pathname === '/api/reports/exceptions') return ADMIN_ROLES;
   if (method === 'GET' && (pathname === '/api/db' || pathname === '/api/tables')) return STAFF_ROLES;
   return null;
 }
@@ -1123,6 +1748,10 @@ const server = http.createServer(async (req, res) => {
         status: rest.status || 'active',
         plan: rest.plan,
         subscriptionCancelled: !!rest.subscriptionCancelled,
+        ordering: (() => {
+          const o = getOrderSettings(rest);
+          return { paused: o.orderingPaused, message: o.pausedMessage, online: o.onlineOrdering, waiterConfirms: o.requireWaiterConfirm };
+        })(),
         theme: rest.theme || DEFAULT_THEME,
         billingCharges: (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
           ? rest.billingCharges
@@ -1871,8 +2500,9 @@ const server = http.createServer(async (req, res) => {
   // GET /api/tables
   if (pathname === '/api/tables' && req.method === 'GET') {
     const db = readDb();
+    const auth = getRequestAuth(req);
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(db.tables || []));
+    res.end(JSON.stringify((db.tables || []).map(t => staffTable(t, auth))));
     return;
   }
 
@@ -1941,26 +2571,16 @@ const server = http.createServer(async (req, res) => {
       }
 
       const db = readDb();
-      if (!db.tables) db.tables = [];
-
-      let tbl = db.tables.find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
-      if (!tbl) {
-        tbl = {
-          id: tNum,
-          name: tableStr,
-          zone: 'Main Dining',
-          capacity: 4,
-          shape: 'square',
-          x: 50,
-          y: 50,
-          status: 'available',
-          order: null
-        };
-        db.tables.push(tbl);
+      const tbl = findTable(db, rawTable);
+      const accessError = tableAccessError(tbl, data.tableToken);
+      if (accessError) {
+        sendJson(res, 403, { error: accessError, invalidTable: true });
+        return;
       }
 
       // Check if table order is active or settled
-      const hasActiveOrder = Boolean(tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
+      const openTicket = findOpenTicketForTable(db, tbl);
+      const hasActiveOrder = Boolean(openTicket);
 
       // Check if existing session is active and valid (less than 1 hour old)
       const sessionValid = tbl.session && tbl.session.hostDeviceId && (Date.now() - (tbl.session.createdAt || 0) < 3600000);
@@ -1980,7 +2600,6 @@ const server = http.createServer(async (req, res) => {
         broadcastEvent({
           type: 'TABLE_SESSION_UPDATED',
           table: tableStr,
-          hostDeviceId: tbl.session.hostDeviceId,
           hostName: tbl.session.hostName,
           sessionId: tbl.session.sessionId
         });
@@ -1994,12 +2613,11 @@ const server = http.createServer(async (req, res) => {
         table: tNum,
         tableStr: tableStr,
         isHost: isHost,
-        hostDeviceId: tbl.session.hostDeviceId,
         hostName: tbl.session.hostName,
         sessionId: tbl.session.sessionId,
         draftCart: tbl.session.draftCart || [],
         hasActiveOrder: hasActiveOrder,
-        activeTicket: hasActiveOrder ? tbl.order : null
+        activeTicket: hasActiveOrder ? guestTicketView(openTicket) : null
       }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -2019,21 +2637,11 @@ const server = http.createServer(async (req, res) => {
       const action = data.action || 'sync'; // 'sync' | 'add' | 'adjust' | 'remove' | 'clear'
 
       const db = readDb();
-      let tbl = (db.tables || []).find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
-      if (!tbl) {
-        tbl = {
-          id: tNum,
-          name: tableStr,
-          zone: 'Main Dining',
-          capacity: 4,
-          shape: 'square',
-          x: 50,
-          y: 50,
-          status: 'available',
-          order: null
-        };
-        if (!db.tables) db.tables = [];
-        db.tables.push(tbl);
+      const tbl = findTable(db, rawTable);
+      const accessError = tableAccessError(tbl, data.tableToken);
+      if (accessError) {
+        sendJson(res, 403, { error: accessError, invalidTable: true });
+        return;
       }
 
       if (!tbl.session) {
@@ -2131,9 +2739,15 @@ const server = http.createServer(async (req, res) => {
     const deviceId = (parsedUrl.query.deviceId || '').trim();
 
     const db = readDb();
-    let tbl = (db.tables || []).find(t => t.id === tNum || (t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === rawTable);
+    const tbl = findTable(db, rawTable);
+    const accessError = tableAccessError(tbl, parsedUrl.query.t || parsedUrl.query.tableToken);
+    if (accessError) {
+      sendJson(res, 403, { error: accessError, invalidTable: true });
+      return;
+    }
 
-    const hasActiveOrder = Boolean(tbl && tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
+    const openTicket = findOpenTicketForTable(db, tbl);
+    const hasActiveOrder = Boolean(openTicket);
     const isHost = Boolean(tbl && tbl.session && tbl.session.hostDeviceId === deviceId);
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2141,11 +2755,10 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       table: tNum,
       isHost: isHost,
-      hostDeviceId: tbl && tbl.session ? tbl.session.hostDeviceId : null,
       hostName: tbl && tbl.session ? tbl.session.hostName : 'Table Lead',
       draftCart: tbl && tbl.session ? (tbl.session.draftCart || []) : [],
       hasActiveOrder: hasActiveOrder,
-      activeTicket: hasActiveOrder ? tbl.order : null
+      activeTicket: hasActiveOrder ? guestTicketView(openTicket) : null
     }));
     return;
   }
@@ -2206,7 +2819,6 @@ const server = http.createServer(async (req, res) => {
       broadcastEvent({
         type: 'TABLE_SESSION_UPDATED',
         table: tableStr,
-        hostDeviceId: tbl.session.hostDeviceId,
         hostName: tbl.session.hostName,
         sessionId: tbl.session.sessionId
       });
@@ -2215,7 +2827,6 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({
         ok: true,
         isHost: willBeHost,
-        hostDeviceId: tbl.session.hostDeviceId,
         hostName: tbl.session.hostName
       }));
     } catch (e) {
@@ -2279,7 +2890,8 @@ const server = http.createServer(async (req, res) => {
           x: x,
           y: y,
           status: 'vacant',
-          order: null
+          order: null,
+          qrToken: generateTableToken()
         };
         db.tables.push(savedTable);
         logAuditEvent(db, 'TABLE_CREATED', { id: tableId, name: tableName, zone, capacity, shape, x, y }, auth.name || 'Admin', auth.restaurantId);
@@ -2292,7 +2904,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       writeDb(db);
-      broadcastEvent({ type: 'TABLES_UPDATED', tables: db.tables, sections: db.sections });
+      broadcastEvent({ type: 'TABLES_UPDATED', tables: (db.tables || []).map(publicTable), sections: db.sections });
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, table: savedTable, tables: db.tables }));
     } catch (e) {
@@ -2329,7 +2941,7 @@ const server = http.createServer(async (req, res) => {
       if (updatedCount > 0) {
         logAuditEvent(db, 'FLOOR_LAYOUT_REARRANGED', { updatedTables: updatedCount }, auth.name || 'Admin', auth.restaurantId);
         writeDb(db);
-        broadcastEvent({ type: 'TABLES_UPDATED', tables: db.tables });
+        broadcastEvent({ type: 'TABLES_UPDATED', tables: (db.tables || []).map(publicTable) });
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2369,7 +2981,7 @@ const server = http.createServer(async (req, res) => {
     db.tables = (db.tables || []).filter(t => t.id !== tbl.id);
     logAuditEvent(db, 'TABLE_DELETED', { id: tbl.id, name: tbl.name, zone: tbl.zone }, auth.name || 'Admin', auth.restaurantId);
     writeDb(db);
-    broadcastEvent({ type: 'TABLES_UPDATED', tables: db.tables });
+    broadcastEvent({ type: 'TABLES_UPDATED', tables: (db.tables || []).map(publicTable) });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, deletedId: tbl.id }));
     return;
@@ -3009,30 +3621,34 @@ const server = http.createServer(async (req, res) => {
       const tNum = tableStr.replace('Table ', '').padStart(2, '0');
       const tbl = db.tables.find(t => t.id === tNum || (tableStr && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === tableStr);
 
-      const ticket = (db.tickets || []).find(t => 
-        t.ticketId === data.ticketId || 
-        (tbl && tbl.order && t.ticketId === tbl.order.ticketId) ||
-        (t.table === tableStr && t.status !== 'Settled')
-      );
-
-      // Recalculate authoritatively to eliminate client-side price tampering
-      let authoritativeTotal = 0;
-      let authoritativeSubtotal = 0;
-      let authoritativeTax = 0;
-      let itemsSnapshot = [];
-
-      if (ticket) {
-        const recalc = calculateAuthoritativeOrder(ticket, db, ticket.restaurantId);
-        authoritativeTotal = recalc.total;
-        authoritativeSubtotal = recalc.subtotal;
-        authoritativeTax = recalc.tax;
-        itemsSnapshot = recalc.items;
-      } else {
-        authoritativeTotal = Math.max(0, Number(data.total) || 0);
-        authoritativeTax = Math.round(authoritativeTotal * 0.05);
-        authoritativeSubtotal = authoritativeTotal - authoritativeTax;
-        itemsSnapshot = data.items || [];
+      // Only an open ticket can be settled, and only by staff of its restaurant
+      const byId = data.ticketId ? findTicket(db, data.ticketId) : null;
+      const ticket = (byId && isTicketOpen(byId)) ? byId : findOpenTicketForTable(db, tbl);
+      if (!ticket) {
+        sendJson(res, 404, { error: byId ? `Order ${byId.ticketId} is already ${byId.status}.` : 'No open order found for this table.' });
+        return;
       }
+      if (!canAccessRestaurant(auth, ticket.restaurantId)) {
+        denyOtherRestaurant(res);
+        return;
+      }
+
+      // Unconfirmed rounds were never served, so they are dropped rather than billed
+      if ((ticket.pendingRounds || []).length > 0) {
+        logAuditEvent(db, 'PENDING_ROUNDS_DROPPED_AT_SETTLE', {
+          ticketId: ticket.ticketId,
+          rounds: ticket.pendingRounds.map(r => r.round)
+        }, auth.name, ticket.restaurantId);
+        ticket.droppedRounds = (ticket.droppedRounds || []).concat(ticket.pendingRounds);
+        ticket.pendingRounds = [];
+      }
+
+      // Bill from the confirmed lines at the prices locked when they were ordered
+      recomputeTicketTotals(ticket, db);
+      const authoritativeTotal = ticket.total;
+      const authoritativeSubtotal = ticket.subtotal;
+      const authoritativeTax = ticket.tax;
+      const itemsSnapshot = (ticket.items || []).map(l => ({ ...l }));
 
       // Check cash received if cash payment
       const paymentMethod = data.paymentMethod || 'Cash';
@@ -3063,22 +3679,15 @@ const server = http.createServer(async (req, res) => {
         activeShift.transactionsCount = (Number(activeShift.transactionsCount) || 0) + 1;
       }
 
-      if (ticket) {
-        ticket.status = 'Settled';
-        ticket.paymentStatus = 'paid';
-        ticket.invoiceNumber = invoiceNumber;
-        ticket.settledBy = auth.name;
-        ticket.settledAt = new Date().toISOString();
-        ticket.total = authoritativeTotal;
-        ticket.subtotal = authoritativeSubtotal;
-        ticket.tax = authoritativeTax;
-      }
-
-      if (tbl) {
-        tbl.status = 'vacant';
-        tbl.order = null;
-        tbl.session = null;
-      }
+      ticket.status = 'Settled';
+      ticket.paymentStatus = 'paid';
+      ticket.invoiceNumber = invoiceNumber;
+      ticket.settledBy = auth.name;
+      ticket.settledAt = new Date().toISOString();
+      addTicketNotice(ticket, `Paid. Invoice ${invoiceNumber}. Thank you!`);
+      // Closing the ticket frees the table and ends the QR session
+      syncTableOrder(db, ticket);
+      if (tbl && tbl.order === null) tbl.session = null;
 
       // Clear table service requests
       db.serviceBells = (db.serviceBells || []).filter(b => b.table !== tableStr);
@@ -3140,6 +3749,124 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // --- ORDER CONTROLS: waiter confirmation, rejection and line removal ---
+  if (req.method === 'POST' && ['/api/orders/confirm', '/api/orders/reject', '/api/orders/remove-line'].includes(pathname)) {
+    try {
+      const auth = getRequestAuth(req);
+      const data = await parseBody(req);
+      const db = readDb();
+      const action = pathname.split('/').pop();
+      const result = action === 'confirm' ? confirmPendingRound(db, data, auth)
+        : action === 'reject' ? rejectPendingRound(db, data, auth)
+        : removeConfirmedLine(db, data, auth);
+      if (result.status !== 200) {
+        writeDb(db); // keeps failed-PIN audit entries
+        sendJson(res, result.status, result.body);
+        return;
+      }
+      writeDb(db);
+      broadcastEvent({ type: 'ORDER_UPDATED', ticketId: result.ticket.ticketId, table: result.ticket.table, status: result.ticket.status });
+      sendJson(res, 200, result.body);
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // Waiter opens a table for QR ordering (when the restaurant requires it)
+  if (pathname === '/api/tables/open' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      const data = await parseBody(req);
+      const db = readDb();
+      const tbl = findTable(db, data.table);
+      if (!tbl) {
+        sendJson(res, 404, { error: 'Table not found.' });
+        return;
+      }
+      tbl.openForOrders = data.open !== false;
+      tbl.openedBy = staffActorName(auth);
+      tbl.openedAt = Date.now();
+      logAuditEvent(db, tbl.openForOrders ? 'TABLE_OPENED' : 'TABLE_CLOSED_FOR_ORDERS', { table: tbl.name, tableId: tbl.id }, staffActorName(auth), auth.restaurantId);
+      writeDb(db);
+      broadcastEvent({ type: 'TABLES_UPDATED' });
+      sendJson(res, 200, { ok: true, table: { id: tbl.id, name: tbl.name, openForOrders: tbl.openForOrders } });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // Admin: issue a new secret for a table's QR (old printed codes stop working)
+  if (pathname === '/api/tables/rotate-token' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      const data = await parseBody(req);
+      const db = readDb();
+      const tbl = findTable(db, data.tableId || data.table);
+      if (!tbl) {
+        sendJson(res, 404, { error: 'Table not found.' });
+        return;
+      }
+      tbl.qrToken = generateTableToken();
+      tbl.session = null;
+      logAuditEvent(db, 'TABLE_QR_ROTATED', { table: tbl.name, tableId: tbl.id }, staffActorName(auth), auth.restaurantId);
+      writeDb(db);
+      sendJson(res, 200, { ok: true, table: { id: tbl.id, name: tbl.name, qrToken: tbl.qrToken } });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // Admin: order control settings
+  if (pathname === '/api/restaurant/order-settings') {
+    try {
+      const auth = getRequestAuth(req);
+      const db = readDb();
+      const data = req.method === 'POST' ? await parseBody(req) : {};
+      const restId = auth.role === 'super_admin' ? (data.restaurantId || parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
+      const rest = findRestaurant(db, restId);
+      if (!rest) {
+        sendJson(res, 404, { error: 'Restaurant not found.' });
+        return;
+      }
+      if (req.method === 'POST') {
+        const current = rest.orderSettings || {};
+        const next = { ...current };
+        ['requireWaiterConfirm', 'requireTableOpen', 'orderingPaused', 'onlineOrdering'].forEach(k => {
+          if (typeof data[k] === 'boolean') next[k] = data[k];
+        });
+        if (typeof data.pausedMessage === 'string') next.pausedMessage = cleanText(data.pausedMessage, 200);
+        rest.orderSettings = next;
+        logAuditEvent(db, 'ORDER_SETTINGS_UPDATED', { settings: next }, staffActorName(auth), rest.id);
+        writeDb(db);
+        broadcastEvent({ type: 'ORDER_SETTINGS_UPDATED', restaurantId: rest.id, orderingPaused: getOrderSettings(rest).orderingPaused });
+      }
+      sendJson(res, 200, { ok: true, settings: getOrderSettings(rest) });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // Admin: exceptions report (voids, removals, rejections, loose ends)
+  if (pathname === '/api/reports/exceptions' && req.method === 'GET') {
+    const auth = getRequestAuth(req);
+    const db = readDb();
+    const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
+    const parseDay = (v, endOfDay) => {
+      if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+      const d = new Date(v + (endOfDay ? 'T23:59:59.999' : 'T00:00:00'));
+      return isNaN(d.getTime()) ? null : d.getTime();
+    };
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    const fromMs = parseDay(parsedUrl.query.from, false) || startOfToday.getTime();
+    const toMs = parseDay(parsedUrl.query.to, true) || Date.now();
+    sendJson(res, 200, { ok: true, report: buildExceptionsReport(db, restId, fromMs, toMs) });
+    return;
+  }
+
   // --- MANAGER VOID & ORDER OVERRIDE ---
   if (pathname === '/api/orders/void' && req.method === 'POST') {
     try {
@@ -3171,6 +3898,10 @@ const server = http.createServer(async (req, res) => {
       if (ticket.status === 'Voided') {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Order is already marked as Voided.' }));
+        return;
+      }
+      if (ticket.status === 'Settled') {
+        sendJson(res, 409, { error: 'This order is already paid and invoiced, so it cannot be voided.' });
         return;
       }
 
@@ -3205,27 +3936,26 @@ const server = http.createServer(async (req, res) => {
       }
 
       const actor = isAuthorizedByPin ? 'Manager (PIN Verified)' : (auth.name || 'Admin');
+      const requestedBy = auth ? staffActorName(auth) : 'Unknown';
       ticket.status = 'Voided';
-      ticket.voidReason = reason;
+      ticket.voidReason = cleanText(reason, 200);
       ticket.voidedBy = actor;
+      ticket.voidRequestedBy = requestedBy;
       ticket.voidedAt = new Date().toISOString();
+      addTicketNotice(ticket, `This order was cancelled by the restaurant (${ticket.voidReason}).`);
 
-      // Free table if this ticket was seated there
-      const tableStr = (ticket.table || '').trim();
-      const tNum = tableStr.replace('Table ', '').padStart(2, '0');
-      const tbl = (db.tables || []).find(t => t.id === tNum || (tableStr && t.name.toLowerCase() === tableStr.toLowerCase()) || (t.order && t.order.ticketId === ticketId));
-      if (tbl && tbl.order && tbl.order.ticketId === ticketId) {
-        tbl.status = 'vacant';
-        tbl.order = null;
-        tbl.session = null;
-      }
+      // Free the table and end its QR session
+      syncTableOrder(db, ticket);
 
       logAuditEvent(db, 'ORDER_VOIDED', {
         ticketId: ticketId,
         table: ticket.table,
-        amount: ticket.total,
-        reason: reason,
-        authorizedBy: actor
+        amount: (Number(ticket.total) || 0) + (Number(ticket.pendingTotal) || 0),
+        reason: ticket.voidReason,
+        authorizedBy: actor,
+        requestedBy: requestedBy,
+        staffId: auth ? auth.userId : null,
+        assignedWaiterId: ticket.assignedWaiterId
       }, actor, ticket.restaurantId);
 
       writeDb(db);
@@ -3239,7 +3969,7 @@ const server = http.createServer(async (req, res) => {
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, message: `Order ${ticketId} successfully voided.`, ticket: ticket }));
+      res.end(JSON.stringify({ ok: true, message: `Order ${ticketId} successfully voided.`, ticket: guestTicketView(ticket) }));
     } catch (e) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
@@ -3275,26 +4005,28 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const data = JSON.parse(body || '{}');
-        const tNum = (data.table || '04').toString().padStart(2, '0');
+        const tNum = tableNumberFrom(data.table || '04');
         const tableStr = `Table ${tNum}`;
         const db = readDb();
+        const auth = getRequestAuth(req);
+        const tbl = findTable(db, tNum);
 
-        if (db.tickets) {
-          db.tickets = db.tickets.map(t => {
-            if ((t.table === tableStr || t.table === `Table ${parseInt(tNum, 10)}` || t.table === tNum) && t.status !== 'Settled') {
-              return { ...t, status: 'Settled' };
-            }
-            return t;
-          });
+        // Any open order is closed as Voided (never Settled: no money was taken)
+        let open = findOpenTicketForTable(db, tbl);
+        while (open) {
+          open.status = 'Voided';
+          open.voidReason = 'Table reset by admin';
+          open.voidedBy = staffActorName(auth);
+          open.voidedAt = new Date().toISOString();
+          logAuditEvent(db, 'TABLE_RESET', { table: open.table, ticketId: open.ticketId, amount: open.total }, staffActorName(auth), open.restaurantId);
+          syncTableOrder(db, open);
+          open = findOpenTicketForTable(db, tbl);
         }
 
-        if (db.tables) {
-          const tbl = db.tables.find(t => t.id === tNum || t.name === tableStr);
-          if (tbl) {
-            tbl.status = 'available';
-            tbl.order = null;
-            tbl.session = null;
-          }
+        if (tbl) {
+          tbl.status = 'vacant';
+          tbl.order = null;
+          tbl.session = null;
         }
 
         writeDb(db);
@@ -3336,127 +4068,41 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (eventData.type === 'NEW_ORDER' && eventData.order) {
-          cleanGuestFields(eventData.order, ['guest', 'notes', 'payment', 'time', 'table', 'status']);
-          if (eventData.table) eventData.table = cleanText(eventData.table, 40);
-          if (eventData.order.ticketId && !/^#?[A-Za-z0-9_-]{1,40}$/.test(String(eventData.order.ticketId))) {
-            sendJson(res, 400, { error: 'Invalid ticket id.' });
+          const result = placeOrder(db, eventData, getRequestAuth(req));
+          if (result.status !== 200) {
+            sendJson(res, result.status, result.body);
             return;
           }
-          const restId = eventData.order.restaurantId || 'rest-dera-01';
-          let tableStr = (eventData.order.table || eventData.table || '').trim();
-          if (!tableStr && eventData.order.ticketId) {
-            const existingTkt = (db.tickets || []).find(t => t.ticketId === eventData.order.ticketId);
-            if (existingTkt && existingTkt.table) {
-              tableStr = existingTkt.table.trim();
-            }
-          }
-          eventData.order.table = tableStr;
-          eventData.table = tableStr;
-          const tNum = tableStr.replace('Table ', '').padStart(2, '0');
-          let tbl = (db.tables || []).find(t => t.id === tNum || (tableStr && t.name && t.name.toLowerCase() === tableStr.toLowerCase()) || t.id === tableStr);
-          const hasActiveOrder = Boolean(tbl && tbl.order && tbl.order.ticketId && tbl.order.status !== 'Settled');
-          const senderDeviceId = (eventData.senderDeviceId || eventData.order.senderDeviceId || '').trim();
-
-          // Enforce Host-only submission for INITIAL order
-          if (!hasActiveOrder && tbl && tbl.session && tbl.session.hostDeviceId && senderDeviceId && senderDeviceId !== tbl.session.hostDeviceId) {
-            res.writeHead(403, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              error: `Only the Table Host (${tbl.session.hostName || 'Table Lead'}) can submit the initial order. Dishes remain in the shared cart for the Host to fire.`,
-              isHost: false,
-              hostName: tbl.session.hostName
-            }));
-            return;
-          }
-
-          // SERVER-AUTHORITATIVE RECALCULATION
-          let authoritative;
-          try {
-            authoritative = calculateAuthoritativeOrder(eventData.order, db, restId, { strict: true });
-          } catch (calcErr) {
-            sendJson(res, calcErr.statusCode || 400, { error: calcErr.message });
-            return;
-          }
-          eventData.order.items = authoritative.items;
-          eventData.order.subtotal = authoritative.subtotal;
-          eventData.order.tax = authoritative.tax;
-          eventData.order.serviceCharge = authoritative.serviceCharge;
-          eventData.order.charges = authoritative.charges;
-          eventData.order.total = authoritative.total;
-          eventData.table = eventData.order.table || tableStr;
-
-          // Hierarchy Auto-assignment: assign waiter if not already assigned
-          if (!eventData.order.assignedWaiterId) {
-            const assigned = autoAssignWaiter(db, restId);
-            eventData.order.assignedWaiterId = assigned.id;
-            eventData.order.assignedWaiterName = assigned.name;
-          }
-
-          const existingIdx = db.tickets.findIndex(t => t.ticketId === eventData.order.ticketId);
-          if (existingIdx >= 0) {
-            db.tickets[existingIdx] = eventData.order;
-          } else {
-            db.tickets.unshift(eventData.order);
-          }
-
-          if (!tbl && tNum && tNum !== '00') {
-            tbl = {
-              id: tNum,
-              name: tableStr || `Table ${tNum}`,
-              zone: 'Main Dining',
-              capacity: 4,
-              shape: 'square',
-              x: 50,
-              y: 50,
-              status: 'dining',
-              order: null
-            };
-            db.tables.push(tbl);
-          }
-          if (tbl) {
-            tbl.status = 'dining';
-            tbl.order = {
-              ticketId: eventData.order.ticketId,
-              table: tableStr || eventData.order.table || tbl.name,
-              guest: eventData.order.guest,
-              time: eventData.order.time,
-              total: eventData.order.total,
-              subtotal: eventData.order.subtotal,
-              tax: eventData.order.tax,
-              serviceCharge: eventData.order.serviceCharge,
-              charges: eventData.order.charges,
-              payment: eventData.order.payment,
-              assignedWaiter: eventData.order.assignedWaiterName,
-              items: eventData.order.items,
-              status: eventData.order.status || 'New'
-            };
-            if (tbl.session) {
-              tbl.session.draftCart = [];
-            }
-          }
-
-          logAuditEvent(db, 'ORDER_CREATED', {
-            ticketId: eventData.order.ticketId,
-            table: eventData.order.table,
-            total: authoritative.total,
-            itemsCount: authoritative.items.length,
-            assignedWaiter: eventData.order.assignedWaiterName
-          }, eventData.order.guest || 'Customer', restId);
-
           writeDb(db);
+          const view = result.body.order;
+          broadcastEvent({ type: 'NEW_ORDER', table: view.table, ticketId: view.ticketId, status: view.status, order: view });
+          sendJson(res, 200, { ok: true, order: view, nothingNew: Boolean(result.body.nothingNew) });
+          return;
         } else if (eventData.type === 'STATUS_UPDATE') {
-          eventData.status = cleanText(eventData.status, 40);
-          const t = db.tickets.find(x => x.ticketId === eventData.ticketId);
-          if (t) {
-            t.status = eventData.status;
-          }
-          const tNum = (eventData.table || '').replace('Table ', '').padStart(2, '0');
-          const tbl = db.tables.find(x => x.id === tNum || (x.order && x.order.ticketId === eventData.ticketId));
-          if (tbl && tbl.order) {
-            tbl.order.status = eventData.status;
+          const statusAuth = getRequestAuth(req);
+          const result = changeTicketStatus(db, eventData.ticketId, eventData.status, statusAuth);
+          if (result.status !== 200) {
+            sendJson(res, result.status, result.body);
+            return;
           }
           writeDb(db);
+          broadcastEvent({ type: 'STATUS_UPDATE', ticketId: result.ticket.ticketId, table: result.ticket.table, status: result.ticket.status });
+          sendJson(res, 200, { ok: true, status: result.ticket.status });
+          return;
         } else if (eventData.type === 'SERVICE_BELL') {
           cleanGuestFields(eventData, ['table', 'request']);
+          const bellAuth = getRequestAuth(req);
+          if (!(bellAuth && STAFF_ROLES.includes(bellAuth.role))) {
+            const bellTable = findTable(db, eventData.table);
+            const accessError = tableAccessError(bellTable, eventData.tableToken);
+            if (accessError) {
+              sendJson(res, 403, { error: accessError, invalidTable: true });
+              return;
+            }
+            eventData.table = bellTable.name || `Table ${bellTable.id}`;
+          }
+          delete eventData.tableToken;
+          if (!db.serviceBells) db.serviceBells = [];
           db.serviceBells.unshift({
             id: 'B-' + Date.now(),
             table: eventData.table,
@@ -3480,7 +4126,7 @@ const server = http.createServer(async (req, res) => {
         broadcastEvent(eventData);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, order: eventData.order }));
+        res.end(JSON.stringify({ ok: true }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
@@ -3491,20 +4137,28 @@ const server = http.createServer(async (req, res) => {
 
   // Full DB Read Endpoint (staff only; secrets always stripped)
   if (pathname === '/api/db' && req.method === 'GET') {
-    sendJson(res, 200, publicDb(readDb()));
+    sendJson(res, 200, publicDb(readDb(), getRequestAuth(req)));
     return;
   }
 
   // Public: the open ticket for one table, so a guest's phone can restore its order
   if (pathname === '/api/public/table-ticket' && req.method === 'GET') {
     const db = readDb();
-    const tNum = String(parsedUrl.query.table || '').replace('Table ', '').trim().padStart(2, '0');
+    const tbl = findTable(db, parsedUrl.query.table);
+    const accessError = tableAccessError(tbl, parsedUrl.query.t || parsedUrl.query.tableToken);
+    if (accessError) {
+      sendJson(res, 403, { error: accessError, invalidTable: true });
+      return;
+    }
+    const tickets = [];
+    const open = findOpenTicketForTable(db, tbl);
+    if (open) tickets.push(guestTicketView(open));
+    // Lets a phone learn that its earlier ticket at this table was paid or cancelled
     const ticketId = String(parsedUrl.query.ticketId || '');
-    const tableNames = [`Table ${tNum}`, `Table ${parseInt(tNum, 10)}`];
-    const tickets = (db.tickets || []).filter(t =>
-      (tableNames.includes(t.table) && t.status !== 'Settled' && t.status !== 'Voided') ||
-      (ticketId && t.ticketId === ticketId)
-    );
+    const earlier = ticketId ? findTicket(db, ticketId) : null;
+    if (earlier && earlier !== open && (earlier.tableId === tbl.id || earlier.table === tbl.name)) {
+      tickets.push(guestTicketView(earlier));
+    }
     sendJson(res, 200, { tickets });
     return;
   }

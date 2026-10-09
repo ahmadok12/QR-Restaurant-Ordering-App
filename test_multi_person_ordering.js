@@ -40,6 +40,8 @@ async function resetTable(table) {
   return request('POST', '/api/test/reset-table', { table }, { 'Authorization': `Bearer ${login.body.token}` });
 }
 
+const { tableToken, adminToken } = require('./test_utils');
+
 async function runTests() {
   console.log('=== MULTI-PERSON TABLE HOST & GUEST ORDERING TEST ===\n');
 
@@ -50,11 +52,18 @@ async function runTests() {
   // 0. Reset table 99 first
   console.log('1. Resetting test table 99...');
   await resetTable(table);
+  const tok = await tableToken(table);
+
+  // 0.5 Someone with a photo of an old / wrong QR code cannot join
+  const badJoin = await request('POST', '/api/table-session/join', { table, deviceId: 'dev_outsider', name: 'Outsider', tableToken: 'not-the-real-code' });
+  if (badJoin.status !== 403) throw new Error('FAIL: Join with a wrong QR code must be rejected with 403!');
+  console.log('   PASS: Join with a wrong QR code is rejected!');
 
   // 1. Device 1 (Host) scans first
   console.log('2. Device 1 (1st scanner) joins table 99...');
   const join1 = await request('POST', '/api/table-session/join', {
     table,
+    tableToken: tok,
     deviceId: deviceHost,
     name: 'Alice (Host)'
   });
@@ -66,12 +75,14 @@ async function runTests() {
   console.log('\n3. Device 2 (2nd scanner) joins table 99...');
   const join2 = await request('POST', '/api/table-session/join', {
     table,
+    tableToken: tok,
     deviceId: deviceGuest,
     name: 'Bob (Guest)'
   });
   console.log('   Join 2 response:', join2.body);
   if (join2.body.isHost) throw new Error('FAIL: 2nd scanner must NOT be Table Host!');
-  if (join2.body.hostDeviceId !== deviceHost) throw new Error('FAIL: Table hostDeviceId mismatch!');
+  if (join2.body.hostDeviceId) throw new Error('FAIL: The host device id must not be shown to other diners!');
+  if (join2.body.hostName !== 'Alice (Host)') throw new Error('FAIL: Table host name mismatch!');
   console.log('   PASS: 2nd scanner is registered as Co-Diner/Guest!');
 
   // 2.5 Multi-Person Two-Way Cart Sync
@@ -79,6 +90,7 @@ async function runTests() {
   // Host adds Chicken Karahi
   const hostAdd = await request('POST', '/api/table-session/cart', {
     table,
+    tableToken: tok,
     deviceId: deviceHost,
     action: 'add',
     item: { dishId: 101, title: 'Chicken Karahi', price: 1450, qty: 1, size: 'Standard Portion', spice: 'Chatpata 🌶️', note: '' }
@@ -89,6 +101,7 @@ async function runTests() {
   // Guest adds Garlic Naan
   const guestAdd1 = await request('POST', '/api/table-session/cart', {
     table,
+    tableToken: tok,
     deviceId: deviceGuest,
     action: 'add',
     item: { dishId: 201, title: 'Garlic Naan', price: 120, qty: 1, size: 'Standard Portion', spice: 'Normal 🍃', note: '' }
@@ -99,6 +112,7 @@ async function runTests() {
   // Guest adds Sweet Lassi
   const guestAdd2 = await request('POST', '/api/table-session/cart', {
     table,
+    tableToken: tok,
     deviceId: deviceGuest,
     action: 'add',
     item: { dishId: 301, title: 'Sweet Lassi', price: 250, qty: 1, size: 'Standard Portion', spice: 'Normal 🍃', note: '' }
@@ -109,6 +123,7 @@ async function runTests() {
   // Host adjusts Garlic Naan (+2)
   const hostAdjust = await request('POST', '/api/table-session/cart', {
     table,
+    tableToken: tok,
     deviceId: deviceHost,
     action: 'adjust',
     delta: 2,
@@ -121,6 +136,7 @@ async function runTests() {
   // Guest removes Sweet Lassi
   const guestRemove = await request('POST', '/api/table-session/cart', {
     table,
+    tableToken: tok,
     deviceId: deviceGuest,
     action: 'remove',
     item: { dishId: 301, title: 'Sweet Lassi', size: 'Standard Portion', spice: 'Normal 🍃', note: '' }
@@ -129,7 +145,7 @@ async function runTests() {
   console.log('   PASS: Guest removed Sweet Lassi from shared table cart!');
 
   // Verify via Poll endpoint
-  const pollCheck = await request('GET', `/api/table-session/poll?table=${table}&deviceId=${deviceGuest}`);
+  const pollCheck = await request('GET', `/api/table-session/poll?table=${table}&deviceId=${deviceGuest}&t=${tok}`);
   if (!pollCheck.body.ok || pollCheck.body.draftCart.length !== 2) throw new Error('FAIL: Poll draftCart mismatch!');
   console.log('   PASS: Poll endpoint confirms 2 items in shared draft cart (all synced)!');
 
@@ -137,6 +153,7 @@ async function runTests() {
   console.log('\n4. Testing permission: Guest attempts to submit initial order...');
   const guestInitialOrder = {
     type: 'NEW_ORDER',
+    tableToken: tok,
     senderDeviceId: deviceGuest,
     order: {
       ticketId: '#TKT-TEST-9901',
@@ -158,6 +175,7 @@ async function runTests() {
   console.log('\n5. Host submits initial order...');
   const hostInitialOrder = {
     type: 'NEW_ORDER',
+    tableToken: tok,
     senderDeviceId: deviceHost,
     order: {
       ticketId: '#TKT-TEST-9901',
@@ -179,6 +197,7 @@ async function runTests() {
   console.log('\n6. Post-order round: Guest orders extra dishes (should be allowed for anyone)...');
   const guestPostOrder = {
     type: 'NEW_ORDER',
+    tableToken: tok,
     senderDeviceId: deviceGuest,
     order: {
       ticketId: '#TKT-TEST-9901',
@@ -203,6 +222,7 @@ async function runTests() {
   console.log('\n7. Waiter service: Guest calls waiter...');
   const guestBell = {
     type: 'SERVICE_BELL',
+    tableToken: tok,
     senderDeviceId: deviceGuest,
     table: 'Table 99',
     request: 'Call Waiter Assistance'
@@ -216,9 +236,10 @@ async function runTests() {
   console.log('\n8. Testing role toggle tool...');
   const toggleRes = await request('POST', '/api/table-session/switch-role', {
     table,
+    tableToken: tok,
     deviceId: deviceGuest,
     targetRole: 'host'
-  });
+  }, { 'Authorization': `Bearer ${await adminToken()}` });
   console.log('   Toggle response:', toggleRes.body);
   if (!toggleRes.body.isHost) throw new Error('FAIL: Role switch did not make deviceGuest host!');
   console.log('   PASS: Role switch tool works as expected!');

@@ -239,9 +239,9 @@
           <div class="flex flex-col h-[800px] bg-white rounded-3xl border-4 border-slate-300 overflow-hidden shadow-lg">
             <div class="px-3 py-2 bg-slate-100 border-b border-slate-200 text-[11px] font-bold text-slate-800 flex items-center justify-between flex-shrink-0">
               <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-pink-500"></span>Customer Portal</span>
-              <a href="index.html?table=04" target="_blank" class="text-slate-500 hover:text-slate-800"><span class="material-symbols-outlined text-[16px]">open_in_new</span></a>
+              <a id="grid-customer-link" href="index.html?table=04" target="_blank" class="text-slate-500 hover:text-slate-800"><span class="material-symbols-outlined text-[16px]">open_in_new</span></a>
             </div>
-            <iframe src="index.html?table=04" class="flex-1 w-full h-full" frameborder="0"></iframe>
+            <iframe id="grid-customer-iframe" src="about:blank" class="flex-1 w-full h-full" frameborder="0"></iframe>
           </div>
 
           <!-- Screen 2: Waiter App -->
@@ -282,7 +282,33 @@
     let currentAppUrl = 'super_admin.html';
     let isSideBySide = false;
 
-    function selectApp(url, btnElement) {
+    // Table QR codes now carry a secret (&t=). For the demo customer link, log in as the demo
+    // admin, read table 04's token and add it to the URL.
+    const CUSTOMER_DEMO_URL = 'index.html?table=04';
+    const customerUrlReady = (async () => {
+      try {
+        const login = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'owner@deragourmet.com', password: 'DeraAdmin#2026' })
+        }).then(r => r.json());
+        if (!login.token) throw new Error(login.error || 'demo admin login failed');
+        const tables = await fetch('/api/tables', { headers: { Authorization: `Bearer ${login.token}` } }).then(r => r.json());
+        const t04 = (Array.isArray(tables) ? tables : []).find(t => String(t.id) === '04');
+        if (!t04 || !t04.qrToken) throw new Error('no QR token for table 04');
+        return `${CUSTOMER_DEMO_URL}&t=${encodeURIComponent(t04.qrToken)}`;
+      } catch (e) {
+        console.warn('Could not get the table 04 QR token; opening the customer page without it.', e);
+        return CUSTOMER_DEMO_URL;
+      }
+    })();
+    customerUrlReady.then(url => {
+      document.getElementById('grid-customer-link').href = url;
+      document.getElementById('grid-customer-iframe').src = url;
+    });
+
+    async function selectApp(url, btnElement) {
+      if (url === CUSTOMER_DEMO_URL) url = await customerUrlReady;
       currentAppUrl = url;
       if (isSideBySide) toggleSideBySide();
       
