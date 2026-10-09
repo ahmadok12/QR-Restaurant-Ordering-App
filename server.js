@@ -1181,12 +1181,21 @@ function guestTicketView(ticket) {
     pendingTotal: ticket.pendingTotal || 0,
     notices: ticket.notices || [],
     billRequested: Boolean(ticket.billRequested),
+    estimatedReadyAt: ['New', 'In Kitchen'].includes(ticket.status) ? (ticket.estimatedReadyAt || null) : null,
     invoiceNumber: ticket.invoiceNumber || null
   };
 }
 
 function staffActorName(auth) {
   return auth ? (auth.name || auth.role) : 'Staff';
+}
+
+// Upper bound of a dish's prep time ("20-25 mins" -> 25), 20 minutes when unknown.
+function prepMinutesFor(db, dishId) {
+  const dish = (db.menu || []).find(d => String(d.id) === String(dishId));
+  const nums = String((dish && dish.prepTime) || '').match(/\d+/g);
+  const mins = nums ? parseInt(nums[nums.length - 1], 10) : 20;
+  return Math.min(Math.max(mins || 20, 5), 120);
 }
 
 function confirmRound(db, ticket, round, auth, edits) {
@@ -1222,6 +1231,10 @@ function confirmRound(db, ticket, round, auth, edits) {
   }
   if (lines.length === 0 && (ticket.items || []).length === 0 && (ticket.pendingRounds || []).length === 0) {
     ticket.status = 'Rejected';
+  }
+  if (lines.length > 0) {
+    const prep = Math.max(...lines.map(l => prepMinutesFor(db, l.dishId)));
+    ticket.estimatedReadyAt = Math.max(ticket.estimatedReadyAt || 0, confirmedAt + prep * 60000);
   }
   recomputeTicketTotals(ticket, db);
   addTicketNotice(ticket, changes.length
@@ -1515,6 +1528,96 @@ function removeConfirmedLine(db, data, auth) {
   return { status: 200, body: { ok: true, ticket: guestTicketView(ticket) }, ticket };
 }
 
+// Reads ?from=YYYY-MM-DD&to=YYYY-MM-DD (local days); defaults to today.
+function reportRange(query) {
+  const parseDay = (v, endOfDay) => {
+    if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    const d = new Date(v + (endOfDay ? 'T23:59:59.999' : 'T00:00:00'));
+    return isNaN(d.getTime()) ? null : d.getTime();
+  };
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  return {
+    fromMs: parseDay(query.from, false) || startOfToday.getTime(),
+    toMs: parseDay(query.to, true) || Date.now()
+  };
+}
+
+function localDay(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function csvCell(v) {
+  let str = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\-@]/.test(str)) str = "'" + str; // keep spreadsheet formulas from running
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+// Sales report for owners: settled bills in a date range.
+function buildSalesReport(db, restId, fromMs, toMs) {
+  const key = canonicalRestId(restId);
+  const sales = (db.sales || []).filter(s => canonicalRestId(s.restaurantId) === key && s.timestamp >= fromMs && s.timestamp <= toMs);
+  const ticketsById = new Map((db.tickets || []).map(t => [t.ticketId, t]));
+  const group = (keyFn) => {
+    const map = new Map();
+    sales.forEach(sale => {
+      const k = keyFn(sale) || 'Unknown';
+      const row = map.get(k) || { key: k, orders: 0, total: 0 };
+      row.orders += 1;
+      row.total += Number(sale.total) || 0;
+      map.set(k, row);
+    });
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  };
+  const dishes = new Map();
+  sales.forEach(sale => (sale.items || []).filter(l => !l.voided).forEach(l => {
+    const row = dishes.get(l.title) || { title: l.title, qty: 0, revenue: 0 };
+    row.qty += Number(l.qty) || 0;
+    row.revenue += (Number(l.price) || 0) * (Number(l.qty) || 0);
+    dishes.set(l.title, row);
+  }));
+  const gross = sales.reduce((s, x) => s + (Number(x.total) || 0), 0);
+  const waiterOf = sale => sale.waiterName || (ticketsById.get(sale.ticketId) || {}).assignedWaiterName;
+  return {
+    from: new Date(fromMs).toISOString(),
+    to: new Date(toMs).toISOString(),
+    totals: {
+      orders: sales.length,
+      gross,
+      subtotal: sales.reduce((s, x) => s + (Number(x.subtotal) || 0), 0),
+      tax: sales.reduce((s, x) => s + (Number(x.tax) || 0), 0),
+      averageBill: sales.length ? Math.round(gross / sales.length) : 0
+    },
+    byDay: group(sale => localDay(sale.timestamp)).sort((a, b) => a.key.localeCompare(b.key)),
+    byHour: group(sale => String(new Date(sale.timestamp).getHours()).padStart(2, '0') + ':00').sort((a, b) => a.key.localeCompare(b.key)),
+    byPayment: group(sale => sale.paymentMethod),
+    byWaiter: group(waiterOf),
+    topDishes: [...dishes.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 20),
+    sales: sales.map(sale => ({
+      invoiceNumber: sale.invoiceNumber, ticketId: sale.ticketId, table: sale.table, date: localDay(sale.timestamp),
+      time: sale.time, waiter: waiterOf(sale) || '', cashier: sale.cashierName, paymentMethod: sale.paymentMethod,
+      subtotal: sale.subtotal, tax: sale.tax, total: sale.total
+    }))
+  };
+}
+
+function salesReportCsv(report) {
+  const cols = ['invoiceNumber', 'date', 'time', 'table', 'waiter', 'cashier', 'paymentMethod', 'subtotal', 'tax', 'total'];
+  return [cols.join(','), ...report.sales.map(row => cols.map(c => csvCell(row[c])).join(','))].join('\n') + '\n';
+}
+
+function buildFeedbackReport(db, restId, fromMs, toMs) {
+  const key = canonicalRestId(restId);
+  const entries = (db.feedback || []).filter(f => canonicalRestId(f.restaurantId) === key && f.timestamp >= fromMs && f.timestamp <= toMs);
+  const distribution = [1, 2, 3, 4, 5].map(r => ({ rating: r, count: entries.filter(f => f.rating === r).length }));
+  return {
+    count: entries.length,
+    averageRating: entries.length ? Math.round(entries.reduce((s, f) => s + f.rating, 0) / entries.length * 10) / 10 : null,
+    distribution,
+    entries: entries.slice(0, 200)
+  };
+}
+
 // Exceptions report for owners: who voided, removed or rejected what, and loose ends.
 function buildExceptionsReport(db, restId, fromMs, toMs) {
   const key = canonicalRestId(restId);
@@ -1634,7 +1737,8 @@ function autoAssignWaiter(db, restaurantId = 'rest-dera-01') {
 
 const PUBLIC_PAGES = new Set([
   'index.html', 'hub.html', 'restaurant_admin.html', 'super_admin.html',
-  'cashier.html', 'waiter.html', 'kds.html', 'admin.html'
+  'cashier.html', 'waiter.html', 'kds.html', 'admin.html',
+  'waiter.webmanifest', 'waiter-icon.svg'
 ]);
 
 const MIME_TYPES = {
@@ -1646,7 +1750,8 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
 
 function parseBody(req) {
@@ -1681,7 +1786,7 @@ function requiredRolesFor(method, pathname) {
   if (pathname === '/api/test/reset-table') return ADMIN_ROLES;
   if (pathname === '/api/table-session/switch-role') return ADMIN_ROLES;
   if (['/api/orders/confirm', '/api/orders/reject', '/api/orders/remove-line', '/api/tables/open'].includes(pathname)) return STAFF_ROLES;
-  if (pathname === '/api/tables/rotate-token' || pathname === '/api/restaurant/order-settings' || pathname === '/api/reports/exceptions') return ADMIN_ROLES;
+  if (pathname === '/api/tables/rotate-token' || pathname === '/api/restaurant/order-settings' || pathname.startsWith('/api/reports/')) return ADMIN_ROLES;
   if (method === 'GET' && (pathname === '/api/db' || pathname === '/api/tables')) return STAFF_ROLES;
   return null;
 }
@@ -3708,6 +3813,7 @@ const server = http.createServer(async (req, res) => {
         changeGiven: changeGiven,
         cashierId: auth.userId,
         cashierName: auth.name || 'Front Cashier',
+        waiterName: ticket ? (ticket.assignedWaiterName || '') : '',
         shiftId: activeShift ? activeShift.id : null,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now()
@@ -3855,15 +3961,90 @@ const server = http.createServer(async (req, res) => {
     const auth = getRequestAuth(req);
     const db = readDb();
     const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
-    const parseDay = (v, endOfDay) => {
-      if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-      const d = new Date(v + (endOfDay ? 'T23:59:59.999' : 'T00:00:00'));
-      return isNaN(d.getTime()) ? null : d.getTime();
-    };
-    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
-    const fromMs = parseDay(parsedUrl.query.from, false) || startOfToday.getTime();
-    const toMs = parseDay(parsedUrl.query.to, true) || Date.now();
+    const { fromMs, toMs } = reportRange(parsedUrl.query);
     sendJson(res, 200, { ok: true, report: buildExceptionsReport(db, restId, fromMs, toMs) });
+    return;
+  }
+
+  // Admin: sales report (JSON, or CSV with ?format=csv)
+  if (pathname === '/api/reports/sales' && req.method === 'GET') {
+    const auth = getRequestAuth(req);
+    const db = readDb();
+    const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
+    const { fromMs, toMs } = reportRange(parsedUrl.query);
+    const report = buildSalesReport(db, restId, fromMs, toMs);
+    if (parsedUrl.query.format === 'csv') {
+      res.writeHead(200, {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="sales-${localDay(fromMs)}-to-${localDay(toMs)}.csv"`
+      });
+      res.end(salesReportCsv(report));
+      return;
+    }
+    sendJson(res, 200, { ok: true, report });
+    return;
+  }
+
+  // Admin: guest feedback
+  if (pathname === '/api/reports/feedback' && req.method === 'GET') {
+    const auth = getRequestAuth(req);
+    const db = readDb();
+    const restId = auth.role === 'super_admin' ? (parsedUrl.query.restaurantId || 'REST-001') : auth.restaurantId;
+    const { fromMs, toMs } = reportRange(parsedUrl.query);
+    sendJson(res, 200, { ok: true, report: buildFeedbackReport(db, restId, fromMs, toMs) });
+    return;
+  }
+
+  // Public: a guest rates their meal. Needs the table QR secret and that table's ticket.
+  if (pathname === '/api/public/feedback' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      const rating = parseInt(data.rating, 10);
+      if (!(rating >= 1 && rating <= 5)) {
+        sendJson(res, 400, { error: 'Please choose 1 to 5 stars.' });
+        return;
+      }
+      const ticket = data.ticketId ? findTicket(db, String(data.ticketId)) : null;
+      if (!ticket) {
+        sendJson(res, 404, { error: 'Order not found.' });
+        return;
+      }
+      if (ticket.isOnline) {
+        if (!data.deviceId || ticket.ownerDeviceId !== data.deviceId) {
+          sendJson(res, 403, { error: 'You can only rate your own order.' });
+          return;
+        }
+      } else {
+        const tbl = ticket.tableId ? (db.tables || []).find(t => t.id === ticket.tableId) : findTable(db, ticket.table);
+        const accessError = tableAccessError(tbl, data.tableToken);
+        if (accessError) {
+          sendJson(res, 403, { error: accessError, invalidTable: true });
+          return;
+        }
+      }
+      if (!db.feedback) db.feedback = [];
+      const deviceId = cleanText(String(data.deviceId || ''), 80);
+      const existing = db.feedback.find(f => f.ticketId === ticket.ticketId && f.deviceId === deviceId);
+      const entry = existing || { id: 'FB-' + crypto.randomBytes(4).toString('hex') };
+      Object.assign(entry, {
+        restaurantId: ticket.restaurantId,
+        ticketId: ticket.ticketId,
+        table: ticket.table,
+        waiter: ticket.assignedWaiterName || '',
+        deviceId,
+        rating,
+        comment: cleanText(String(data.comment || ''), 500),
+        tags: Array.isArray(data.tags) ? data.tags.slice(0, 8).map(t => cleanText(String(t), 40)) : [],
+        timestamp: Date.now()
+      });
+      if (!existing) db.feedback.unshift(entry);
+      if (db.feedback.length > 5000) db.feedback.length = 5000;
+      writeDb(db);
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
     return;
   }
 
@@ -4103,10 +4284,29 @@ const server = http.createServer(async (req, res) => {
           }
           delete eventData.tableToken;
           if (!db.serviceBells) db.serviceBells = [];
+          // The same request from the same table within 20 seconds is a double tap, not a new call.
+          const recentSame = db.serviceBells.find(b => b.table === eventData.table && b.request === eventData.request && Date.now() - (b.timestamp || 0) < 20000);
+          if (recentSame) {
+            sendJson(res, 200, { ok: true, duplicate: true });
+            return;
+          }
+          if (/bill|check/i.test(String(eventData.request || ''))) {
+            const billTicket = findOpenTicketForTable(db, findTable(db, eventData.table));
+            if (billTicket && !billTicket.billRequested) {
+              billTicket.billRequested = true;
+              billTicket.billRequestedAt = Date.now();
+              addTicketNotice(billTicket, 'Bill requested. Your waiter will bring it shortly.');
+              syncTableOrder(db, billTicket);
+              eventData.ticketId = billTicket.ticketId;
+              eventData.billRequested = true;
+            }
+          }
           db.serviceBells.unshift({
             id: 'B-' + Date.now(),
             table: eventData.table,
             request: eventData.request,
+            ticketId: eventData.ticketId || null,
+            timestamp: Date.now(),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           });
           writeDb(db);

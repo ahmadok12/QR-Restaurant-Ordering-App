@@ -13,6 +13,7 @@ const SUITES = [
   'test_multi_person_ordering.js',
   'test_cohost_realtime_sync.js',
   'test_order_controls.js',
+  'test_reports_and_feedback.js',
   'test_security.js' // last: it trips the manager PIN lockout
 ];
 
