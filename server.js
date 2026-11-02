@@ -644,7 +644,7 @@ function calculateAuthoritativeOrder(order, db, targetRestId) {
       price: finalItemPrice,
       qty: qty,
       size: item.size || 'Standard Portion',
-      spice: item.spice || 'Normal 🍃',
+      spice: (typeof item.spice === 'string') ? item.spice : 'Normal 🍃', // '' = no spice level (drinks, desserts)
       station: canonical ? canonical.station : (item.station || 'karahi'),
       notes: item.notes || item.note || ''
     };
@@ -3006,6 +3006,7 @@ const server = http.createServer(async (req, res) => {
 
         broadcastEvent({
           type: 'BILL_SETTLED',
+          reason: 'table_reset',
           table: tableStr,
           timestamp: Date.now()
         });

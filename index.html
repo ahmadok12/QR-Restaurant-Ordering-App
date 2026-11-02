@@ -31,6 +31,26 @@
       .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
       .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
     }
+    /* Category tabs (sticky, horizontal) */
+    .cat-chip {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 9999px; font-size: 13px; font-weight: 700; line-height: 1;
+      background: #ffffff; color: #3d4659; border: 1px solid #dce3f0;
+      transition: background-color .15s, color .15s, border-color .15s;
+    }
+    .cat-chip:hover { border-color: rgb(var(--color-primary-rgb) / 0.45); color: #0b1c30; }
+    .cat-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: #ffffff; }
+    .cat-chip:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    #menu-section-heading { scroll-margin-top: 9rem; }
+
+    /* Staff test / demo controls: only visible with ?demo=1 */
+    body:not(.demo-mode) .demo-only { display: none !important; }
+
+    /* Readability floor: no text smaller than 11px for guests */
+    body .text-\[8px\], body .text-\[8\.5px\], body .text-\[9px\], body .text-\[9\.5px\],
+    body .text-\[10px\], body .text-\[10\.5px\] { font-size: 11px; }
+    body .text-secondary { color: #475266; }
+
     ::-webkit-scrollbar { display: none; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -116,7 +136,7 @@
   </script>
 </head>
 
-<body class="bg-surface font-body text-on-surface antialiased min-h-full flex flex-col select-none">
+<body class="bg-surface font-body text-on-surface antialiased min-h-full flex flex-col">
 
   <!-- ================= TOP APP HEADER ================= -->
   <header class="fixed top-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl pt-safe shadow-[0_1px_10px_rgba(11,28,48,0.05)] border-b border-surface-container-high/40">
@@ -132,20 +152,20 @@
             <span id="restaurant-title-display" class="font-headline font-bold text-[17px] text-on-surface leading-tight tracking-tight">Dera Gourmet</span>
             <span id="restaurant-tagline-badge" class="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Desi Dine-In</span>
           </div>
-          <div class="flex items-center gap-1.5 text-[11px] text-secondary mt-0.5">
+          <div class="flex items-center gap-1.5 text-[12px] text-secondary mt-0.5">
             <span id="header-table-label" class="font-bold text-on-surface">Table 04</span>
-            <span class="text-secondary/40">&bull;</span>
-            <span id="table-role-badge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs">
+            <span class="demo-only text-secondary/40">&bull;</span>
+            <span id="table-role-badge" class="demo-only inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs">
               <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
               <span id="table-role-text">Table Host</span>
             </span>
-            <button type="button" onclick="toggleHostRoleForTesting()" class="text-[10px] font-semibold text-primary hover:underline cursor-pointer" title="Toggle role to test Host / Guest permissions">(Switch)</button>
+            <button type="button" onclick="toggleHostRoleForTesting()" class="demo-only text-[10px] font-semibold text-primary hover:underline cursor-pointer" title="Toggle role to test Host / Guest permissions">(Switch)</button>
           </div>
         </div>
       </div>
 
       <!-- Portal Switcher for Multi-Role Testing -->
-      <div class="hidden sm:flex items-center gap-1 bg-surface-container-low px-2.5 py-1 rounded-full text-[11px] font-semibold border border-surface-container">
+      <div class="demo-only hidden sm:flex items-center gap-1 bg-surface-container-low px-2.5 py-1 rounded-full text-[11px] font-semibold border border-surface-container">
         <span class="text-primary font-bold">Customer</span>
         <span class="text-secondary/40">&bull;</span>
         <a href="kds.html" target="_blank" class="text-secondary hover:text-primary transition-colors">KDS</a>
@@ -192,7 +212,7 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="resetOrderForTesting()" class="text-[11px] font-bold text-red-600 bg-red-100 hover:bg-red-200 border border-red-300 px-2.5 py-1 rounded-xl transition-all active:scale-95 flex items-center gap-0.5" title="Reset order for testing">
+            <button onclick="resetOrderForTesting()" class="demo-only text-[11px] font-bold text-red-600 bg-red-100 hover:bg-red-200 border border-red-300 px-2.5 py-1 rounded-xl transition-all active:scale-95 flex items-center gap-0.5" title="Reset order for testing">
               <span class="material-symbols-outlined text-[13px]">restart_alt</span>
               <span>Reset</span>
             </button>
@@ -207,12 +227,12 @@
 
 
       <!-- Dynamic Restaurant Atmosphere & Vibe Banner -->
-      <div id="restaurant-vibe-hero" class="px-margin py-1.5 transition-all">
-        <div class="relative w-full h-32 sm:h-36 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-end p-3.5 text-white bg-slate-900">
+      <div id="restaurant-vibe-hero" class="px-margin pt-1 pb-1.5 transition-all">
+        <div class="relative w-full h-24 sm:h-28 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-end px-3.5 py-3 text-white bg-slate-900">
           <img id="restaurant-hero-img" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80" alt="Restaurant Atmosphere" class="absolute inset-0 w-full h-full object-cover opacity-85 hover:scale-105 transition-transform duration-700" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
           <div class="relative z-10">
-            <div class="flex items-center gap-1.5 mb-1">
+            <div class="hidden items-center gap-1.5 mb-1">
               <span id="restaurant-hero-badge" class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-xs text-white border border-white/30">
                 ✦ Gourmet Experience
               </span>
@@ -229,13 +249,13 @@
       </div>
 
       <!-- TOP FEATURED DISHES & DEALS LARGE THUMBNAIL SLIDER -->
-      <div id="deals-slider-section" class="px-margin py-2 transition-all duration-300">
+      <div id="deals-slider-section" class="px-margin pt-1 pb-2 transition-all duration-300">
         <div class="relative w-full">
           <!-- Horizontal Swipeable Track -->
           <div id="featured-deals-slider" class="w-full flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth pb-1">
             
             <!-- Slide 1: Family Mega Party Combo -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-32 sm:h-36 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80" alt="Family Mega Party Combo" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
@@ -262,7 +282,7 @@
             </div>
 
             <!-- Slide 2: Duo Pizza & Wings Feast -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-32 sm:h-36 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80" alt="Duo Pizza & Wings Feast" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
@@ -289,7 +309,7 @@
             </div>
 
             <!-- Slide 3: Solo Crunch Fiesta -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-32 sm:h-36 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" alt="Solo Crunch Fiesta" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
@@ -316,7 +336,7 @@
             </div>
 
             <!-- Slide 4: Molten Lava Cake -->
-            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-40 sm:h-44 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
+            <div class="w-[88%] sm:w-[92%] shrink-0 snap-center rounded-2xl overflow-hidden relative h-32 sm:h-36 bg-slate-900 shadow-md flex flex-col justify-end p-3.5 text-white">
               <img src="https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80" alt="Molten Lava Cake" class="absolute inset-0 w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10"></div>
               
@@ -345,7 +365,7 @@
           </div>
 
           <!-- Pagination Indicator Dots -->
-          <div class="flex items-center justify-center gap-1.5 mt-2" id="slider-dots">
+          <div class="flex items-center justify-center gap-1.5 mt-1.5" id="slider-dots">
             <span class="slider-dot w-5 h-1.5 rounded-full bg-primary transition-all"></span>
             <span class="slider-dot w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></span>
             <span class="slider-dot w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></span>
@@ -354,48 +374,47 @@
         </div>
       </div>
 
-      <!-- MAIN SPLIT VIEW: VERTICAL CATEGORY BAR (LEFT ~15%) + RESPECTIVE DISHES (RIGHT) -->
-      <div class="flex items-start w-full border-t border-surface-container/60 mt-1">
-        
-        <!-- Left Vertical Category Rail (around 15-18% of screen) -->
-        <aside class="w-[66px] sm:w-[76px] shrink-0 sticky top-16 bg-surface-container-low/70 border-r border-surface-container/70 py-2 flex flex-col items-center gap-1 z-10 select-none">
-          <button onclick="selectCategory('all', this)" class="cat-rail-btn active w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all bg-surface border-l-4 border-primary text-primary font-bold shadow-2xs">
-            <span class="material-symbols-outlined text-[20px]">restaurant_menu</span>
-            <span class="text-[10px] font-bold leading-tight">All</span>
+      <!-- STICKY CATEGORY TABS (horizontal, full-width dishes below) -->
+      <nav id="category-tabs" aria-label="Menu categories" class="sticky z-30 bg-surface/95 backdrop-blur-md border-y border-surface-container/70 mt-1" style="top: calc(4rem + env(safe-area-inset-top, 0px));">
+        <div id="category-tabs-track" class="flex gap-2 overflow-x-auto no-scrollbar px-margin py-2.5">
+          <button type="button" onclick="selectCategory('all', this)" class="cat-rail-btn cat-chip active" aria-pressed="true">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">restaurant_menu</span>
+            <span>All</span>
           </button>
-          <button onclick="selectCategory('deals', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent relative group">
-            <span class="material-symbols-outlined text-[20px] text-amber-500 group-hover:scale-110 transition-transform">local_offer</span>
-            <span class="text-[10px] font-bold leading-tight">Deals</span>
-            <span class="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          <button type="button" onclick="selectCategory('deals', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">local_offer</span>
+            <span>Deals</span>
           </button>
-          <button onclick="selectCategory('pizzas', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
-            <span class="material-symbols-outlined text-[20px]">local_pizza</span>
-            <span class="text-[10px] font-bold leading-tight">Pizzas</span>
+          <button type="button" onclick="selectCategory('pizzas', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">local_pizza</span>
+            <span>Pizzas</span>
           </button>
-          <button onclick="selectCategory('burgers', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
-            <span class="material-symbols-outlined text-[20px]">lunch_dining</span>
-            <span class="text-[10px] font-bold leading-tight">Burgers</span>
+          <button type="button" onclick="selectCategory('burgers', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">lunch_dining</span>
+            <span>Burgers</span>
           </button>
-          <button onclick="selectCategory('sandwiches', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
-            <span class="material-symbols-outlined text-[20px]">breakfast_dining</span>
-            <span class="text-[10px] font-bold leading-tight">Sandwiches</span>
+          <button type="button" onclick="selectCategory('sandwiches', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">breakfast_dining</span>
+            <span>Sandwiches</span>
           </button>
-          <button onclick="selectCategory('wraps', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
-            <span class="material-symbols-outlined text-[20px]">restaurant</span>
-            <span class="text-[10px] font-bold leading-tight">Wraps</span>
+          <button type="button" onclick="selectCategory('wraps', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">restaurant</span>
+            <span>Wraps</span>
           </button>
-          <button onclick="selectCategory('drinks', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
-            <span class="material-symbols-outlined text-[20px]">local_cafe</span>
-            <span class="text-[10px] font-bold leading-tight">Drinks</span>
+          <button type="button" onclick="selectCategory('drinks', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">local_cafe</span>
+            <span>Drinks</span>
           </button>
-          <button onclick="selectCategory('desserts', this)" class="cat-rail-btn w-full py-2.5 px-0.5 flex flex-col items-center justify-center gap-1 text-center transition-all text-secondary hover:text-on-surface border-l-4 border-transparent">
-            <span class="material-symbols-outlined text-[20px]">icecream</span>
-            <span class="text-[10px] font-bold leading-tight">Desserts</span>
+          <button type="button" onclick="selectCategory('desserts', this)" class="cat-rail-btn cat-chip" aria-pressed="false">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">icecream</span>
+            <span>Desserts</span>
           </button>
-        </aside>
+        </div>
+      </nav>
 
+      <div class="w-full">
         <!-- Right Respective Dishes Column -->
-        <section class="flex-1 min-w-0 pl-2.5 pr-margin py-2">
+        <section class="w-full min-w-0 px-margin py-3">
           <!-- Dishes Header Row: Title, Counter, View Switcher & Search on Right -->
           <div class="relative flex items-center justify-between mb-2.5 pb-1.5 border-b border-surface-container/40 min-h-[36px]">
             <div id="menu-heading-group" class="min-w-0 pr-2 transition-opacity">
@@ -488,7 +507,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-1">
               <span id="cart-host-status-title" class="font-bold block text-[13px] text-amber-950">👑 You are Table Host</span>
-              <button type="button" onclick="toggleHostRoleForTesting()" class="text-[10px] font-bold text-primary hover:underline shrink-0">Switch Role</button>
+              <button type="button" onclick="toggleHostRoleForTesting()" class="demo-only text-[10px] font-bold text-primary hover:underline shrink-0">Switch Role</button>
             </div>
             <span id="cart-host-status-desc" class="text-amber-900/80 text-[11.5px] block mt-0.5 leading-snug">As the 1st person who scanned, only you can fire the initial order to the kitchen.</span>
           </div>
@@ -544,7 +563,7 @@
           <span class="material-symbols-outlined text-[17px]">restaurant_menu</span>
           <span>Full Menu</span>
         </button>
-        <button onclick="resetOrderForTesting()" class="flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
+        <button onclick="resetOrderForTesting()" class="demo-only flex items-center gap-1 text-[11.5px] font-bold text-red-600 hover:text-white hover:bg-red-600 transition-all py-1.5 px-3 rounded-full bg-red-50 border border-red-200 active:scale-95 shadow-2xs" title="Reset this order to start from scratch">
           <span class="material-symbols-outlined text-[16px]">restart_alt</span>
           <span>Reset Order (Test)</span>
         </button>
@@ -585,7 +604,7 @@
                 <span class="text-[11px] text-secondary">Table #<span class="font-bold text-on-surface" id="conf-table-badge">04</span> &bull; <span id="ticket-number-display" class="font-mono">#TKT-0000</span></span>
               </div>
             </div>
-            <span class="text-[12px] font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed transition-colors" id="status-chip-text">Cooking In Kitchen 🔥</span>
+            <span class="text-[12px] font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed transition-colors whitespace-nowrap" id="status-chip-text">In Kitchen</span>
           </div>
 
           <!-- Stepper Timeline -->
@@ -606,7 +625,7 @@
               <div id="step-prep-dot" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors">
                 <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
               </div>
-              <span class="text-[11px] font-bold text-primary mt-1.5">In Kitchen</span>
+              <span id="step-prep-label" class="text-[11px] font-bold text-primary mt-1.5">In Kitchen</span>
             </div>
 
             <!-- Step 3: Plating/Serving -->
@@ -620,13 +639,13 @@
 
           <!-- Time info & demo status advance + Reset button -->
           <div class="mt-3 pt-2.5 border-t border-surface-container/60 flex items-center justify-between gap-2 text-[11px] text-secondary">
-            <button onclick="resetOrderForTesting()" class="text-red-600 font-bold hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg active:scale-95 transition-all" type="button" title="Reset order to start from scratch">
+            <button onclick="resetOrderForTesting()" class="demo-only text-red-600 font-bold hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg active:scale-95 transition-all" type="button" title="Reset order to start from scratch">
               <span class="material-symbols-outlined text-[14px]">restart_alt</span>
               <span>Reset Order</span>
             </button>
             <div class="flex items-center gap-3">
-              <span id="prep-time-estimate-text" class="hidden sm:inline">Estimated prep: ~18-22 mins</span>
-              <button onclick="advanceDemoStatus()" class="text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
+              <span id="prep-time-estimate-text">Estimated prep: ~18-22 mins</span>
+              <button onclick="advanceDemoStatus()" class="demo-only text-primary font-semibold hover:underline flex items-center gap-0.5 active:scale-95 transition-transform" type="button">
                 <span>Advance Status (Demo)</span>
                 <span class="material-symbols-outlined text-[12px]">fast_forward</span>
               </button>
@@ -758,7 +777,7 @@
 
           <!-- Total due -->
           <div class="pt-3 border-t border-surface-container flex items-center justify-between">
-            <span class="font-headline font-bold text-[15px] text-on-surface">Total Due (Incl. 5% Tax):</span>
+            <span class="font-headline font-bold text-[15px] text-on-surface">Total due (incl. tax &amp; charges)</span>
             <span class="font-headline font-bold text-[18px] text-primary" id="ticket-total-val">Rs. 0</span>
           </div>
 
@@ -810,7 +829,7 @@
       <!-- Modal Header Bar -->
       <div class="sticky top-0 z-20 bg-surface/95 backdrop-blur-md px-margin py-3 flex items-center justify-between border-b border-surface-container">
         <span class="font-headline font-bold text-[16px] text-on-surface">Dish Customization</span>
-        <button onclick="closeDishDetail()" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface transition-colors" type="button">
+        <button onclick="closeDishDetail()" aria-label="Close" class="w-9 h-9 rounded-full bg-surface-container-lowest border border-surface-container flex items-center justify-center text-secondary hover:text-on-surface transition-colors" type="button">
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
@@ -818,25 +837,21 @@
       <!-- Dish Image & Glance Cards -->
       <div class="p-margin flex flex-col items-center">
         
-        <!-- Circular Hero Plate Stage -->
-        <div class="relative w-56 h-56 sm:w-64 sm:h-64 my-1 flex items-center justify-center">
-          <div class="relative w-52 h-52 sm:w-60 sm:h-60 rounded-full overflow-hidden shadow-xl ring-4 ring-surface-container-lowest">
+        <!-- Compact dish header: photo + title/price -->
+        <div class="w-full flex items-start gap-3.5">
+          <div class="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-2xl overflow-hidden shadow-md bg-surface-container">
             <img id="modal-dish-img" class="w-full h-full object-cover" alt="Dish photo" src=""/>
           </div>
-          <div class="absolute -bottom-1 right-2 bg-surface-container-lowest px-3 py-1 rounded-full shadow-md text-on-surface font-semibold text-[11px] flex items-center gap-1">
-            <span class="material-symbols-outlined text-tertiary text-[14px]">schedule</span>
-            <span id="modal-dish-time">20 min</span>
+          <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+            <h2 class="font-headline font-black text-[19px] sm:text-[21px] text-on-surface leading-tight" id="modal-dish-title">Dish Title</h2>
+            <span class="font-headline font-black text-[20px] sm:text-[22px] text-primary leading-none" id="modal-dish-price">$0.00</span>
+            <span class="inline-flex items-center gap-1 self-start bg-surface-container-lowest border border-surface-container px-2.5 py-1 rounded-full text-on-surface font-semibold text-[11px]">
+              <span class="material-symbols-outlined text-tertiary text-[14px]">schedule</span>
+              <span id="modal-dish-time">20 min</span>
+            </span>
           </div>
         </div>
-
-        <!-- Title, Price & Description (Center-aligned with picture) -->
-        <div class="w-full mt-3 flex flex-col items-center text-center">
-          <h2 class="font-headline font-black text-[20px] sm:text-[22px] text-on-surface leading-tight text-center" id="modal-dish-title">Dish Title</h2>
-          <div class="mt-1.5 flex items-center justify-center gap-1.5">
-            <span class="font-headline font-black text-[22px] sm:text-[24px] text-primary leading-none" id="modal-dish-price">$0.00</span>
-          </div>
-          <p class="text-[12.5px] text-secondary mt-2 leading-relaxed text-center max-w-md px-3" id="modal-dish-desc">Savory dish description...</p>
-        </div>
+        <p class="w-full text-[13px] text-secondary mt-3 leading-relaxed" id="modal-dish-desc">Savory dish description...</p>
 
         <!-- Nutrition Glance Badges -->
         <div class="w-full mt-3 grid grid-cols-3 gap-2">
@@ -856,15 +871,15 @@
 
         <!-- Portion Size Options -->
         <div class="w-full mt-4">
-          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2 text-center">Choose Serving Size</label>
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2">Choose Serving Size</label>
           <div class="grid grid-cols-2 gap-2.5" id="modal-size-container">
             <!-- Dynamically populated per dish (e.g. Half kg vs Full kg) -->
           </div>
         </div>
 
-        <!-- Desi Mirch / Spice Preference -->
-        <div class="w-full mt-4">
-          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2 text-center">Desi Mirch &amp; Spice Level</label>
+        <!-- Desi Mirch / Spice Preference (hidden for drinks & desserts) -->
+        <div class="w-full mt-4" id="modal-spice-section">
+          <label class="font-headline font-bold text-[14px] text-on-surface block mb-2">Desi Mirch &amp; Spice Level</label>
           <div class="grid grid-cols-3 gap-2">
             <button onclick="selectSpice('Normal 🍃', this)" type="button" class="spice-btn py-2 px-2 rounded-xl border border-surface-container bg-surface-container-lowest text-[12px] font-semibold text-secondary hover:text-on-surface text-center">
               Normal 🍃
@@ -892,27 +907,27 @@
           <input id="modal-dish-note" type="text" placeholder="e.g. No onions, sauce on side, extra crispy" class="w-full bg-surface-container-lowest border border-surface-container rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"/>
         </div>
 
-        <!-- Stepper & Add to Order Bar -->
-        <div class="w-full mt-5 pt-3 border-t border-surface-container flex items-center gap-3">
+      </div>
+
+      <!-- Stepper & Add to Order Bar (sticky so it's always reachable) -->
+      <div class="sticky bottom-0 z-20 w-full bg-surface/95 backdrop-blur-md border-t border-surface-container px-margin pt-3 pb-safe flex items-center gap-3" style="padding-bottom: max(12px, env(safe-area-inset-bottom));">
           <!-- Stepper -->
           <div class="flex items-center bg-surface-container-low rounded-full p-1 border border-surface-container">
-            <button onclick="adjustModalQty(-1)" class="w-9 h-9 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center text-on-surface active:scale-90 transition-transform">
+            <button onclick="adjustModalQty(-1)" aria-label="Decrease quantity" class="w-9 h-9 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center text-on-surface active:scale-90 transition-transform">
               <span class="material-symbols-outlined text-[18px]">remove</span>
             </button>
             <span id="modal-qty-val" class="w-8 text-center font-bold text-[15px]">1</span>
-            <button onclick="adjustModalQty(1)" class="w-9 h-9 rounded-full bg-primary text-on-primary shadow-sm flex items-center justify-center active:scale-90 transition-transform">
+            <button onclick="adjustModalQty(1)" aria-label="Increase quantity" class="w-9 h-9 rounded-full bg-primary text-on-primary shadow-sm flex items-center justify-center active:scale-90 transition-transform">
               <span class="material-symbols-outlined text-[18px]">add</span>
             </button>
           </div>
 
           <!-- Add Button -->
           <button id="modal-add-btn" onclick="commitModalToCart()" class="flex-1 py-3 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[15px] flex items-center justify-between shadow-[0_4px_16px_rgba(172,45,0,0.28)] hover:brightness-105 active:scale-95 transition-all">
-            <span>Add to Table Order</span>
+            <span>Add to order</span>
             <span id="modal-add-total">$0.00</span>
           </button>
         </div>
-
-      </div>
 
     </div>
   </div>
@@ -982,12 +997,12 @@
         <span class="material-symbols-outlined text-[36px]">verified</span>
       </div>
       <span class="text-[11px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full mb-1">Payment Confirmed</span>
-      <h3 class="font-headline font-bold text-[20px] text-on-surface">Bill Settled by Server!</h3>
-      <p class="text-[12px] text-secondary mt-1">Your cash payment for <span id="settled-table-name" class="font-bold text-on-surface">Table 04</span> has been confirmed by staff.</p>
+      <h3 class="font-headline font-bold text-[20px] text-on-surface">Thanks for dining with us</h3>
+      <p class="text-[13px] text-secondary mt-1">Your <span id="settled-pay-method">payment</span> for <span id="settled-table-name" class="font-bold text-on-surface">Table 04</span> has been confirmed.</p>
 
       <!-- Post-Order Review (step 1: rate, step 2: thanks + Google) -->
       <div id="review-step-rate" class="w-full bg-surface-container-low rounded-2xl p-4 my-4 text-left">
-        <p class="text-[13px] font-semibold text-on-surface mb-2 text-center">How was your meal?</p>
+        <p class="font-headline text-[16px] font-bold text-on-surface mb-2 text-center">How was your meal?</p>
         <div class="flex items-center justify-center gap-1.5 text-tertiary" role="radiogroup" aria-label="Rate your meal">
           <button type="button" onclick="rateDining(1)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="1 star">star</button>
           <button type="button" onclick="rateDining(2)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="2 stars">star</button>
@@ -997,7 +1012,7 @@
         </div>
         <span id="rating-feedback-label" class="text-[11px] text-secondary mt-1 block text-center">Tap stars to rate</span>
         <textarea id="review-comment-input" rows="3" maxlength="1000" placeholder="Tell us what you loved or what we can do better (optional)" class="mt-3 w-full rounded-xl border border-surface-container bg-surface p-2.5 text-[13px] text-on-surface focus:outline-none focus:border-primary resize-none"></textarea>
-        <button id="review-submit-btn" type="button" onclick="submitMealReview()" disabled class="mt-2 w-full py-2.5 rounded-full bg-on-surface text-surface font-bold text-[13px] disabled:opacity-40 active:scale-95 transition-all">
+        <button id="review-submit-btn" type="button" onclick="submitMealReview()" disabled class="mt-2 w-full py-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md disabled:opacity-40 disabled:shadow-none active:scale-95 transition-all">
           Submit Review
         </button>
       </div>
@@ -1022,13 +1037,13 @@
         </button>
       </div>
 
-      <button type="button" onclick="openOwnerMessageModal()" class="owner-msg-entry w-full mb-2 py-3 px-4 rounded-full bg-surface-container-lowest border border-surface-container text-on-surface font-bold text-[13px] flex items-center justify-center gap-1.5 hover:border-primary active:scale-95 transition-all">
+      <button type="button" onclick="openOwnerMessageModal()" class="owner-msg-entry w-full py-3 px-4 rounded-full bg-surface-container-lowest border border-surface-container text-on-surface font-bold text-[13px] flex items-center justify-center gap-1.5 hover:border-primary active:scale-95 transition-all">
         <span class="material-symbols-outlined text-[18px] text-primary">mail</span>
         <span>Message the Owner or Manager</span>
       </button>
 
-      <button onclick="closeSettledModalAndReset()" class="w-full py-3.5 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
-        Start New Dining Order
+      <button onclick="closeSettledModalAndReset()" class="w-full mt-1 py-2.5 px-4 rounded-full text-secondary hover:text-on-surface font-bold text-[13px] active:scale-95 transition-all">
+        Done, start a new order
       </button>
     </div>
   </div>
@@ -2649,10 +2664,10 @@
       const roleText = document.getElementById('table-role-text');
       if (roleBadge && roleText) {
         if (appState.isHost) {
-          roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs";
+          roleBadge.className = "demo-only inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs";
           roleBadge.innerHTML = '<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: \'FILL\' 1;">star</span><span id="table-role-text">Table Host</span>';
         } else {
-          roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs";
+          roleBadge.className = "demo-only inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs";
           roleBadge.innerHTML = '<span class="material-symbols-outlined text-[12px]">person</span><span id="table-role-text">Co-Diner</span>';
         }
       }
@@ -2736,6 +2751,7 @@
       appState.currentTicket.status = curStatus;
 
       const chip = document.getElementById('status-chip-text');
+      const prepLabel = document.getElementById('step-prep-label');
       const bar = document.getElementById('timeline-progress-bar');
       const prepDot = document.getElementById('step-prep-dot');
       const servedDot = document.getElementById('step-served-dot');
@@ -2752,10 +2768,11 @@
 
       if (curStatus === 'Served' || curStatus === 'Plated & Ready') {
         if (chip) {
-          chip.textContent = (curStatus === 'Served') ? "Dishes Served! 🍽️" : "Plated & Serving 🍽️";
+          chip.textContent = (curStatus === 'Served') ? "Served" : "Being Served";
           chip.className = "text-[12px] font-bold text-emerald-800 px-2.5 py-1 rounded-full bg-emerald-100 transition-colors";
         }
         if (bar) bar.style.width = '100%';
+        if (prepLabel) prepLabel.className = "text-[11px] font-bold text-emerald-700 mt-1.5";
         if (prepDot) {
           prepDot.className = "w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors";
           prepDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span>';
@@ -2776,10 +2793,11 @@
         if (bannerSub) bannerSub.textContent = "Tap to view table tab, add items or request bill";
       } else if (curStatus === 'In Kitchen' || curStatus === 'Cooking') {
         if (chip) {
-          chip.textContent = "Cooking In Kitchen 🔥";
+          chip.textContent = "In Kitchen";
           chip.className = "text-[12px] font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed transition-colors";
         }
         if (bar) bar.style.width = '50%';
+        if (prepLabel) prepLabel.className = "text-[11px] font-bold text-primary mt-1.5";
         if (prepDot) {
           prepDot.className = "w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-[14px] font-bold shadow-sm transition-colors";
           prepDot.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">soup_kitchen</span>';
@@ -2801,10 +2819,23 @@
       } else {
         // New / Received
         if (chip) {
-          chip.textContent = "Order Received 👨‍🍳";
+          chip.textContent = "Order Received";
           chip.className = "text-[12px] font-bold text-sky-800 px-2.5 py-1 rounded-full bg-sky-100 transition-colors";
         }
-        if (bar) bar.style.width = '20%';
+        if (bar) bar.style.width = '0%';
+        if (prepDot) {
+          prepDot.className = "w-8 h-8 rounded-full bg-surface-container text-secondary flex items-center justify-center text-[14px] font-bold transition-colors";
+          prepDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">soup_kitchen</span>';
+        }
+        if (servedDot) {
+          servedDot.className = "w-8 h-8 rounded-full bg-surface-container text-secondary flex items-center justify-center text-[14px] font-bold transition-colors";
+          servedDot.innerHTML = '<span class="material-symbols-outlined text-[16px]">dinner_dining</span>';
+        }
+        if (servedLabel) {
+          servedLabel.textContent = "Serving";
+          servedLabel.className = "text-[11px] text-secondary mt-1.5";
+        }
+        if (prepLabel) prepLabel.className = "text-[11px] text-secondary mt-1.5";
         if (celebrationBanner) celebrationBanner.classList.add('hidden');
         if (prepTimeText) prepTimeText.textContent = "Order received by kitchen station.";
         if (bannerStatus) bannerStatus.textContent = "Received by Kitchen 👨‍🍳";
@@ -2851,10 +2882,17 @@
           (appState.currentTicket && data.ticketId === appState.currentTicket.ticketId)
         );
 
-        if (isMatch) {
+        if (isMatch && data.reason === 'table_reset') {
+          syncTableSession();
+        } else if (isMatch) {
           syncTableSession();
           const tableNameEl = document.getElementById('settled-table-name');
           if (tableNameEl) tableNameEl.textContent = ourTable;
+          const payMethodEl = document.getElementById('settled-pay-method');
+          if (payMethodEl) {
+            const method = String((data.sale && data.sale.paymentMethod) || data.paymentMethod || '').toLowerCase();
+            payMethodEl.textContent = method === 'cash' ? 'cash payment' : (method === 'card' ? 'card payment' : 'payment');
+          }
           const modal = document.getElementById('bill-settled-modal');
           if (modal) {
             const settledTicketId = data.ticketId || (appState.currentTicket && appState.currentTicket.ticketId) || null;
@@ -3068,7 +3106,17 @@
     }, 1200);
 
     // Load persisted state or URL table param on startup
+    function initDemoMode() {
+      try {
+        const q = new URLSearchParams(window.location.search);
+        if (q.get('demo') === '1') sessionStorage.setItem('gourmet_demo_mode', '1');
+        if (q.get('demo') === '0') sessionStorage.removeItem('gourmet_demo_mode');
+        document.body.classList.toggle('demo-mode', sessionStorage.getItem('gourmet_demo_mode') === '1');
+      } catch (e) {}
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
+      initDemoMode();
       initTableFromUrl();
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('reset') === '1' || urlParams.get('resetOrder') === '1') {
@@ -3242,11 +3290,6 @@
       }
 
       // Update active category rail button
-      const activeCat = document.querySelector('.cat-rail-btn.active');
-      if (activeCat) {
-        activeCat.style.borderColor = primary;
-        activeCat.style.color = primary;
-      }
     }
 
     function applyTableLabels() {
@@ -3433,15 +3476,17 @@
 
       // Update vertical rail buttons
       document.querySelectorAll('.cat-rail-btn').forEach(b => {
-        b.classList.remove('active', 'bg-surface', 'border-primary', 'text-primary', 'font-bold', 'shadow-2xs');
-        b.classList.add('text-secondary', 'border-transparent');
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
       });
       if (!btn) {
         btn = Array.from(document.querySelectorAll('.cat-rail-btn')).find(b => b.getAttribute('onclick')?.includes(`'${cat}'`));
       }
       if (btn) {
-        btn.classList.add('active', 'bg-surface', 'border-primary', 'text-primary', 'font-bold', 'shadow-2xs');
-        btn.classList.remove('text-secondary', 'border-transparent');
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        const track = document.getElementById('category-tabs-track');
+        if (track) track.scrollTo({ left: Math.max(0, btn.offsetLeft - (track.clientWidth - btn.offsetWidth) / 2), behavior: 'smooth' });
       }
 
       // Update section heading
@@ -3864,7 +3909,10 @@
 
       appState.activeModalDish = dish;
       appState.modalQty = 1;
-      appState.modalSpice = "Chatpata 🌶️";
+      const spiceApplies = dishTakesSpice(dish);
+      appState.modalSpice = spiceApplies ? "Chatpata 🌶️" : "";
+      const spiceSec = document.getElementById('modal-spice-section');
+      if (spiceSec) spiceSec.classList.toggle('hidden', !spiceApplies);
       appState.modalSelectedAddons = [];
 
       document.getElementById('modal-dish-img').src = dish.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
@@ -4233,6 +4281,12 @@
       renderDishGrid();
     }
 
+    // Drinks and desserts don't get a spice level
+    function dishTakesSpice(dish) {
+      const cat = String((dish && dish.category) || '').toLowerCase();
+      return !['drinks', 'drink', 'beverages', 'desserts', 'dessert', 'meetha', 'shakes'].includes(cat);
+    }
+
     function quickAddToCart(dishId) {
       const dish = findDishById(dishId);
       if (!dish) return;
@@ -4245,7 +4299,7 @@
         qty: 1,
         image: dish.image,
         size: defaultSize,
-        spice: "Chatpata 🌶️",
+        spice: dishTakesSpice(dish) ? "Chatpata 🌶️" : "",
         note: "",
         station: dish.station || "karahi"
       });
@@ -4444,7 +4498,7 @@
             </div>
 
             <p class="text-[11px] text-secondary mt-0.5">
-              ${item.size} • ${item.spice} ${item.note ? `• <span class="italic">"${item.note}"</span>` : ''}
+              ${[item.size, item.spice].filter(Boolean).join(' • ')} ${item.note ? `• <span class="italic">"${item.note}"</span>` : ''}
             </p>
 
             <div class="flex items-center justify-between mt-2">
@@ -4758,9 +4812,10 @@
         });
       } catch (e) {}
 
-      // 6. Broadcast event
+      // 6. Broadcast event (tagged as a reset so no "bill settled" screen is shown)
       PosSync.emit({
         type: 'BILL_SETTLED',
+        reason: 'table_reset',
         table: tableStr
       });
 
@@ -4804,7 +4859,7 @@
           <div class="flex items-start justify-between text-[12px]">
             <div>
               <span class="font-bold text-on-surface">${item.qty}x ${item.title}</span>
-              <span class="text-secondary text-[11px] block pl-3">${item.size || 'Standard'} • ${item.spice || 'Normal'}</span>
+              <span class="text-secondary text-[11px] block pl-3">${[item.size || 'Standard', item.spice].filter(Boolean).join(' • ')}</span>
             </div>
             <span class="font-semibold text-on-surface">${formatPrice((item.price || 0) * (item.qty || 1))}</span>
           </div>
@@ -4866,7 +4921,7 @@
               <span class="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded-full group-hover:bg-primary group-hover:text-white transition-colors">+ ADD</span>
             </div>
             <span class="font-bold text-[12px] text-on-surface block leading-tight">${displayName}</span>
-            <span class="text-secondary font-mono text-[11px] mt-0.5">Rs. ${price}</span>
+            <span class="font-headline font-bold text-primary text-[12px] mt-0.5">Rs. ${price.toLocaleString('en-PK')}</span>
           </button>
         `;
       }).join('');

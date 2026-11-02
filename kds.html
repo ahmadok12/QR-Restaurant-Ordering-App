@@ -239,9 +239,9 @@
                   <strong class="text-slate-900 text-[13px]">${item.qty}x</strong> ${item.title}
                   <div class="text-[10px] text-slate-500">${item.size || 'Standard'}</div>
                 </div>
-                <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[10px]">
+                ${item.spice === '' ? '' : `<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[10px]">
                   ${item.spice || 'Normal'}
-                </span>
+                </span>`}
               </div>
             `).join('')}
           </div>
