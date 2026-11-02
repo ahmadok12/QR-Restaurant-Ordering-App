@@ -718,6 +718,20 @@
         </button>
       </div>
 
+      <!-- Private Note to Owner / Manager (restaurant admin can switch this off) -->
+      <div class="owner-msg-entry px-margin mt-3">
+        <button onclick="openOwnerMessageModal()" type="button" class="w-full p-3 rounded-2xl bg-surface-container-lowest border border-dashed border-primary/40 hover:border-primary flex items-center gap-3 text-left active:scale-[0.99] transition-all">
+          <span class="w-10 h-10 rounded-xl bg-primary-fixed text-primary flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-[20px]">mail</span>
+          </span>
+          <span class="flex-1 min-w-0">
+            <span class="font-headline font-bold text-[14px] text-on-surface block leading-tight">Message the Owner or Manager</span>
+            <span class="text-[11px] text-secondary">Leave a private note for the restaurant's management</span>
+          </span>
+          <span class="material-symbols-outlined text-secondary text-[18px]">chevron_right</span>
+        </button>
+      </div>
+
       <!-- Itemized Table Order Breakdown (Receipt Style) -->
       <div class="px-margin mt-4 mb-6">
         <div class="bg-surface-container-lowest border border-surface-container rounded-2xl p-4 shadow-sm" id="printable-ticket">
@@ -971,21 +985,85 @@
       <h3 class="font-headline font-bold text-[20px] text-on-surface">Bill Settled by Server!</h3>
       <p class="text-[12px] text-secondary mt-1">Your cash payment for <span id="settled-table-name" class="font-bold text-on-surface">Table 04</span> has been confirmed by staff.</p>
 
-      <!-- 5-Star Feedback Form -->
-      <div class="w-full bg-surface-container-low rounded-2xl p-4 my-4">
-        <p class="text-[12px] font-semibold text-on-surface mb-2">How was your culinary experience?</p>
-        <div class="flex items-center justify-center gap-1.5 text-tertiary">
-          <button onclick="rateDining(1)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(2)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(3)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(4)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
-          <button onclick="rateDining(5)" class="star-btn text-[28px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform">star</button>
+      <!-- Post-Order Review (step 1: rate, step 2: thanks + Google) -->
+      <div id="review-step-rate" class="w-full bg-surface-container-low rounded-2xl p-4 my-4 text-left">
+        <p class="text-[13px] font-semibold text-on-surface mb-2 text-center">How was your meal?</p>
+        <div class="flex items-center justify-center gap-1.5 text-tertiary" role="radiogroup" aria-label="Rate your meal">
+          <button type="button" onclick="rateDining(1)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="1 star">star</button>
+          <button type="button" onclick="rateDining(2)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="2 stars">star</button>
+          <button type="button" onclick="rateDining(3)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="3 stars">star</button>
+          <button type="button" onclick="rateDining(4)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="4 stars">star</button>
+          <button type="button" onclick="rateDining(5)" class="star-btn text-[32px] material-symbols-outlined hover:scale-110 active:scale-90 transition-transform" aria-label="5 stars">star</button>
         </div>
-        <span id="rating-feedback-label" class="text-[11px] text-secondary mt-1 block">Tap stars to rate</span>
+        <span id="rating-feedback-label" class="text-[11px] text-secondary mt-1 block text-center">Tap stars to rate</span>
+        <textarea id="review-comment-input" rows="3" maxlength="1000" placeholder="Tell us what you loved or what we can do better (optional)" class="mt-3 w-full rounded-xl border border-surface-container bg-surface p-2.5 text-[13px] text-on-surface focus:outline-none focus:border-primary resize-none"></textarea>
+        <button id="review-submit-btn" type="button" onclick="submitMealReview()" disabled class="mt-2 w-full py-2.5 rounded-full bg-on-surface text-surface font-bold text-[13px] disabled:opacity-40 active:scale-95 transition-all">
+          Submit Review
+        </button>
       </div>
+
+      <div id="review-step-thanks" class="hidden w-full bg-surface-container-low rounded-2xl p-4 my-4">
+        <p class="text-[14px] font-bold text-on-surface">Thank you for your feedback! 🙏</p>
+        <p class="text-[12px] text-secondary mt-1">Your review has been shared with the restaurant team.</p>
+
+        <!-- Highlighted Google prompt (shown for high ratings) -->
+        <div id="google-review-highlight" class="hidden mt-3 p-3 rounded-xl bg-surface border border-amber-300 text-left">
+          <p class="text-[13px] font-semibold text-on-surface">Would you share this on Google too?</p>
+          <p class="text-[11px] text-secondary mt-0.5">It really helps other diners find us. Your comment is copied so you can paste it.</p>
+          <button type="button" onclick="openGoogleReview()" class="mt-2 w-full py-2.5 rounded-full bg-primary text-on-primary font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[18px]">rate_review</span>
+            <span>Post on Google</span>
+          </button>
+        </div>
+
+        <!-- Plain Google link (shown for everyone else) -->
+        <button id="google-review-plain" type="button" onclick="openGoogleReview()" class="hidden mt-3 text-[12px] font-semibold text-primary hover:underline">
+          You can also leave a review on Google
+        </button>
+      </div>
+
+      <button type="button" onclick="openOwnerMessageModal()" class="owner-msg-entry w-full mb-2 py-3 px-4 rounded-full bg-surface-container-lowest border border-surface-container text-on-surface font-bold text-[13px] flex items-center justify-center gap-1.5 hover:border-primary active:scale-95 transition-all">
+        <span class="material-symbols-outlined text-[18px] text-primary">mail</span>
+        <span>Message the Owner or Manager</span>
+      </button>
 
       <button onclick="closeSettledModalAndReset()" class="w-full py-3.5 px-4 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md hover:brightness-105 active:scale-95 transition-all">
         Start New Dining Order
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MESSAGE THE OWNER / MANAGER MODAL ================= -->
+  <div id="owner-message-modal" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-margin">
+    <div class="w-full max-w-sm bg-surface rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl animate-fade-in">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="font-headline font-bold text-[18px] text-on-surface">Leave a Private Message</h3>
+          <p class="text-[12px] text-secondary mt-0.5">Goes privately to management, not to your server.</p>
+        </div>
+        <button type="button" onclick="closeOwnerMessageModal()" class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary hover:text-on-surface" aria-label="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+      <span class="block mt-3 text-[11px] font-bold text-secondary">Send to</span>
+      <div class="mt-1 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Send message to">
+        <button type="button" id="owner-msg-to-manager" onclick="setOwnerMessageRecipient('manager')" role="radio" class="py-2 rounded-xl border text-[13px] font-bold transition-all">Manager</button>
+        <button type="button" id="owner-msg-to-owner" onclick="setOwnerMessageRecipient('owner')" role="radio" class="py-2 rounded-xl border text-[13px] font-bold transition-all">Owner</button>
+      </div>
+      <label class="block mt-3 text-[11px] font-bold text-secondary" for="owner-message-text">Your message</label>
+      <textarea id="owner-message-text" rows="4" maxlength="1000" placeholder="A compliment, a concern, a special request..." class="mt-1 w-full rounded-xl border border-surface-container bg-surface-container-lowest p-2.5 text-[13px] text-on-surface focus:outline-none focus:border-primary resize-none"></textarea>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <div>
+          <label class="block text-[11px] font-bold text-secondary" for="owner-message-name">Name (optional)</label>
+          <input id="owner-message-name" type="text" maxlength="40" class="mt-1 w-full rounded-xl border border-surface-container bg-surface-container-lowest p-2 text-[13px] text-on-surface focus:outline-none focus:border-primary">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-secondary" for="owner-message-contact">Phone / email (optional)</label>
+          <input id="owner-message-contact" type="text" maxlength="80" placeholder="If you'd like a reply" class="mt-1 w-full rounded-xl border border-surface-container bg-surface-container-lowest p-2 text-[13px] text-on-surface focus:outline-none focus:border-primary">
+        </div>
+      </div>
+      <button id="owner-message-send-btn" type="button" onclick="sendOwnerMessage()" class="mt-4 w-full py-3 rounded-full bg-primary text-on-primary font-headline font-bold text-[14px] shadow-md active:scale-95 transition-all">
+        Send Message
       </button>
     </div>
   </div>
@@ -2330,6 +2408,9 @@
       billingCharges: []
     };
 
+    // Post-order review state (declared early: settle events can fire during startup)
+    const reviewState = { ticketId: null, rating: 0, reviewId: null, googleUrl: '', comment: '', submitted: false };
+
     // --- MULTI-PERSON TABLE SESSION & HOST MANAGEMENT ---
     function getDeviceId() {
       let devId = sessionStorage.getItem('gourmet_device_id');
@@ -2776,6 +2857,10 @@
           if (tableNameEl) tableNameEl.textContent = ourTable;
           const modal = document.getElementById('bill-settled-modal');
           if (modal) {
+            const settledTicketId = data.ticketId || (appState.currentTicket && appState.currentTicket.ticketId) || null;
+            if (modal.classList.contains('hidden') || reviewState.ticketId !== settledTicketId) {
+              resetReviewForm(settledTicketId);
+            }
             modal.classList.remove('hidden');
             modal.classList.add('flex');
           }
@@ -2878,6 +2963,10 @@
           if (data.theme) {
             applyRestaurantVibe(data.theme);
           }
+        }
+      } else if (data.type === 'FEEDBACK_SETTINGS_UPDATED') {
+        if (!data.restaurantId || data.restaurantId === appState.restaurantId || (appState.restaurantId === 'REST-001' && data.restaurantId === 'rest-dera-01')) {
+          applyOwnerMessagesEnabled(data.ownerMessagesEnabled);
         }
       } else if (data.type === 'BILLING_SETTINGS_UPDATED') {
         if (!data.restaurantId || data.restaurantId === (appState.restaurantId || 'REST-001')) {
@@ -3066,6 +3155,7 @@
           if (r.theme) {
             applyRestaurantVibe(r.theme, r.name);
           }
+          applyOwnerMessagesEnabled(r.ownerMessagesEnabled);
 
           if (r.subscriptionCancelled || r.status === 'cancelled') {
             const overlay = document.createElement('div');
@@ -5119,10 +5209,35 @@
     }
 
     // --- 10. BILL SETTLED FEEDBACK ---
+    // --- POST-ORDER REVIEW & GOOGLE PROMPT ---
+
+    function getGuestNickname() {
+      return (localStorage.getItem('gourmet_guest_name') || '').trim();
+    }
+
+    function resetReviewForm(ticketId) {
+      reviewState.ticketId = ticketId || null;
+      reviewState.rating = 0;
+      reviewState.reviewId = null;
+      reviewState.googleUrl = '';
+      reviewState.comment = '';
+      reviewState.submitted = false;
+      const comment = document.getElementById('review-comment-input');
+      if (comment) comment.value = '';
+      document.getElementById('review-step-rate')?.classList.remove('hidden');
+      document.getElementById('review-step-thanks')?.classList.add('hidden');
+      document.getElementById('google-review-highlight')?.classList.add('hidden');
+      document.getElementById('google-review-plain')?.classList.add('hidden');
+      rateDining(0);
+    }
+
     function rateDining(stars) {
+      reviewState.rating = stars;
       const label = document.getElementById('rating-feedback-label');
       const labels = ['Needs Improvement', 'Fair', 'Good', 'Very Good', 'Exceptional! 🌟'];
-      if (label) label.textContent = `Rated ${stars}/5 Stars: ${labels[stars - 1]}`;
+      if (label) label.textContent = stars ? `Rated ${stars}/5: ${labels[stars - 1]}` : 'Tap stars to rate';
+      const submitBtn = document.getElementById('review-submit-btn');
+      if (submitBtn) submitBtn.disabled = !stars;
       const starBtns = document.querySelectorAll('.star-btn');
       starBtns.forEach((btn, idx) => {
         if (idx < stars) {
@@ -5133,6 +5248,142 @@
           btn.classList.remove('text-amber-400');
         }
       });
+    }
+
+    async function submitMealReview() {
+      if (!reviewState.rating || reviewState.submitted) return;
+      if (!reviewState.ticketId) {
+        showToast('Could not find your order to review.');
+        return;
+      }
+      const btn = document.getElementById('review-submit-btn');
+      if (btn) btn.disabled = true;
+      reviewState.comment = (document.getElementById('review-comment-input')?.value || '').trim();
+      try {
+        const res = await fetch(`${getApiBase()}/api/feedback/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurantId: appState.restaurantId || 'REST-001',
+            table: appState.tableNumber,
+            ticketId: reviewState.ticketId,
+            deviceId: getDeviceId(),
+            nickname: getGuestNickname(),
+            rating: reviewState.rating,
+            comment: reviewState.comment
+          })
+        });
+        const data = await res.json();
+        if (!res.ok && res.status !== 409) throw new Error(data.error || 'Could not submit review');
+        reviewState.submitted = true;
+        reviewState.reviewId = data.reviewId || null;
+        reviewState.googleUrl = data.googleReviewUrl || '';
+        document.getElementById('review-step-rate')?.classList.add('hidden');
+        document.getElementById('review-step-thanks')?.classList.remove('hidden');
+        if (reviewState.googleUrl) {
+          const target = data.highlightGoogle ? 'google-review-highlight' : 'google-review-plain';
+          document.getElementById(target)?.classList.remove('hidden');
+        }
+      } catch (e) {
+        if (btn) btn.disabled = false;
+        showToast(e.message || 'Could not submit review. Please try again.');
+      }
+    }
+
+    async function openGoogleReview() {
+      if (!reviewState.googleUrl) return;
+      if (reviewState.comment && navigator.clipboard) {
+        try { await navigator.clipboard.writeText(reviewState.comment); showToast('Your comment is copied. Paste it on Google!'); } catch (e) {}
+      }
+      window.open(reviewState.googleUrl, '_blank', 'noopener');
+      if (reviewState.reviewId) {
+        fetch(`${getApiBase()}/api/feedback/review/google-click`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewId: reviewState.reviewId, deviceId: getDeviceId() })
+        }).catch(() => {});
+      }
+    }
+
+    // --- PRIVATE MESSAGE TO OWNER / MANAGER ---
+    let ownerMessageRecipient = 'manager';
+
+    function applyOwnerMessagesEnabled(enabled) {
+      appState.ownerMessagesEnabled = enabled !== false;
+      document.querySelectorAll('.owner-msg-entry').forEach(el => el.classList.toggle('hidden', !appState.ownerMessagesEnabled));
+      if (!appState.ownerMessagesEnabled) {
+        const modal = document.getElementById('owner-message-modal');
+        if (modal && !modal.classList.contains('hidden')) closeOwnerMessageModal();
+      }
+    }
+
+    function setOwnerMessageRecipient(who) {
+      ownerMessageRecipient = who === 'owner' ? 'owner' : 'manager';
+      [['manager', 'owner-msg-to-manager'], ['owner', 'owner-msg-to-owner']].forEach(([key, id]) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const active = key === ownerMessageRecipient;
+        btn.setAttribute('aria-checked', active ? 'true' : 'false');
+        btn.classList.toggle('bg-primary', active);
+        btn.classList.toggle('text-on-primary', active);
+        btn.classList.toggle('border-primary', active);
+        btn.classList.toggle('bg-surface-container-lowest', !active);
+        btn.classList.toggle('text-on-surface', !active);
+        btn.classList.toggle('border-surface-container', !active);
+      });
+    }
+
+    function openOwnerMessageModal() {
+      if (appState.ownerMessagesEnabled === false) return;
+      setOwnerMessageRecipient(ownerMessageRecipient);
+      const nameEl = document.getElementById('owner-message-name');
+      if (nameEl && !nameEl.value) nameEl.value = getGuestNickname();
+      const modal = document.getElementById('owner-message-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => document.getElementById('owner-message-text')?.focus(), 50);
+    }
+
+    function closeOwnerMessageModal() {
+      const modal = document.getElementById('owner-message-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function sendOwnerMessage() {
+      const textEl = document.getElementById('owner-message-text');
+      const message = (textEl?.value || '').trim();
+      if (!message) {
+        showToast('Please write a message first.');
+        return;
+      }
+      const btn = document.getElementById('owner-message-send-btn');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(`${getApiBase()}/api/feedback/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurantId: appState.restaurantId || 'REST-001',
+            table: appState.tableNumber,
+            ticketId: (appState.currentTicket && appState.currentTicket.ticketId) || reviewState.ticketId || '',
+            deviceId: getDeviceId(),
+            nickname: (document.getElementById('owner-message-name')?.value || '').trim(),
+            contact: (document.getElementById('owner-message-contact')?.value || '').trim(),
+            recipient: ownerMessageRecipient,
+            message: message
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not send message');
+        textEl.value = '';
+        closeOwnerMessageModal();
+        showToast(`Message sent to the ${ownerMessageRecipient}. Thank you!`);
+      } catch (e) {
+        showToast(e.message || 'Could not send message. Please try again.');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     function closeSettledModalAndReset() {

@@ -496,6 +496,8 @@ function readDb() {
       }
       if (!data.auditLogs) data.auditLogs = [];
       if (!data.shifts) data.shifts = [];
+      if (!data.reviews) data.reviews = [];
+      if (!data.ownerMessages) data.ownerMessages = [];
       if (!data.superAdmin) data.superAdmin = DEFAULT_DB.superAdmin;
       (data.restaurants || []).forEach(r => {
         if (!r.managerPin) r.managerPin = "7788";
@@ -701,6 +703,30 @@ function calculateAuthoritativeOrder(order, db, targetRestId) {
   };
 }
 
+function sendJson(res, status, payload) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(payload));
+}
+
+function cleanText(value, maxLen) {
+  return String(value == null ? '' : value).trim().slice(0, maxLen);
+}
+
+function resolveRestaurant(db, restId) {
+  const list = db.restaurants || [];
+  return list.find(r => r.id === restId || ((!restId || restId === 'REST-001') && r.id === 'rest-dera-01')) || null;
+}
+
+function getReviewSettings(rest) {
+  const min = Number(rest && rest.googleHighlightMinRating);
+  return {
+    googleReviewUrl: (rest && rest.googleReviewUrl) || '',
+    googleHighlightMinRating: (Number.isInteger(min) && min >= 1 && min <= 5) ? min : 4,
+    // Restaurant admin can switch the guest "message the owner/manager" button on or off (on by default)
+    ownerMessagesEnabled: !(rest && rest.ownerMessagesEnabled === false)
+  };
+}
+
 const sseClients = new Set();
 
 function broadcastEvent(eventData) {
@@ -849,6 +875,8 @@ const server = http.createServer(async (req, res) => {
         plan: rest.plan,
         subscriptionCancelled: !!rest.subscriptionCancelled,
         theme: rest.theme || DEFAULT_THEME,
+        googleReviewUrl: rest.googleReviewUrl || '',
+        ownerMessagesEnabled: getReviewSettings(rest).ownerMessagesEnabled,
         billingCharges: (rest.billingCharges && Array.isArray(rest.billingCharges) && rest.billingCharges.length > 0)
           ? rest.billingCharges
           : [
@@ -3141,6 +3169,228 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ==========================================
+  // Guest Feedback: Post-Order Reviews & Messages to Owner/Manager
+  // ==========================================
+
+  // POST /api/feedback/review (guest rates the meal after the bill is settled)
+  if (pathname === '/api/feedback/review' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      const rest = resolveRestaurant(db, data.restaurantId);
+      const deviceId = cleanText(data.deviceId, 80);
+      const ticketId = cleanText(data.ticketId, 40);
+      const rating = Number(data.rating);
+
+      if (!rest || !rest.id) return sendJson(res, 404, { error: 'Restaurant not found' });
+      if (!deviceId) return sendJson(res, 400, { error: 'deviceId is required' });
+      if (!ticketId) return sendJson(res, 400, { error: 'ticketId is required' });
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return sendJson(res, 400, { error: 'rating must be a whole number from 1 to 5' });
+      }
+
+      const ticket = (db.tickets || []).find(t => t.ticketId === ticketId);
+      if (!ticket) return sendJson(res, 404, { error: 'Order not found' });
+      if (!['Settled', 'Served'].includes(ticket.status)) {
+        return sendJson(res, 409, { error: 'Reviews open once your order is complete' });
+      }
+
+      if (!db.reviews) db.reviews = [];
+      if (db.reviews.some(r => r.ticketId === ticketId && r.deviceId === deviceId)) {
+        return sendJson(res, 409, { error: 'You have already reviewed this order' });
+      }
+
+      const review = {
+        id: 'REV-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900),
+        restaurantId: rest.id,
+        ticketId: ticketId,
+        table: ticket.table || cleanText(data.table, 20),
+        deviceId: deviceId,
+        nickname: cleanText(data.nickname, 40) || 'Guest',
+        rating: rating,
+        comment: cleanText(data.comment, 1000),
+        googleClicked: false,
+        createdAt: new Date().toISOString()
+      };
+      db.reviews.unshift(review);
+      writeDb(db);
+
+      broadcastEvent({ type: 'REVIEW_SUBMITTED', restaurantId: rest.id, table: review.table, rating: rating });
+
+      const settings = getReviewSettings(rest);
+      sendJson(res, 200, {
+        ok: true,
+        reviewId: review.id,
+        googleReviewUrl: settings.googleReviewUrl,
+        // Every guest gets the Google link (Google bans asking only happy customers).
+        // High ratings just get a more prominent prompt.
+        highlightGoogle: Boolean(settings.googleReviewUrl) && rating >= settings.googleHighlightMinRating
+      });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // POST /api/feedback/review/google-click (record that the guest opened the Google review link)
+  if (pathname === '/api/feedback/review/google-click' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      const review = (db.reviews || []).find(r => r.id === data.reviewId && r.deviceId === cleanText(data.deviceId, 80));
+      if (!review) return sendJson(res, 404, { error: 'Review not found' });
+      review.googleClicked = true;
+      writeDb(db);
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // POST /api/feedback/message (guest leaves a private note for the owner/manager)
+  if (pathname === '/api/feedback/message' && req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      const db = readDb();
+      const rest = resolveRestaurant(db, data.restaurantId);
+      const deviceId = cleanText(data.deviceId, 80);
+      const message = cleanText(data.message, 1000);
+
+      if (!rest || !rest.id) return sendJson(res, 404, { error: 'Restaurant not found' });
+      if (!deviceId) return sendJson(res, 400, { error: 'deviceId is required' });
+      if (!message) return sendJson(res, 400, { error: 'Message cannot be empty' });
+      if (!getReviewSettings(rest).ownerMessagesEnabled) {
+        return sendJson(res, 403, { error: 'Messages to the owner/manager are turned off for this restaurant' });
+      }
+      const recipient = data.recipient === 'owner' ? 'owner' : 'manager';
+
+      if (!db.ownerMessages) db.ownerMessages = [];
+      const tenMinAgo = Date.now() - 10 * 60 * 1000;
+      const recentFromDevice = db.ownerMessages.filter(m => m.deviceId === deviceId && Date.parse(m.createdAt) > tenMinAgo).length;
+      if (recentFromDevice >= 5) {
+        return sendJson(res, 429, { error: 'Too many messages. Please wait a few minutes and try again.' });
+      }
+
+      const rawTable = cleanText(data.table, 20).replace('Table ', '');
+      const entry = {
+        id: 'MSG-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900),
+        restaurantId: rest.id,
+        table: rawTable ? `Table ${rawTable.padStart(2, '0')}` : '',
+        ticketId: cleanText(data.ticketId, 40),
+        deviceId: deviceId,
+        nickname: cleanText(data.nickname, 40) || 'Guest',
+        contact: cleanText(data.contact, 80),
+        recipient: recipient,
+        message: message,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      db.ownerMessages.unshift(entry);
+      writeDb(db);
+
+      // Content stays private: the SSE stream is public, so only a notice is broadcast.
+      broadcastEvent({ type: 'OWNER_MESSAGE', restaurantId: rest.id, table: entry.table, recipient: recipient });
+
+      sendJson(res, 200, { ok: true, messageId: entry.id });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // GET /api/feedback (owner/manager inbox: reviews + messages)
+  if (pathname === '/api/feedback' && req.method === 'GET') {
+    const auth = getRequestAuth(req);
+    if (!auth || !['restaurant_admin', 'super_admin'].includes(auth.role)) {
+      return sendJson(res, 401, { error: 'Restaurant admin login required' });
+    }
+    const db = readDb();
+    const rest = resolveRestaurant(db, auth.role === 'super_admin' ? parsedUrl.query.restaurantId : auth.restaurantId);
+    if (!rest || !rest.id) return sendJson(res, 404, { error: 'Restaurant not found' });
+
+    const strip = ({ deviceId, ...rest }) => rest;
+    const reviews = (db.reviews || []).filter(r => r.restaurantId === rest.id).map(strip);
+    const messages = (db.ownerMessages || []).filter(m => m.restaurantId === rest.id).map(strip);
+    const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
+
+    sendJson(res, 200, {
+      ok: true,
+      settings: getReviewSettings(rest),
+      summary: {
+        reviewCount: reviews.length,
+        averageRating: Math.round(avg * 10) / 10,
+        googleClicks: reviews.filter(r => r.googleClicked).length,
+        unreadMessages: messages.filter(m => !m.read).length
+      },
+      reviews: reviews,
+      messages: messages
+    });
+    return;
+  }
+
+  // POST /api/feedback/message/read (mark a guest message read/unread)
+  if (pathname === '/api/feedback/message/read' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      if (!auth || !['restaurant_admin', 'super_admin'].includes(auth.role)) {
+        return sendJson(res, 401, { error: 'Restaurant admin login required' });
+      }
+      const data = await parseBody(req);
+      const db = readDb();
+      const msg = (db.ownerMessages || []).find(m => m.id === data.messageId);
+      if (!msg || (auth.role !== 'super_admin' && msg.restaurantId !== (resolveRestaurant(db, auth.restaurantId) || {}).id)) {
+        return sendJson(res, 404, { error: 'Message not found' });
+      }
+      msg.read = data.read !== false;
+      writeDb(db);
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
+  // POST /api/restaurant/review-settings (Google review link setup)
+  if (pathname === '/api/restaurant/review-settings' && req.method === 'POST') {
+    try {
+      const auth = getRequestAuth(req);
+      if (!auth || !['restaurant_admin', 'super_admin'].includes(auth.role)) {
+        return sendJson(res, 401, { error: 'Restaurant admin login required' });
+      }
+      const data = await parseBody(req);
+      const db = readDb();
+      const rest = resolveRestaurant(db, auth.role === 'super_admin' ? data.restaurantId : auth.restaurantId);
+      if (!rest || !rest.id) return sendJson(res, 404, { error: 'Restaurant not found' });
+
+      // Each field is optional so the admin can save the Google link and the messages toggle separately
+      if (data.googleReviewUrl !== undefined) {
+        const urlStr = cleanText(data.googleReviewUrl, 500);
+        if (urlStr && !/^https:\/\//i.test(urlStr)) {
+          return sendJson(res, 400, { error: 'Google review link must start with https://' });
+        }
+        rest.googleReviewUrl = urlStr;
+      }
+      if (data.googleHighlightMinRating !== undefined) {
+        const minRating = Number(data.googleHighlightMinRating);
+        rest.googleHighlightMinRating = (Number.isInteger(minRating) && minRating >= 1 && minRating <= 5) ? minRating : 4;
+      }
+      if (data.ownerMessagesEnabled !== undefined) {
+        rest.ownerMessagesEnabled = data.ownerMessagesEnabled !== false;
+      }
+
+      const settings = getReviewSettings(rest);
+      logAuditEvent(db, 'REVIEW_SETTINGS_UPDATED', { restaurantId: rest.id, ...settings }, auth.name || 'Restaurant Admin', rest.id);
+      writeDb(db);
+      broadcastEvent({ type: 'FEEDBACK_SETTINGS_UPDATED', restaurantId: rest.id, ownerMessagesEnabled: settings.ownerMessagesEnabled });
+      sendJson(res, 200, { ok: true, settings: settings });
+    } catch (e) {
+      sendJson(res, 400, { error: e.message });
+    }
+    return;
+  }
+
   // Full DB Read Endpoint (Sanitized to prevent credential theft)
   if (pathname === '/api/db' && req.method === 'GET') {
     const auth = getRequestAuth(req);
@@ -3154,6 +3404,9 @@ const server = http.createServer(async (req, res) => {
     // Strip sensitive passwords & credentials for non-superadmin clients
     const sanitized = JSON.parse(JSON.stringify(db));
     delete sanitized.superAdmin;
+    // Guest reviews/messages are private to the owner; read them via /api/feedback
+    delete sanitized.reviews;
+    delete sanitized.ownerMessages;
     delete sanitized.managerPin;
     if (sanitized.restaurants) {
       sanitized.restaurants.forEach(r => {

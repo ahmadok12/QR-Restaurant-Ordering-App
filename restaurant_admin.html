@@ -362,6 +362,14 @@
                 <span class="text-[12px] font-bold text-slate-800 block mt-1">Dining Tables</span>
                 <span class="text-[10px] text-slate-400">Live floor cards</span>
               </div>
+              <div onclick="switchTab('feedback')" class="col-span-2 p-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-primary transition-all shadow-2xs flex items-center gap-3">
+                <span class="material-symbols-outlined text-amber-500 text-[22px]">reviews</span>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[12px] font-bold text-slate-800 block">Guest Feedback</span>
+                  <span class="text-[10px] text-slate-400" id="home-feedback-summary">Reviews &amp; private messages from guests</span>
+                </div>
+                <span id="home-feedback-unread" class="hidden px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black"></span>
+              </div>
             </div>
           </div>
 
@@ -832,6 +840,73 @@
           <div id="kitchen-orders-container" class="space-y-2.5">
             <!-- Rendered via JS -->
           </div>
+        </section>
+
+        <!-- TAB 7: GUEST FEEDBACK (Reviews + Messages to Owner/Manager) -->
+        <section id="tab-feedback" class="hidden space-y-3 pb-16">
+          <div class="px-1">
+            <h3 class="text-[15px] font-black text-slate-900 tracking-tight">Guest Feedback</h3>
+            <p class="text-[11px] text-slate-500">Post-meal reviews and private notes guests send to the owner or manager</p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div class="p-3 bg-white border border-slate-200 rounded-2xl">
+              <span class="text-[10px] text-slate-500 font-bold uppercase">Avg rating</span>
+              <span id="fb-avg" class="block text-[18px] font-black text-slate-900">–</span>
+            </div>
+            <div class="p-3 bg-white border border-slate-200 rounded-2xl">
+              <span class="text-[10px] text-slate-500 font-bold uppercase">Reviews</span>
+              <span id="fb-count" class="block text-[18px] font-black text-slate-900">0</span>
+            </div>
+            <div class="p-3 bg-white border border-slate-200 rounded-2xl">
+              <span class="text-[10px] text-slate-500 font-bold uppercase">Went to Google</span>
+              <span id="fb-google" class="block text-[18px] font-black text-slate-900">0</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-white border border-slate-200 rounded-2xl space-y-2">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-sky-600">link</span>
+              <h4 class="text-[13px] font-black text-slate-900">Google review link</h4>
+            </div>
+            <p class="text-[10.5px] text-slate-500">After rating their meal, every guest is offered this link. Guests who rate at or above the threshold get a highlighted prompt; Google's policy doesn't allow showing it only to happy guests.</p>
+            <input id="fb-google-url" type="url" placeholder="https://g.page/r/your-place-id/review" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-[12px] focus:outline-none focus:border-primary">
+            <div class="flex items-center justify-between gap-2">
+              <label class="text-[11px] text-slate-600 font-semibold flex items-center gap-1.5">
+                Highlight from
+                <select id="fb-google-min" class="rounded-lg border border-slate-200 px-2 py-1 text-[12px]">
+                  <option value="3">3★</option><option value="4" selected>4★</option><option value="5">5★</option>
+                </select>
+              </label>
+              <button type="button" onclick="saveReviewSettings()" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-[11px] active:scale-95 transition-all">Save</button>
+            </div>
+          </div>
+
+          <div class="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3">
+            <div>
+              <h4 class="text-[13px] font-black text-slate-900">Guest messages to owner/manager</h4>
+              <p class="text-[10.5px] text-slate-500">Shows a "Message the Owner or Manager" button on the guest app</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input id="fb-messages-enabled" type="checkbox" class="sr-only peer" onchange="toggleOwnerMessages(this.checked)" checked>
+              <span class="w-10 h-6 bg-slate-300 rounded-full peer-checked:bg-emerald-500 transition-colors"></span>
+              <span class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></span>
+            </label>
+          </div>
+
+          <div class="flex items-center gap-1.5 px-1 pt-1 flex-wrap">
+            <h4 class="text-[13px] font-black text-slate-900">Messages for you</h4>
+            <span id="fb-unread-badge" class="hidden px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold"></span>
+          </div>
+          <div class="flex items-center gap-1.5 px-1" id="fb-recipient-filter">
+            <button type="button" data-filter="all" onclick="setFeedbackRecipientFilter('all')" class="px-2.5 py-1 rounded-full text-[10.5px] font-bold border">All</button>
+            <button type="button" data-filter="owner" onclick="setFeedbackRecipientFilter('owner')" class="px-2.5 py-1 rounded-full text-[10.5px] font-bold border">To Owner</button>
+            <button type="button" data-filter="manager" onclick="setFeedbackRecipientFilter('manager')" class="px-2.5 py-1 rounded-full text-[10.5px] font-bold border">To Manager</button>
+          </div>
+          <div id="fb-messages" class="space-y-2"></div>
+
+          <h4 class="text-[13px] font-black text-slate-900 px-1 pt-1">Meal reviews</h4>
+          <div id="fb-reviews" class="space-y-2"></div>
         </section>
 
         <!-- TAB 6: DINING TABLES STATUS & CARDS -->
@@ -3600,6 +3675,7 @@
       renderOnlineQr();
       renderTableQrs();
       switchTab('home');
+      loadGuestFeedback();
     }
 
     function getAdminAuthHeaders() {
@@ -3648,7 +3724,7 @@
         openHomeSubView('dishes');
         return;
       }
-      ['home', 'tables', 'waiters', 'qr', 'orders'].forEach(t => {
+      ['home', 'tables', 'waiters', 'qr', 'orders', 'feedback'].forEach(t => {
         const sec = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`btn-tab-${t}`);
         if (t === tabId) {
@@ -3673,6 +3749,147 @@
       if (tabId === 'qr') {
         renderTableQrs();
         renderOnlineQr();
+      }
+      if (tabId === 'feedback') {
+        loadGuestFeedback();
+      }
+    }
+
+    // --- GUEST FEEDBACK (reviews + private messages) ---
+    let feedbackCache = null;
+    let feedbackRecipientFilter = 'all';
+
+    function setFeedbackRecipientFilter(filter) {
+      feedbackRecipientFilter = filter;
+      renderGuestFeedback();
+    }
+
+    async function toggleOwnerMessages(enabled) {
+      try {
+        const res = await fetch(`${getApiBase()}/api/restaurant/review-settings`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ ownerMessagesEnabled: enabled })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not update');
+      } catch (e) {
+        alert(e.message || 'Could not update the messages setting');
+      }
+      loadGuestFeedback();
+    }
+
+    function fbEsc(str) {
+      return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function fbWhen(iso) {
+      const d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadGuestFeedback() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/feedback`, { headers: getAdminAuthHeaders() });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load feedback');
+        feedbackCache = data;
+        renderGuestFeedback();
+      } catch (e) {
+        console.error('Failed to load guest feedback', e);
+      }
+    }
+
+    function renderGuestFeedback() {
+      if (!feedbackCache) return;
+      const { summary, settings, reviews, messages } = feedbackCache;
+      const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      setText('fb-avg', summary.reviewCount ? `${summary.averageRating}★` : '–');
+      setText('fb-count', summary.reviewCount);
+      setText('fb-google', summary.googleClicks);
+      setText('home-feedback-summary', summary.reviewCount
+        ? `${summary.averageRating}★ average from ${summary.reviewCount} review${summary.reviewCount === 1 ? '' : 's'}`
+        : 'Reviews & private messages from guests');
+
+      ['fb-unread-badge', 'home-feedback-unread'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('hidden', !summary.unreadMessages);
+        el.textContent = `${summary.unreadMessages} new`;
+      });
+
+      const urlEl = document.getElementById('fb-google-url');
+      if (urlEl && document.activeElement !== urlEl) urlEl.value = settings.googleReviewUrl || '';
+      const minEl = document.getElementById('fb-google-min');
+      if (minEl) minEl.value = String(settings.googleHighlightMinRating || 4);
+
+      const enabledEl = document.getElementById('fb-messages-enabled');
+      if (enabledEl) enabledEl.checked = settings.ownerMessagesEnabled !== false;
+      document.querySelectorAll('#fb-recipient-filter button').forEach(b => {
+        const active = b.dataset.filter === feedbackRecipientFilter;
+        b.className = `px-2.5 py-1 rounded-full text-[10.5px] font-bold border ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`;
+      });
+      const shownMessages = messages.filter(m => feedbackRecipientFilter === 'all' || (m.recipient || 'manager') === feedbackRecipientFilter);
+
+      const msgBox = document.getElementById('fb-messages');
+      if (msgBox) {
+        msgBox.innerHTML = shownMessages.length ? shownMessages.map(m => `
+          <div class="p-3 rounded-2xl border ${m.read ? 'bg-white border-slate-200' : 'bg-amber-50 border-amber-300'}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[12px] font-bold text-slate-900">${fbEsc(m.nickname)}${m.table ? ` · ${fbEsc(m.table)}` : ''}
+                <span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase ${(m.recipient || 'manager') === 'owner' ? 'bg-purple-100 text-purple-800' : 'bg-sky-100 text-sky-800'}">To ${(m.recipient || 'manager') === 'owner' ? 'Owner' : 'Manager'}</span></span>
+              <span class="text-[10px] text-slate-400">${fbEsc(fbWhen(m.createdAt))}</span>
+            </div>
+            <p class="text-[12px] text-slate-700 mt-1 whitespace-pre-wrap break-words">${fbEsc(m.message)}</p>
+            <div class="flex items-center justify-between gap-2 mt-2">
+              <span class="text-[10.5px] text-slate-500">${m.contact ? `Reply to: <b>${fbEsc(m.contact)}</b>` : 'No contact left'}</span>
+              <button type="button" onclick="markOwnerMessageRead('${fbEsc(m.id)}', ${!m.read})" class="text-[10.5px] font-bold text-primary hover:underline">${m.read ? 'Mark unread' : 'Mark read'}</button>
+            </div>
+          </div>`).join('')
+          : '<p class="text-[11px] text-slate-400 px-1">No messages yet.</p>';
+      }
+
+      const revBox = document.getElementById('fb-reviews');
+      if (revBox) {
+        revBox.innerHTML = reviews.length ? reviews.map(r => `
+          <div class="p-3 rounded-2xl bg-white border border-slate-200">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[13px] text-amber-500 tracking-tight" aria-label="${r.rating} out of 5">${'★'.repeat(r.rating)}<span class="text-slate-300">${'★'.repeat(5 - r.rating)}</span></span>
+              <span class="text-[10px] text-slate-400">${fbEsc(fbWhen(r.createdAt))}</span>
+            </div>
+            <span class="text-[11px] font-semibold text-slate-600">${fbEsc(r.nickname)} · ${fbEsc(r.table)} · ${fbEsc(r.ticketId)}${r.googleClicked ? ' · <span class="text-sky-700">opened Google</span>' : ''}</span>
+            ${r.comment ? `<p class="text-[12px] text-slate-700 mt-1 whitespace-pre-wrap break-words">${fbEsc(r.comment)}</p>` : ''}
+          </div>`).join('')
+          : '<p class="text-[11px] text-slate-400 px-1">No reviews yet.</p>';
+      }
+    }
+
+    async function markOwnerMessageRead(messageId, read) {
+      try {
+        await fetch(`${getApiBase()}/api/feedback/message/read`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ messageId, read })
+        });
+      } catch (e) {}
+      loadGuestFeedback();
+    }
+
+    async function saveReviewSettings() {
+      const googleReviewUrl = (document.getElementById('fb-google-url')?.value || '').trim();
+      const googleHighlightMinRating = Number(document.getElementById('fb-google-min')?.value || 4);
+      try {
+        const res = await fetch(`${getApiBase()}/api/restaurant/review-settings`, {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ googleReviewUrl, googleHighlightMinRating })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not save');
+        alert('Google review link saved');
+        loadGuestFeedback();
+      } catch (e) {
+        alert(e.message || 'Could not save review settings');
       }
     }
 
@@ -7158,6 +7375,9 @@
       evtSource.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
+          if ((data.type === 'REVIEW_SUBMITTED' || data.type === 'OWNER_MESSAGE') && currentRestaurant && data.restaurantId === currentRestaurant.id) {
+            loadGuestFeedback();
+          }
           if (['NEW_ORDER', 'STATUS_UPDATE', 'BILL_SETTLED', 'STAFF_UPDATED', 'RESTAURANTS_UPDATED', 'MENU_UPDATE', 'TABLES_UPDATED', 'SECTIONS_UPDATED', 'WAITER_SERVICES_UPDATE'].includes(data.type)) {
             if (currentRestaurant) {
               refreshAllData();
