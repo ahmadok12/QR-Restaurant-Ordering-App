@@ -41,9 +41,16 @@ http://localhost:3000/hub.html
 ```bash
 node test_fraud_controls.js    # 33 institutional security & audit tests
 node test_table_layouts.js     # 22 table customization & floor layout tests
+node test_guest_feedback.js    # 39 post-order review, Google prompt & owner/manager message tests
 ```
 
 ---
+
+## ⭐ Guest Feedback
+- **Post-order review**: once the bill is settled, each guest device is asked to rate the meal (1-5 stars + optional comment). One review per device per order.
+- **Google review prompt**: after the internal review, every guest is offered the restaurant's Google review link; ratings at or above the admin's threshold (default 4★) get a highlighted prompt. Showing it only to happy guests ("review gating") is against Google's policy, so it is never hidden.
+- **Message the Owner or Manager**: guests can send a private note, choosing Owner or Manager, with an optional name and contact. The restaurant admin can switch this button on or off.
+- **Owner inbox**: Restaurant Admin → Guest Feedback shows average rating, reviews, messages (filter by recipient, mark read) and the Google link / messages settings.
 
 ## 🛡️ Anti-Fraud & Security Controls
 - **Server-Authoritative Pricing**: Client-side prices or totals are discarded; recalculations strictly enforce catalog pricing.
